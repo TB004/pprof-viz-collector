@@ -13,10 +13,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v6.3.0
         with:
           go-version: "1.26.1"
           cache: true
@@ -24,14 +24,28 @@ jobs:
       - name: Install just
         uses: taiki-e/install-action@just
 
+      - name: Cache Go tools
+        id: cache-tools
+        uses: actions/cache@v5.0.3
+        with:
+          path: ~/go/bin
+          # The cache key includes the workflow file hash, so if you change
+          # the tool list, the cache will invalidate and reinstall.
+          key: ${{ runner.os }}-go-tools-${{ hashFiles('.github/workflows/ci.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-go-tools-
 
       - name: Install Go tools
+        if: steps.cache-tools.outputs.cache-hit != 'true'
         run: |
           go install honnef.co/go/tools/cmd/staticcheck@latest
           go install golang.org/x/vuln/cmd/govulncheck@latest
           go install github.com/securego/gosec/v2/cmd/gosec@latest
           go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
           go install golang.org/x/tools/go/analysis/passes/modernize/cmd/modernize@latest
+
+      - name: Install dependencies
+        run: go mod download
 
       - name: Create test output directory
         run: mkdir -p .test
