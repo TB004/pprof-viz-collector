@@ -6,11 +6,13 @@ package internal
 import (
 	"context"
 	"errors"
+	"runtime/metrics"
 	"time"
 
 	"connectrpc.com/connect"
 	"github.com/TB004/pprof-viz-agent/internal/proto"
 	"github.com/TB004/pprof-viz-agent/internal/proto/protoconnect"
+	"github.com/TB004/pprof-viz-agent/pkg/models"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -21,7 +23,39 @@ type AgentServiceHandler struct {
 
 // SnapshotAll returns a single point-in-time capture of all supported Go runtime metrics.
 func (h AgentServiceHandler) SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error) {
-	return collectSamples(), nil
+	return collectSamples(true), nil
+}
+
+// GetMetadata returns the static bucket boundaries for all histogram metrics.
+// Clients should call this once and then use StreamAll with exclude_histogram_buckets=true.
+func (h AgentServiceHandler) GetMetadata(context.Context, *emptypb.Empty) (*proto.MetadataResponse, error) {
+	// Helper function to get buckets out of a histogram sample
+	getBuckets := func(s metrics.Sample) []float32 {
+		h := AsHistogram(s)
+		if h == nil {
+			return nil
+		}
+		return h.Buckets
+	}
+
+	gcVals := RetrieveGCSamples()
+	schedVals := RetrieveSchedulerSamples()
+
+	resp := &proto.MetadataResponse{
+		Gc: &proto.GCMetadata{
+			BytesAllocsBySizeBuckets: getBuckets(gcVals[MetricGCHeapAllocsBySize]),
+			BytesFreesBySizeBuckets:  getBuckets(gcVals[MetricGCHeapFreesBySize]),
+		},
+		Scheduler: &proto.SchedulerMetadata{
+			LatenciesSecondsBuckets:       getBuckets(schedVals[MetricSchedLatencies]),
+			StoppingGcSecondsBuckets:      getBuckets(schedVals[MetricSchedPausesStoppingGC]),
+			StoppingOtherSecondsBuckets:   getBuckets(schedVals[MetricSchedPausesStoppingOther]),
+			TotalGcPauseSecondsBuckets:    getBuckets(schedVals[MetricSchedPausesTotalGC]),
+			TotalOtherPauseSecondsBuckets: getBuckets(schedVals[MetricSchedPausesTotalOther]),
+		},
+	}
+
+	return resp, nil
 }
 
 // StreamAll streams runtime metrics at a client-provided interval in a client-provided number of cycles or indefinitely.
@@ -32,6 +66,8 @@ func (h AgentServiceHandler) StreamAll(ctx context.Context, req *proto.StreamCon
 	}
 
 	numCycles := int(req.GetNumberOfCycles())
+	includeBuckets := !req.GetExcludeHistogramBuckets()
+
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	defer ticker.Stop()
 
@@ -40,7 +76,7 @@ func (h AgentServiceHandler) StreamAll(ctx context.Context, req *proto.StreamCon
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			all := collectSamples()
+			all := collectSamples(includeBuckets)
 			if err := stream.Send(all); err != nil {
 				return err
 			}
@@ -51,7 +87,22 @@ func (h AgentServiceHandler) StreamAll(ctx context.Context, req *proto.StreamCon
 }
 
 // collectSamples retrieves and maps all current runtime metrics into a proto response.
-func collectSamples() *proto.AllResponse {
+func collectSamples(includeBuckets bool) *proto.AllResponse {
+	// Helper function to convert *models.Histogram to *proto.Histogram
+	toProtoHistogram := func(h *models.Histogram, includeBuckets bool) *proto.Histogram {
+		if h == nil {
+			return nil
+		}
+		buckets := h.Buckets
+		if !includeBuckets {
+			buckets = nil
+		}
+		return &proto.Histogram{
+			Counts:  h.Counts,
+			Buckets: buckets,
+		}
+	}
+
 	// cgo
 	cgoVals := RetrieveCgoSamples()
 	cgo := &proto.CgoResponse{
@@ -77,8 +128,8 @@ func collectSamples() *proto.AllResponse {
 	// gc
 	gcVals := RetrieveGCSamples()
 	gc := &proto.GCResponse{
-		BytesAllocsBySize:        ToProtoHistogram(AsHistogram(gcVals[MetricGCHeapAllocsBySize])),
-		BytesFreesBySize:         ToProtoHistogram(AsHistogram(gcVals[MetricGCHeapFreesBySize])),
+		BytesAllocsBySize:        toProtoHistogram(AsHistogram(gcVals[MetricGCHeapAllocsBySize]), includeBuckets),
+		BytesFreesBySize:         toProtoHistogram(AsHistogram(gcVals[MetricGCHeapFreesBySize]), includeBuckets),
 		ExecutedCleanups:         AsUint(gcVals[MetricGCCleanupsExecuted]),
 		QueuedCleanups:           AsUint(gcVals[MetricGCCleanupsQueued]),
 		AutomaticCycles:          AsUint(gcVals[MetricGCCyclesAutomatic]),
@@ -177,11 +228,11 @@ func collectSamples() *proto.AllResponse {
 	// scheduler
 	schedVals := RetrieveSchedulerSamples()
 	scheduler := &proto.SchedulerResponse{
-		LatenciesSeconds:       ToProtoHistogram(AsHistogram(schedVals[MetricSchedLatencies])),
-		StoppingGcSeconds:      ToProtoHistogram(AsHistogram(schedVals[MetricSchedPausesStoppingGC])),
-		StoppingOtherSeconds:   ToProtoHistogram(AsHistogram(schedVals[MetricSchedPausesStoppingOther])),
-		TotalGcPauseSeconds:    ToProtoHistogram(AsHistogram(schedVals[MetricSchedPausesTotalGC])),
-		TotalOtherPauseSeconds: ToProtoHistogram(AsHistogram(schedVals[MetricSchedPausesTotalOther])),
+		LatenciesSeconds:       toProtoHistogram(AsHistogram(schedVals[MetricSchedLatencies]), includeBuckets),
+		StoppingGcSeconds:      toProtoHistogram(AsHistogram(schedVals[MetricSchedPausesStoppingGC]), includeBuckets),
+		StoppingOtherSeconds:   toProtoHistogram(AsHistogram(schedVals[MetricSchedPausesStoppingOther]), includeBuckets),
+		TotalGcPauseSeconds:    toProtoHistogram(AsHistogram(schedVals[MetricSchedPausesTotalGC]), includeBuckets),
+		TotalOtherPauseSeconds: toProtoHistogram(AsHistogram(schedVals[MetricSchedPausesTotalOther]), includeBuckets),
 		GoroutinesCreated:      AsUint(schedVals[MetricSchedGoroutinesCreated]),
 		GomaxprocsThreads:      SafeUint32(AsUint(schedVals[MetricSchedGOMAXPROCS])),
 		NotInGoGoroutines:      SafeUint32(AsUint(schedVals[MetricSchedGoroutinesNotInGo])),

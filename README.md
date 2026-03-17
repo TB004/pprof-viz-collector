@@ -23,6 +23,15 @@ While standard `pprof` is indispensable for deep-dive analysis and stack-trace i
 go get github.com/TB004/pprof-viz-agent
 ```
 
+## Bandwidth Optimization
+
+For long-running streams, histogram bucket boundaries (which are static) can consume significant bandwidth. `pprof-viz-agent` supports a "Metadata + Data" pattern to optimize this:
+
+1.  Call `GetMetadata` once to retrieve the static bucket definitions.
+2.  Call `StreamAll` with `exclude_histogram_buckets = true`.
+
+This ensures that only the dynamic `counts` are sent over the wire, reducing payload size significantly for histogram-heavy metrics.
+
 ## Usage
 
 The library provides two primary entry points depending on your application's architecture.
@@ -36,7 +45,8 @@ package main
 
 import (
     "net/http"
-    "github.com/TB004/pprof-viz-agent"
+    
+    pprofvizagent "github.com/TB004/pprof-viz-agent"
 )
 
 func main() {
@@ -63,7 +73,8 @@ package main
 
 import (
     "log"
-    "github.com/TB004/pprof-viz-agent"
+    
+    pprofvizagent "github.com/TB004/pprof-viz-agent"
 )
 
 func main() {
