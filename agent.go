@@ -13,6 +13,8 @@ import (
 	"github.com/TB004/pprof-viz-agent/internal"
 	"github.com/TB004/pprof-viz-agent/internal/proto/protoconnect"
 	"github.com/TB004/pprof-viz-agent/pkg/models"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
 // Bind registers the AgentService handler to the provided http.ServeMux.
@@ -38,12 +40,15 @@ func New(port int, proto *http.Protocols, tls *tls.Config) error {
 	)
 	mux.Handle(path, handler)
 
+	// Wrap the mux with h2c to support HTTP/2 over cleartext.
+	h2cHandler := h2c.NewHandler(mux, &http2.Server{})
+
 	s := http.Server{
 		Addr:        fmt.Sprintf("localhost:%d", port),
-		Handler:     mux,
+		Handler:     h2cHandler,
 		Protocols:   proto,
 		TLSConfig:   tls,
-		ReadTimeout: 3 * time.Millisecond,
+		ReadTimeout: 10 * time.Second,
 	}
 	if err := s.ListenAndServe(); err != nil {
 		return err
