@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Tizian Bahr
 
-package pkg
+package models
 
 type Histogram struct {
 	Counts  []uint64  `json:"counts"`

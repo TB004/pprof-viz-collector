@@ -8,7 +8,7 @@ import (
 	"runtime/metrics"
 
 	"github.com/TB004/pprof-viz-agent/internal/proto"
-	"github.com/TB004/pprof-viz-agent/pkg"
+	"github.com/TB004/pprof-viz-agent/pkg/models"
 )
 
 // ReadSamples reads the given metric names and returns a map from name to Sample.
@@ -25,8 +25,8 @@ func ReadSamples(names []string) map[string]metrics.Sample {
 	return m
 }
 
-// AsHistogram returns the sample as a pkg.Histogram when possible.
-func AsHistogram(s metrics.Sample) *pkg.Histogram {
+// AsHistogram returns the sample as a models.Histogram when possible.
+func AsHistogram(s metrics.Sample) *models.Histogram {
 	if s.Value.Kind() != metrics.KindFloat64Histogram {
 		return nil
 	}
@@ -37,7 +37,7 @@ func AsHistogram(s metrics.Sample) *pkg.Histogram {
 		buckets[i] = float32(b)
 	}
 
-	return &pkg.Histogram{
+	return &models.Histogram{
 		Counts:  h.Counts,
 		Buckets: buckets,
 	}
@@ -69,7 +69,7 @@ func AsUint(s metrics.Sample) uint64 {
 	}
 }
 
-func ToProtoHistogram(h *pkg.Histogram) *proto.Histogram {
+func ToProtoHistogram(h *models.Histogram) *proto.Histogram {
 	if h == nil {
 		return nil
 	}
