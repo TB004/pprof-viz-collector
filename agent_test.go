@@ -14,11 +14,10 @@ import (
 )
 
 func TestBind(t *testing.T) {
+	t.Parallel()
 	mux := http.NewServeMux()
 	Bind(mux)
 
-	// Verify the route is registered
-	// The path for AgentService is /proto.AgentService/
 	req := httptest.NewRequest("POST", "/proto.AgentService/SnapshotAll", nil)
 	rec := httptest.NewRecorder()
 
@@ -38,7 +37,7 @@ func TestNew(t *testing.T) {
 	}()
 
 	// Give the server a moment to start up and bind to the port.
-	time.Sleep(3 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	// ConnectRPC with JSON expects an empty object "{}" for google.protobuf.Empty.
 	body := strings.NewReader("{}")
@@ -50,47 +49,57 @@ func TestNew(t *testing.T) {
 	resp, err := http.DefaultClient.Do(req)
 	assert.NoError(t, err)
 
-	assert.NotEmpty(t, resp.Body)
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	if err == nil {
+		assert.NotEmpty(t, resp.Body)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	}
 }
 
 func TestSnapshotCgo(t *testing.T) {
+	t.Parallel()
 	resp := SnapshotCgo()
 	assert.NotNil(t, resp)
 }
 
 func TestSnapshotGC(t *testing.T) {
+	t.Parallel()
 	resp := SnapshotGC()
 	assert.NotNil(t, resp)
 }
 
 func TestSnapshotCPU(t *testing.T) {
+	t.Parallel()
 	resp := SnapshotCPU()
 	assert.NotNil(t, resp)
 }
 
 func TestSnapshotGoDebug(t *testing.T) {
+	t.Parallel()
 	resp := SnapshotGoDebug()
 	assert.NotNil(t, resp)
 }
 
 func TestSnapshotMemory(t *testing.T) {
+	t.Parallel()
 	resp := SnapshotMemory()
 	assert.NotNil(t, resp)
 }
 
 func TestSnapshotSchedular(t *testing.T) {
+	t.Parallel()
 	resp := SnapshotSchedular()
 	assert.NotNil(t, resp)
 }
 
 func TestSnapshotSync(t *testing.T) {
+	t.Parallel()
 	resp := SnapshotSync()
 	assert.NotNil(t, resp)
 }
 
 func TestSnapshotAll(t *testing.T) {
+	t.Parallel()
 	resp := SnapshotAll()
 	assert.NotNil(t, resp)
 }

@@ -12,7 +12,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/TB004/pprof-viz-agent/internal"
 	"github.com/TB004/pprof-viz-agent/internal/proto/protoconnect"
-	"github.com/TB004/pprof-viz-agent/pkg"
+	"github.com/TB004/pprof-viz-agent/pkg/models"
 )
 
 // Bind registers the AgentService handler to the provided http.ServeMux.
@@ -53,18 +53,18 @@ func New(port int, proto *http.Protocols, tls *tls.Config) error {
 }
 
 // SnapshotCgo retrieves a snapshot of cgo-related metrics.
-func SnapshotCgo() pkg.CgoResponse {
+func SnapshotCgo() models.CgoResponse {
 	vals := internal.RetrieveCgoSamples()
 
-	return pkg.CgoResponse{
+	return models.CgoResponse{
 		CgoCalls: internal.AsUint(vals[internal.MetricCgoGoToCCalls]),
 	}
 }
 
 // SnapshotGC retrieves a snapshot of GC-related metrics.
-func SnapshotGC() *pkg.GCResponse {
+func SnapshotGC() *models.GCResponse {
 	gcVals := internal.RetrieveGCSamples()
-	return &pkg.GCResponse{
+	return &models.GCResponse{
 		BytesAllocsBySize:        internal.AsHistogram(gcVals[internal.MetricGCHeapAllocsBySize]),
 		BytesFreesBySize:         internal.AsHistogram(gcVals[internal.MetricGCHeapFreesBySize]),
 		ExecutedCleanups:         internal.AsUint(gcVals[internal.MetricGCCleanupsExecuted]),
@@ -94,9 +94,9 @@ func SnapshotGC() *pkg.GCResponse {
 }
 
 // SnapshotCPU retrieves a snapshot of CPU-related metrics.
-func SnapshotCPU() *pkg.CPUResponse {
+func SnapshotCPU() *models.CPUResponse {
 	cpuVals := internal.RetrieveCPUSamples()
-	return &pkg.CPUResponse{
+	return &models.CPUResponse{
 		GcAssistSeconds:           internal.AsFloat(cpuVals[internal.MetricCPUClassesGCMarkAssist]),
 		GcDedicatedSeconds:        internal.AsFloat(cpuVals[internal.MetricCPUClassesGCMarkDedicated]),
 		GcIdleSeconds:             internal.AsFloat(cpuVals[internal.MetricCPUClassesGCMarkIdle]),
@@ -112,9 +112,9 @@ func SnapshotCPU() *pkg.CPUResponse {
 }
 
 // SnapshotGoDebug retrieves a snapshot of godebug-related metrics.
-func SnapshotGoDebug() *pkg.GoDebugResponse {
+func SnapshotGoDebug() *models.GoDebugResponse {
 	gdVals := internal.RetrieveGoDebugSamples()
-	return &pkg.GoDebugResponse{
+	return &models.GoDebugResponse{
 		CacheHashEvents:                   internal.AsUint(gdVals[internal.MetricGoDebugGoCacheHash]),
 		CacheTestEvents:                   internal.AsUint(gdVals[internal.MetricGoDebugGoCacheTest]),
 		CacheVerifyEvents:                 internal.AsUint(gdVals[internal.MetricGoDebugGoCacheVerify]),
@@ -165,9 +165,9 @@ func SnapshotGoDebug() *pkg.GoDebugResponse {
 }
 
 // SnapshotMemory retrieves a snapshot of memory-related metrics.
-func SnapshotMemory() *pkg.MemoryResponse {
+func SnapshotMemory() *models.MemoryResponse {
 	memVals := internal.RetrieveMemorySamples()
-	return &pkg.MemoryResponse{
+	return &models.MemoryResponse{
 		HeapFreeBytes:        internal.AsUint(memVals[internal.MetricMemoryClassesHeapFree]),
 		HeapObjectBytes:      internal.AsUint(memVals[internal.MetricMemoryClassesHeapObjects]),
 		HeapReleasedBytes:    internal.AsUint(memVals[internal.MetricMemoryClassesHeapReleased]),
@@ -186,9 +186,9 @@ func SnapshotMemory() *pkg.MemoryResponse {
 }
 
 // SnapshotSchedular retrieves a snapshot of scheduler-related metrics.
-func SnapshotSchedular() *pkg.SchedulerResponse {
+func SnapshotSchedular() *models.SchedulerResponse {
 	schedVals := internal.RetrieveSchedulerSamples()
-	return &pkg.SchedulerResponse{
+	return &models.SchedulerResponse{
 		LatenciesSeconds:       internal.AsHistogram(schedVals[internal.MetricSchedLatencies]),
 		StoppingGcSeconds:      internal.AsHistogram(schedVals[internal.MetricSchedPausesStoppingGC]),
 		StoppingOtherSeconds:   internal.AsHistogram(schedVals[internal.MetricSchedPausesStoppingOther]),
@@ -206,15 +206,15 @@ func SnapshotSchedular() *pkg.SchedulerResponse {
 }
 
 // SnapshotSync retrieves a snapshot of sync-related metrics.
-func SnapshotSync() pkg.SyncResponse {
+func SnapshotSync() models.SyncResponse {
 	syncVals := internal.RetrieveSyncSamples()
-	return pkg.SyncResponse{
+	return models.SyncResponse{
 		TotalMutexWaitDurationSeconds: internal.AsFloat(syncVals[internal.MetricSyncMutexWaitTotal]),
 	}
 }
 
 // SnapshotAll retrieves a single point-in-time capture of all supported Go runtime metrics.
-func SnapshotAll() pkg.AllResponse {
+func SnapshotAll() models.AllResponse {
 	cgoResp := SnapshotCgo()
 	cpuResp := SnapshotCPU()
 	gcResp := SnapshotGC()
@@ -223,7 +223,7 @@ func SnapshotAll() pkg.AllResponse {
 	schedResp := SnapshotSchedular()
 	syncResp := SnapshotSync()
 
-	return pkg.AllResponse{
+	return models.AllResponse{
 		Cgo:       cgoResp,
 		Cpu:       cpuResp,
 		Gc:        gcResp,
