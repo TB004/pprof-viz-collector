@@ -19,7 +19,7 @@ vuln:
 # Run tests with coverage
 [group("maintain")]
 cover:
-    - go test -race -cover -coverprofile cover.out  -outputdir ./.test ./internal/...
+    - go test -race -cover -coverprofile cover.out  -outputdir ./.test ./...
     - go tool cover -html=./.test/cover.out  -o ./.test/coverage.html
 
 # Run tests
