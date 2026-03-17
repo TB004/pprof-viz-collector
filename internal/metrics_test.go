@@ -10,24 +10,28 @@ import (
 )
 
 func TestRetrieveCPUSamples(t *testing.T) {
+	t.Parallel()
 	samples := RetrieveCPUSamples()
 	assert.NotEmpty(t, samples)
 	assert.Len(t, samples, 11) // We expect exactly 11 CPU samples
 }
 
 func TestRetrieveCgoSamples(t *testing.T) {
+	t.Parallel()
 	samples := RetrieveCgoSamples()
 	assert.NotEmpty(t, samples)
 	assert.Len(t, samples, 1) // We expect exactly 1 cgo sample
 }
 
 func TestRetrieveGCSamples(t *testing.T) {
+	t.Parallel()
 	samples := RetrieveGCSamples()
 	assert.NotEmpty(t, samples)
 	assert.Len(t, samples, 26) // We expect exactly 26 GC samples
 }
 
 func TestRetrieveGoDebugSamples(t *testing.T) {
+	t.Parallel()
 	samples := RetrieveGoDebugSamples()
 	// GoDebug metrics might be empty if none are enabled/tracked, but the map should exist
 	assert.NotNil(t, samples)
@@ -35,18 +39,21 @@ func TestRetrieveGoDebugSamples(t *testing.T) {
 }
 
 func TestRetrieveMemorySamples(t *testing.T) {
+	t.Parallel()
 	samples := RetrieveMemorySamples()
 	assert.NotEmpty(t, samples)
 	assert.Len(t, samples, 14) // We expect exactly 14 memory samples
 }
 
 func TestRetrieveSchedulerSamples(t *testing.T) {
+	t.Parallel()
 	samples := RetrieveSchedulerSamples()
 	assert.NotEmpty(t, samples)
 	assert.Len(t, samples, 13) // We expect exactly 13 scheduler samples
 }
 
 func TestRetrieveSyncSamples(t *testing.T) {
+	t.Parallel()
 	samples := RetrieveSyncSamples()
 	assert.NotEmpty(t, samples)
 	assert.Len(t, samples, 1) // We expect exactly 1 sync sample

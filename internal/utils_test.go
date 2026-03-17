@@ -9,7 +9,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/TB004/pprof-viz-agent/pkg"
+	"github.com/TB004/pprof-viz-agent/pkg/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,6 +30,7 @@ func setMetricValue(v *metrics.Value, kind int, scalar uint64, ptr unsafe.Pointe
 }
 
 func TestReadSamples(t *testing.T) {
+	t.Parallel()
 	name := []string{MetricCgoGoToCCalls}
 	samples := ReadSamples(name)
 	assert.NotEmpty(t, samples)
@@ -71,6 +72,7 @@ func TestAsFloat(t *testing.T) {
 	t.Parallel()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			var s metrics.Sample
 			setMetricValue(&s.Value, tt.kind, tt.scalar, nil)
 
@@ -114,6 +116,7 @@ func TestAsUint(t *testing.T) {
 	t.Parallel()
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			var s metrics.Sample
 			setMetricValue(&s.Value, tc.kind, tc.scalar, nil)
 
@@ -127,6 +130,7 @@ func TestAsHistogram(t *testing.T) {
 	t.Parallel()
 
 	t.Run("ValidHistogram", func(t *testing.T) {
+		t.Parallel()
 		name := []string{MetricGCHeapAllocsBySize}
 		samples := ReadSamples(name)
 
@@ -137,6 +141,7 @@ func TestAsHistogram(t *testing.T) {
 	})
 
 	t.Run("InvalidHistogram", func(t *testing.T) {
+		t.Parallel()
 		// Constructing a fake Float64Histogram is complex because it involves pointers.
 		// Instead, we verify that non-histograms return nil.
 		var s metrics.Sample
@@ -151,11 +156,13 @@ func TestToProtoHistogram(t *testing.T) {
 	t.Parallel()
 
 	t.Run("NilInput", func(t *testing.T) {
+		t.Parallel()
 		assert.Nil(t, ToProtoHistogram(nil))
 	})
 
 	t.Run("ValidInput", func(t *testing.T) {
-		h := &pkg.Histogram{
+		t.Parallel()
+		h := &models.Histogram{
 			Counts:  []uint64{1, 2, 3},
 			Buckets: []float32{0.1, 0.5, 1.0},
 		}
@@ -187,6 +194,7 @@ func TestSafeUint32(t *testing.T) {
 	t.Parallel()
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			out := SafeUint32(tc.input)
 			assert.Equal(t, tc.expect, out)
 		})

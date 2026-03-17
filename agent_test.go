@@ -49,11 +49,9 @@ func TestNew(t *testing.T) {
 	resp, err := http.DefaultClient.Do(req)
 	assert.NoError(t, err)
 
-	if err == nil {
-		assert.NotEmpty(t, resp.Body)
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-	}
+	assert.NotEmpty(t, resp.Body)
+	defer assert.NoError(t, resp.Body.Close())
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func TestSnapshotCgo(t *testing.T) {

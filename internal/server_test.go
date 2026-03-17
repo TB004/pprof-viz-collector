@@ -17,6 +17,7 @@ import (
 )
 
 func TestAgentServiceHandler_SnapshotAll(t *testing.T) {
+	t.Parallel()
 	// Setup Connect server
 	mux := http.NewServeMux()
 	path, handler := protoconnect.NewAgentServiceHandler(AgentServiceHandler{})
@@ -35,17 +36,17 @@ func TestAgentServiceHandler_SnapshotAll(t *testing.T) {
 }
 
 func TestAgentServiceHandler_StreamAll(t *testing.T) {
-	// Setup Connect server
-	mux := http.NewServeMux()
-	path, handler := protoconnect.NewAgentServiceHandler(AgentServiceHandler{})
-	mux.Handle(path, handler)
-	server := httptest.NewServer(mux)
-	defer server.Close()
-
-	client := protoconnect.NewAgentServiceClient(server.Client(), server.URL)
-
 	t.Parallel()
+
 	t.Run("InvalidInterval", func(t *testing.T) {
+		t.Parallel()
+		mux := http.NewServeMux()
+		path, handler := protoconnect.NewAgentServiceHandler(AgentServiceHandler{})
+		mux.Handle(path, handler)
+		server := httptest.NewServer(mux)
+		defer server.Close()
+
+		client := protoconnect.NewAgentServiceClient(server.Client(), server.URL)
 		stream, err := client.StreamAll(context.Background(), &proto.StreamConfigRequest{
 			IntervalSeconds: 0, // Invalid
 			NumberOfCycles:  1,
@@ -61,11 +62,14 @@ func TestAgentServiceHandler_StreamAll(t *testing.T) {
 	})
 
 	t.Run("StreamMultipleCycles", func(t *testing.T) {
-		// Use a short interval for testing
-		// Since the server implementation enforces "seconds" (interval * time.Second),
-		// we have to wait at least 1 second per cycle.
-		// For a fast test, we might only test 1 cycle with 1 second.
-		// Or we trust the logic.
+		t.Parallel()
+		mux := http.NewServeMux()
+		path, handler := protoconnect.NewAgentServiceHandler(AgentServiceHandler{})
+		mux.Handle(path, handler)
+		server := httptest.NewServer(mux)
+		defer server.Close()
+
+		client := protoconnect.NewAgentServiceClient(server.Client(), server.URL)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
@@ -88,6 +92,15 @@ func TestAgentServiceHandler_StreamAll(t *testing.T) {
 	})
 
 	t.Run("ContextCancellation", func(t *testing.T) {
+		t.Parallel()
+		mux := http.NewServeMux()
+		path, handler := protoconnect.NewAgentServiceHandler(AgentServiceHandler{})
+		mux.Handle(path, handler)
+		server := httptest.NewServer(mux)
+		defer server.Close()
+
+		client := protoconnect.NewAgentServiceClient(server.Client(), server.URL)
+
 		// Test that it stops when context is cancelled
 		ctx, cancel := context.WithCancel(context.Background())
 
@@ -113,6 +126,7 @@ func TestAgentServiceHandler_StreamAll(t *testing.T) {
 }
 
 func TestCollectSamples(t *testing.T) {
+	t.Parallel()
 	resp := collectSamples()
 	assert.NotNil(t, resp)
 	// Basic validation that we got some data populated
