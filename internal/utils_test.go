@@ -9,7 +9,6 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/TB004/pprof-viz-agent/pkg/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -149,27 +148,6 @@ func TestAsHistogram(t *testing.T) {
 
 		h := AsHistogram(s)
 		assert.Nil(t, h)
-	})
-}
-
-func TestToProtoHistogram(t *testing.T) {
-	t.Parallel()
-
-	t.Run("NilInput", func(t *testing.T) {
-		t.Parallel()
-		assert.Nil(t, ToProtoHistogram(nil))
-	})
-
-	t.Run("ValidInput", func(t *testing.T) {
-		t.Parallel()
-		h := &models.Histogram{
-			Counts:  []uint64{1, 2, 3},
-			Buckets: []float32{0.1, 0.5, 1.0},
-		}
-		protoH := ToProtoHistogram(h)
-		assert.NotNil(t, protoH)
-		assert.Equal(t, h.Counts, protoH.Counts)
-		assert.Equal(t, h.Buckets, protoH.Buckets)
 	})
 }
 

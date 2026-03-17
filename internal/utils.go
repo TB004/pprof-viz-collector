@@ -7,7 +7,6 @@ import (
 	"math"
 	"runtime/metrics"
 
-	"github.com/TB004/pprof-viz-agent/internal/proto"
 	"github.com/TB004/pprof-viz-agent/pkg/models"
 )
 
@@ -66,16 +65,6 @@ func AsUint(s metrics.Sample) uint64 {
 		return uint64(s.Value.Float64())
 	default:
 		return 0
-	}
-}
-
-func ToProtoHistogram(h *models.Histogram) *proto.Histogram {
-	if h == nil {
-		return nil
-	}
-	return &proto.Histogram{
-		Counts:  h.Counts,
-		Buckets: h.Buckets,
 	}
 }
 
