@@ -10,11 +10,13 @@ import "google/protobuf/empty.proto";
 service AgentService {
   rpc SnapshotAll(google.protobuf.Empty) returns (AllResponse);
   rpc StreamAll(StreamConfigRequest) returns (stream AllResponse);
+  rpc GetMetadata(google.protobuf.Empty) returns (MetadataResponse);
 }
 
 message StreamConfigRequest {
   uint32 interval_seconds = 1;
   uint32 number_of_cycles = 2;
+  bool exclude_histogram_buckets = 3;
 }
 
 message Histogram {
@@ -38,6 +40,24 @@ message CPUResponse {
   double scavenge_assist_seconds = 9;
   double scavenge_background_seconds = 10;
   double scavenge_total_seconds = 11;
+}
+
+message GCMetadata {
+  repeated float bytes_allocs_by_size_buckets = 1;
+  repeated float bytes_frees_by_size_buckets = 2;
+}
+
+message SchedulerMetadata {
+  repeated float latencies_seconds_buckets = 1;
+  repeated float stopping_gc_seconds_buckets = 2;
+  repeated float stopping_other_seconds_buckets = 3;
+  repeated float total_gc_pause_seconds_buckets = 4;
+  repeated float total_other_pause_seconds_buckets = 5;
+}
+
+message MetadataResponse {
+  GCMetadata gc = 1;
+  SchedulerMetadata scheduler = 2;
 }
 
 message GCResponse {

@@ -42,12 +42,16 @@ const (
 	AgentServiceSnapshotAllProcedure = "/proto.AgentService/SnapshotAll"
 	// AgentServiceStreamAllProcedure is the fully-qualified name of the AgentService's StreamAll RPC.
 	AgentServiceStreamAllProcedure = "/proto.AgentService/StreamAll"
+	// AgentServiceGetMetadataProcedure is the fully-qualified name of the AgentService's GetMetadata
+	// RPC.
+	AgentServiceGetMetadataProcedure = "/proto.AgentService/GetMetadata"
 )
 
 // AgentServiceClient is a client for the proto.AgentService service.
 type AgentServiceClient interface {
 	SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error)
 	StreamAll(context.Context, *proto.StreamConfigRequest) (*connect.ServerStreamForClient[proto.AllResponse], error)
+	GetMetadata(context.Context, *emptypb.Empty) (*proto.MetadataResponse, error)
 }
 
 // NewAgentServiceClient constructs a client for the proto.AgentService service. By default, it uses
@@ -73,6 +77,12 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(agentServiceMethods.ByName("StreamAll")),
 			connect.WithClientOptions(opts...),
 		),
+		getMetadata: connect.NewClient[emptypb.Empty, proto.MetadataResponse](
+			httpClient,
+			baseURL+AgentServiceGetMetadataProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("GetMetadata")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -80,6 +90,7 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 type agentServiceClient struct {
 	snapshotAll *connect.Client[emptypb.Empty, proto.AllResponse]
 	streamAll   *connect.Client[proto.StreamConfigRequest, proto.AllResponse]
+	getMetadata *connect.Client[emptypb.Empty, proto.MetadataResponse]
 }
 
 // SnapshotAll calls proto.AgentService.SnapshotAll.
@@ -96,10 +107,20 @@ func (c *agentServiceClient) StreamAll(ctx context.Context, req *proto.StreamCon
 	return c.streamAll.CallServerStream(ctx, connect.NewRequest(req))
 }
 
+// GetMetadata calls proto.AgentService.GetMetadata.
+func (c *agentServiceClient) GetMetadata(ctx context.Context, req *emptypb.Empty) (*proto.MetadataResponse, error) {
+	response, err := c.getMetadata.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
+}
+
 // AgentServiceHandler is an implementation of the proto.AgentService service.
 type AgentServiceHandler interface {
 	SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error)
 	StreamAll(context.Context, *proto.StreamConfigRequest, *connect.ServerStream[proto.AllResponse]) error
+	GetMetadata(context.Context, *emptypb.Empty) (*proto.MetadataResponse, error)
 }
 
 // NewAgentServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -121,12 +142,20 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(agentServiceMethods.ByName("StreamAll")),
 		connect.WithHandlerOptions(opts...),
 	)
+	agentServiceGetMetadataHandler := connect.NewUnaryHandlerSimple(
+		AgentServiceGetMetadataProcedure,
+		svc.GetMetadata,
+		connect.WithSchema(agentServiceMethods.ByName("GetMetadata")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/proto.AgentService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AgentServiceSnapshotAllProcedure:
 			agentServiceSnapshotAllHandler.ServeHTTP(w, r)
 		case AgentServiceStreamAllProcedure:
 			agentServiceStreamAllHandler.ServeHTTP(w, r)
+		case AgentServiceGetMetadataProcedure:
+			agentServiceGetMetadataHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -142,4 +171,8 @@ func (UnimplementedAgentServiceHandler) SnapshotAll(context.Context, *emptypb.Em
 
 func (UnimplementedAgentServiceHandler) StreamAll(context.Context, *proto.StreamConfigRequest, *connect.ServerStream[proto.AllResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("proto.AgentService.StreamAll is not implemented"))
+}
+
+func (UnimplementedAgentServiceHandler) GetMetadata(context.Context, *emptypb.Empty) (*proto.MetadataResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.AgentService.GetMetadata is not implemented"))
 }

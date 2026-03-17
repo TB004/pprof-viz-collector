@@ -26,11 +26,12 @@ const (
 )
 
 type StreamConfigRequest struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	IntervalSeconds uint32                 `protobuf:"varint,1,opt,name=interval_seconds,json=intervalSeconds,proto3" json:"interval_seconds,omitempty"`
-	NumberOfCycles  uint32                 `protobuf:"varint,2,opt,name=number_of_cycles,json=numberOfCycles,proto3" json:"number_of_cycles,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"open.v1"`
+	IntervalSeconds         uint32                 `protobuf:"varint,1,opt,name=interval_seconds,json=intervalSeconds,proto3" json:"interval_seconds,omitempty"`
+	NumberOfCycles          uint32                 `protobuf:"varint,2,opt,name=number_of_cycles,json=numberOfCycles,proto3" json:"number_of_cycles,omitempty"`
+	ExcludeHistogramBuckets bool                   `protobuf:"varint,3,opt,name=exclude_histogram_buckets,json=excludeHistogramBuckets,proto3" json:"exclude_histogram_buckets,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *StreamConfigRequest) Reset() {
@@ -75,6 +76,13 @@ func (x *StreamConfigRequest) GetNumberOfCycles() uint32 {
 		return x.NumberOfCycles
 	}
 	return 0
+}
+
+func (x *StreamConfigRequest) GetExcludeHistogramBuckets() bool {
+	if x != nil {
+		return x.ExcludeHistogramBuckets
+	}
+	return false
 }
 
 type Histogram struct {
@@ -297,6 +305,186 @@ func (x *CPUResponse) GetScavengeTotalSeconds() float64 {
 	return 0
 }
 
+type GCMetadata struct {
+	state                    protoimpl.MessageState `protogen:"open.v1"`
+	BytesAllocsBySizeBuckets []float32              `protobuf:"fixed32,1,rep,packed,name=bytes_allocs_by_size_buckets,json=bytesAllocsBySizeBuckets,proto3" json:"bytes_allocs_by_size_buckets,omitempty"`
+	BytesFreesBySizeBuckets  []float32              `protobuf:"fixed32,2,rep,packed,name=bytes_frees_by_size_buckets,json=bytesFreesBySizeBuckets,proto3" json:"bytes_frees_by_size_buckets,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
+}
+
+func (x *GCMetadata) Reset() {
+	*x = GCMetadata{}
+	mi := &file_proto_agent_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GCMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GCMetadata) ProtoMessage() {}
+
+func (x *GCMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_agent_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GCMetadata.ProtoReflect.Descriptor instead.
+func (*GCMetadata) Descriptor() ([]byte, []int) {
+	return file_proto_agent_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GCMetadata) GetBytesAllocsBySizeBuckets() []float32 {
+	if x != nil {
+		return x.BytesAllocsBySizeBuckets
+	}
+	return nil
+}
+
+func (x *GCMetadata) GetBytesFreesBySizeBuckets() []float32 {
+	if x != nil {
+		return x.BytesFreesBySizeBuckets
+	}
+	return nil
+}
+
+type SchedulerMetadata struct {
+	state                         protoimpl.MessageState `protogen:"open.v1"`
+	LatenciesSecondsBuckets       []float32              `protobuf:"fixed32,1,rep,packed,name=latencies_seconds_buckets,json=latenciesSecondsBuckets,proto3" json:"latencies_seconds_buckets,omitempty"`
+	StoppingGcSecondsBuckets      []float32              `protobuf:"fixed32,2,rep,packed,name=stopping_gc_seconds_buckets,json=stoppingGcSecondsBuckets,proto3" json:"stopping_gc_seconds_buckets,omitempty"`
+	StoppingOtherSecondsBuckets   []float32              `protobuf:"fixed32,3,rep,packed,name=stopping_other_seconds_buckets,json=stoppingOtherSecondsBuckets,proto3" json:"stopping_other_seconds_buckets,omitempty"`
+	TotalGcPauseSecondsBuckets    []float32              `protobuf:"fixed32,4,rep,packed,name=total_gc_pause_seconds_buckets,json=totalGcPauseSecondsBuckets,proto3" json:"total_gc_pause_seconds_buckets,omitempty"`
+	TotalOtherPauseSecondsBuckets []float32              `protobuf:"fixed32,5,rep,packed,name=total_other_pause_seconds_buckets,json=totalOtherPauseSecondsBuckets,proto3" json:"total_other_pause_seconds_buckets,omitempty"`
+	unknownFields                 protoimpl.UnknownFields
+	sizeCache                     protoimpl.SizeCache
+}
+
+func (x *SchedulerMetadata) Reset() {
+	*x = SchedulerMetadata{}
+	mi := &file_proto_agent_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SchedulerMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SchedulerMetadata) ProtoMessage() {}
+
+func (x *SchedulerMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_agent_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SchedulerMetadata.ProtoReflect.Descriptor instead.
+func (*SchedulerMetadata) Descriptor() ([]byte, []int) {
+	return file_proto_agent_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SchedulerMetadata) GetLatenciesSecondsBuckets() []float32 {
+	if x != nil {
+		return x.LatenciesSecondsBuckets
+	}
+	return nil
+}
+
+func (x *SchedulerMetadata) GetStoppingGcSecondsBuckets() []float32 {
+	if x != nil {
+		return x.StoppingGcSecondsBuckets
+	}
+	return nil
+}
+
+func (x *SchedulerMetadata) GetStoppingOtherSecondsBuckets() []float32 {
+	if x != nil {
+		return x.StoppingOtherSecondsBuckets
+	}
+	return nil
+}
+
+func (x *SchedulerMetadata) GetTotalGcPauseSecondsBuckets() []float32 {
+	if x != nil {
+		return x.TotalGcPauseSecondsBuckets
+	}
+	return nil
+}
+
+func (x *SchedulerMetadata) GetTotalOtherPauseSecondsBuckets() []float32 {
+	if x != nil {
+		return x.TotalOtherPauseSecondsBuckets
+	}
+	return nil
+}
+
+type MetadataResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Gc            *GCMetadata            `protobuf:"bytes,1,opt,name=gc,proto3" json:"gc,omitempty"`
+	Scheduler     *SchedulerMetadata     `protobuf:"bytes,2,opt,name=scheduler,proto3" json:"scheduler,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MetadataResponse) Reset() {
+	*x = MetadataResponse{}
+	mi := &file_proto_agent_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MetadataResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MetadataResponse) ProtoMessage() {}
+
+func (x *MetadataResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_agent_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MetadataResponse.ProtoReflect.Descriptor instead.
+func (*MetadataResponse) Descriptor() ([]byte, []int) {
+	return file_proto_agent_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *MetadataResponse) GetGc() *GCMetadata {
+	if x != nil {
+		return x.Gc
+	}
+	return nil
+}
+
+func (x *MetadataResponse) GetScheduler() *SchedulerMetadata {
+	if x != nil {
+		return x.Scheduler
+	}
+	return nil
+}
+
 type GCResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// 8-byte types and pointers first (Tag 1-15)
@@ -332,7 +520,7 @@ type GCResponse struct {
 
 func (x *GCResponse) Reset() {
 	*x = GCResponse{}
-	mi := &file_proto_agent_proto_msgTypes[4]
+	mi := &file_proto_agent_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -344,7 +532,7 @@ func (x *GCResponse) String() string {
 func (*GCResponse) ProtoMessage() {}
 
 func (x *GCResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[4]
+	mi := &file_proto_agent_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -357,7 +545,7 @@ func (x *GCResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GCResponse.ProtoReflect.Descriptor instead.
 func (*GCResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{4}
+	return file_proto_agent_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GCResponse) GetBytesAllocsBySize() *Histogram {
@@ -592,7 +780,7 @@ type GoDebugResponse struct {
 
 func (x *GoDebugResponse) Reset() {
 	*x = GoDebugResponse{}
-	mi := &file_proto_agent_proto_msgTypes[5]
+	mi := &file_proto_agent_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -604,7 +792,7 @@ func (x *GoDebugResponse) String() string {
 func (*GoDebugResponse) ProtoMessage() {}
 
 func (x *GoDebugResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[5]
+	mi := &file_proto_agent_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -617,7 +805,7 @@ func (x *GoDebugResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GoDebugResponse.ProtoReflect.Descriptor instead.
 func (*GoDebugResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{5}
+	return file_proto_agent_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GoDebugResponse) GetCacheHashEvents() uint64 {
@@ -964,7 +1152,7 @@ type MemoryResponse struct {
 
 func (x *MemoryResponse) Reset() {
 	*x = MemoryResponse{}
-	mi := &file_proto_agent_proto_msgTypes[6]
+	mi := &file_proto_agent_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -976,7 +1164,7 @@ func (x *MemoryResponse) String() string {
 func (*MemoryResponse) ProtoMessage() {}
 
 func (x *MemoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[6]
+	mi := &file_proto_agent_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -989,7 +1177,7 @@ func (x *MemoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MemoryResponse.ProtoReflect.Descriptor instead.
 func (*MemoryResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{6}
+	return file_proto_agent_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *MemoryResponse) GetHeapFreeBytes() uint64 {
@@ -1113,7 +1301,7 @@ type SchedulerResponse struct {
 
 func (x *SchedulerResponse) Reset() {
 	*x = SchedulerResponse{}
-	mi := &file_proto_agent_proto_msgTypes[7]
+	mi := &file_proto_agent_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1125,7 +1313,7 @@ func (x *SchedulerResponse) String() string {
 func (*SchedulerResponse) ProtoMessage() {}
 
 func (x *SchedulerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[7]
+	mi := &file_proto_agent_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1138,7 +1326,7 @@ func (x *SchedulerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SchedulerResponse.ProtoReflect.Descriptor instead.
 func (*SchedulerResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{7}
+	return file_proto_agent_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SchedulerResponse) GetLatenciesSeconds() *Histogram {
@@ -1241,7 +1429,7 @@ type SyncResponse struct {
 
 func (x *SyncResponse) Reset() {
 	*x = SyncResponse{}
-	mi := &file_proto_agent_proto_msgTypes[8]
+	mi := &file_proto_agent_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1253,7 +1441,7 @@ func (x *SyncResponse) String() string {
 func (*SyncResponse) ProtoMessage() {}
 
 func (x *SyncResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[8]
+	mi := &file_proto_agent_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1266,7 +1454,7 @@ func (x *SyncResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncResponse.ProtoReflect.Descriptor instead.
 func (*SyncResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{8}
+	return file_proto_agent_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SyncResponse) GetTotalMutexWaitDurationSeconds() float64 {
@@ -1291,7 +1479,7 @@ type AllResponse struct {
 
 func (x *AllResponse) Reset() {
 	*x = AllResponse{}
-	mi := &file_proto_agent_proto_msgTypes[9]
+	mi := &file_proto_agent_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1303,7 +1491,7 @@ func (x *AllResponse) String() string {
 func (*AllResponse) ProtoMessage() {}
 
 func (x *AllResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[9]
+	mi := &file_proto_agent_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1316,7 +1504,7 @@ func (x *AllResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AllResponse.ProtoReflect.Descriptor instead.
 func (*AllResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{9}
+	return file_proto_agent_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *AllResponse) GetScheduler() *SchedulerResponse {
@@ -1372,10 +1560,11 @@ var File_proto_agent_proto protoreflect.FileDescriptor
 
 const file_proto_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x11proto/agent.proto\x12\x05proto\x1a\x1bgoogle/protobuf/empty.proto\"j\n" +
+	"\x11proto/agent.proto\x12\x05proto\x1a\x1bgoogle/protobuf/empty.proto\"\xa6\x01\n" +
 	"\x13StreamConfigRequest\x12)\n" +
 	"\x10interval_seconds\x18\x01 \x01(\rR\x0fintervalSeconds\x12(\n" +
-	"\x10number_of_cycles\x18\x02 \x01(\rR\x0enumberOfCycles\"=\n" +
+	"\x10number_of_cycles\x18\x02 \x01(\rR\x0enumberOfCycles\x12:\n" +
+	"\x19exclude_histogram_buckets\x18\x03 \x01(\bR\x17excludeHistogramBuckets\"=\n" +
 	"\tHistogram\x12\x16\n" +
 	"\x06counts\x18\x01 \x03(\x04R\x06counts\x12\x18\n" +
 	"\abuckets\x18\x02 \x03(\x02R\abuckets\"*\n" +
@@ -1393,7 +1582,20 @@ const file_proto_agent_proto_rawDesc = "" +
 	"\x17scavenge_assist_seconds\x18\t \x01(\x01R\x15scavengeAssistSeconds\x12>\n" +
 	"\x1bscavenge_background_seconds\x18\n" +
 	" \x01(\x01R\x19scavengeBackgroundSeconds\x124\n" +
-	"\x16scavenge_total_seconds\x18\v \x01(\x01R\x14scavengeTotalSeconds\"\x9d\t\n" +
+	"\x16scavenge_total_seconds\x18\v \x01(\x01R\x14scavengeTotalSeconds\"\x8a\x01\n" +
+	"\n" +
+	"GCMetadata\x12>\n" +
+	"\x1cbytes_allocs_by_size_buckets\x18\x01 \x03(\x02R\x18bytesAllocsBySizeBuckets\x12<\n" +
+	"\x1bbytes_frees_by_size_buckets\x18\x02 \x03(\x02R\x17bytesFreesBySizeBuckets\"\xe1\x02\n" +
+	"\x11SchedulerMetadata\x12:\n" +
+	"\x19latencies_seconds_buckets\x18\x01 \x03(\x02R\x17latenciesSecondsBuckets\x12=\n" +
+	"\x1bstopping_gc_seconds_buckets\x18\x02 \x03(\x02R\x18stoppingGcSecondsBuckets\x12C\n" +
+	"\x1estopping_other_seconds_buckets\x18\x03 \x03(\x02R\x1bstoppingOtherSecondsBuckets\x12B\n" +
+	"\x1etotal_gc_pause_seconds_buckets\x18\x04 \x03(\x02R\x1atotalGcPauseSecondsBuckets\x12H\n" +
+	"!total_other_pause_seconds_buckets\x18\x05 \x03(\x02R\x1dtotalOtherPauseSecondsBuckets\"m\n" +
+	"\x10MetadataResponse\x12!\n" +
+	"\x02gc\x18\x01 \x01(\v2\x11.proto.GCMetadataR\x02gc\x126\n" +
+	"\tscheduler\x18\x02 \x01(\v2\x18.proto.SchedulerMetadataR\tscheduler\"\x9d\t\n" +
 	"\n" +
 	"GCResponse\x12A\n" +
 	"\x14bytes_allocs_by_size\x18\x01 \x01(\v2\x10.proto.HistogramR\x11bytesAllocsBySize\x12?\n" +
@@ -1513,10 +1715,11 @@ const file_proto_agent_proto_rawDesc = "" +
 	"\x06memory\x18\x04 \x01(\v2\x15.proto.MemoryResponseR\x06memory\x12$\n" +
 	"\x03cpu\x18\x05 \x01(\v2\x12.proto.CPUResponseR\x03cpu\x12$\n" +
 	"\x03cgo\x18\x06 \x01(\v2\x12.proto.CgoResponseR\x03cgo\x12'\n" +
-	"\x04sync\x18\a \x01(\v2\x13.proto.SyncResponseR\x04sync2\x88\x01\n" +
+	"\x04sync\x18\a \x01(\v2\x13.proto.SyncResponseR\x04sync2\xc8\x01\n" +
 	"\fAgentService\x129\n" +
 	"\vSnapshotAll\x12\x16.google.protobuf.Empty\x1a\x12.proto.AllResponse\x12=\n" +
-	"\tStreamAll\x12\x1a.proto.StreamConfigRequest\x1a\x12.proto.AllResponse0\x01B|\n" +
+	"\tStreamAll\x12\x1a.proto.StreamConfigRequest\x1a\x12.proto.AllResponse0\x01\x12>\n" +
+	"\vGetMetadata\x12\x16.google.protobuf.Empty\x1a\x17.proto.MetadataResponseB|\n" +
 	"\tcom.protoB\n" +
 	"AgentProtoP\x01Z/github.com/TB004/pprof-viz-agent/internal/proto\xa2\x02\x03PXX\xaa\x02\x05Proto\xca\x02\x05Proto\xe2\x02\x11Proto\\GPBMetadata\xea\x02\x05Protob\x06proto3"
 
@@ -1532,44 +1735,51 @@ func file_proto_agent_proto_rawDescGZIP() []byte {
 	return file_proto_agent_proto_rawDescData
 }
 
-var file_proto_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_proto_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_proto_agent_proto_goTypes = []any{
 	(*StreamConfigRequest)(nil), // 0: proto.StreamConfigRequest
 	(*Histogram)(nil),           // 1: proto.Histogram
 	(*CgoResponse)(nil),         // 2: proto.CgoResponse
 	(*CPUResponse)(nil),         // 3: proto.CPUResponse
-	(*GCResponse)(nil),          // 4: proto.GCResponse
-	(*GoDebugResponse)(nil),     // 5: proto.GoDebugResponse
-	(*MemoryResponse)(nil),      // 6: proto.MemoryResponse
-	(*SchedulerResponse)(nil),   // 7: proto.SchedulerResponse
-	(*SyncResponse)(nil),        // 8: proto.SyncResponse
-	(*AllResponse)(nil),         // 9: proto.AllResponse
-	(*emptypb.Empty)(nil),       // 10: google.protobuf.Empty
+	(*GCMetadata)(nil),          // 4: proto.GCMetadata
+	(*SchedulerMetadata)(nil),   // 5: proto.SchedulerMetadata
+	(*MetadataResponse)(nil),    // 6: proto.MetadataResponse
+	(*GCResponse)(nil),          // 7: proto.GCResponse
+	(*GoDebugResponse)(nil),     // 8: proto.GoDebugResponse
+	(*MemoryResponse)(nil),      // 9: proto.MemoryResponse
+	(*SchedulerResponse)(nil),   // 10: proto.SchedulerResponse
+	(*SyncResponse)(nil),        // 11: proto.SyncResponse
+	(*AllResponse)(nil),         // 12: proto.AllResponse
+	(*emptypb.Empty)(nil),       // 13: google.protobuf.Empty
 }
 var file_proto_agent_proto_depIdxs = []int32{
-	1,  // 0: proto.GCResponse.bytes_allocs_by_size:type_name -> proto.Histogram
-	1,  // 1: proto.GCResponse.bytes_frees_by_size:type_name -> proto.Histogram
-	1,  // 2: proto.SchedulerResponse.latencies_seconds:type_name -> proto.Histogram
-	1,  // 3: proto.SchedulerResponse.stopping_gc_seconds:type_name -> proto.Histogram
-	1,  // 4: proto.SchedulerResponse.stopping_other_seconds:type_name -> proto.Histogram
-	1,  // 5: proto.SchedulerResponse.total_gc_pause_seconds:type_name -> proto.Histogram
-	1,  // 6: proto.SchedulerResponse.total_other_pause_seconds:type_name -> proto.Histogram
-	7,  // 7: proto.AllResponse.scheduler:type_name -> proto.SchedulerResponse
-	5,  // 8: proto.AllResponse.go_debug:type_name -> proto.GoDebugResponse
-	4,  // 9: proto.AllResponse.gc:type_name -> proto.GCResponse
-	6,  // 10: proto.AllResponse.memory:type_name -> proto.MemoryResponse
-	3,  // 11: proto.AllResponse.cpu:type_name -> proto.CPUResponse
-	2,  // 12: proto.AllResponse.cgo:type_name -> proto.CgoResponse
-	8,  // 13: proto.AllResponse.sync:type_name -> proto.SyncResponse
-	10, // 14: proto.AgentService.SnapshotAll:input_type -> google.protobuf.Empty
-	0,  // 15: proto.AgentService.StreamAll:input_type -> proto.StreamConfigRequest
-	9,  // 16: proto.AgentService.SnapshotAll:output_type -> proto.AllResponse
-	9,  // 17: proto.AgentService.StreamAll:output_type -> proto.AllResponse
-	16, // [16:18] is the sub-list for method output_type
-	14, // [14:16] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	4,  // 0: proto.MetadataResponse.gc:type_name -> proto.GCMetadata
+	5,  // 1: proto.MetadataResponse.scheduler:type_name -> proto.SchedulerMetadata
+	1,  // 2: proto.GCResponse.bytes_allocs_by_size:type_name -> proto.Histogram
+	1,  // 3: proto.GCResponse.bytes_frees_by_size:type_name -> proto.Histogram
+	1,  // 4: proto.SchedulerResponse.latencies_seconds:type_name -> proto.Histogram
+	1,  // 5: proto.SchedulerResponse.stopping_gc_seconds:type_name -> proto.Histogram
+	1,  // 6: proto.SchedulerResponse.stopping_other_seconds:type_name -> proto.Histogram
+	1,  // 7: proto.SchedulerResponse.total_gc_pause_seconds:type_name -> proto.Histogram
+	1,  // 8: proto.SchedulerResponse.total_other_pause_seconds:type_name -> proto.Histogram
+	10, // 9: proto.AllResponse.scheduler:type_name -> proto.SchedulerResponse
+	8,  // 10: proto.AllResponse.go_debug:type_name -> proto.GoDebugResponse
+	7,  // 11: proto.AllResponse.gc:type_name -> proto.GCResponse
+	9,  // 12: proto.AllResponse.memory:type_name -> proto.MemoryResponse
+	3,  // 13: proto.AllResponse.cpu:type_name -> proto.CPUResponse
+	2,  // 14: proto.AllResponse.cgo:type_name -> proto.CgoResponse
+	11, // 15: proto.AllResponse.sync:type_name -> proto.SyncResponse
+	13, // 16: proto.AgentService.SnapshotAll:input_type -> google.protobuf.Empty
+	0,  // 17: proto.AgentService.StreamAll:input_type -> proto.StreamConfigRequest
+	13, // 18: proto.AgentService.GetMetadata:input_type -> google.protobuf.Empty
+	12, // 19: proto.AgentService.SnapshotAll:output_type -> proto.AllResponse
+	12, // 20: proto.AgentService.StreamAll:output_type -> proto.AllResponse
+	6,  // 21: proto.AgentService.GetMetadata:output_type -> proto.MetadataResponse
+	19, // [19:22] is the sub-list for method output_type
+	16, // [16:19] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_proto_agent_proto_init() }
@@ -1583,7 +1793,7 @@ func file_proto_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_agent_proto_rawDesc), len(file_proto_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
