@@ -14,7 +14,8 @@ While standard `pprof` is indispensable for deep-dive analysis and stack-trace i
 
 - **High Fidelity**: Exposes the full range of `runtime/metrics` (CPU, Memory, GC, Scheduler, etc.).
 - **Modern Protocol**: Built on ConnectRPC for type-safe, performant streaming over HTTP/2.
-- **Optimized**: Uses `zstd` compression and intelligent field alignment to minimize network and memory footprint.
+- **Low Overhead**: Optimized for zero-alloc collection loops using a single-pass `runtime/metrics.Read` approach and O(1) metric indexing.
+- **Efficient**: Uses `zstd` compression and intelligent field alignment to minimize network and memory footprint.
 - **Easy Integration**: Zero-config setup for both existing web services and standalone CLI tools.
 
 ## Installation
