@@ -184,7 +184,9 @@ func TestAgentServiceHandler_StreamAll(t *testing.T) {
 
 func TestCollectSamples(t *testing.T) {
 	t.Parallel()
-	resp := collectSamples(true)
+	collector := NewSampleCollector()
+	collector.Read()
+	resp := collector.Collect(true)
 	assert.NotNil(t, resp)
 	// Basic validation that we got some data populated
 	assert.NotNil(t, resp.Cpu)

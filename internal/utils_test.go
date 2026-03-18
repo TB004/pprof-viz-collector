@@ -28,14 +28,6 @@ func setMetricValue(v *metrics.Value, kind int, scalar uint64, ptr unsafe.Pointe
 	dst.pointer = ptr
 }
 
-func TestReadSamples(t *testing.T) {
-	t.Parallel()
-	name := []string{MetricCgoGoToCCalls}
-	samples := ReadSamples(name)
-	assert.NotEmpty(t, samples)
-	assert.NotNil(t, samples[MetricCgoGoToCCalls])
-}
-
 func TestAsFloat(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -72,10 +64,10 @@ func TestAsFloat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			var s metrics.Sample
-			setMetricValue(&s.Value, tt.kind, tt.scalar, nil)
+			var v metrics.Value
+			setMetricValue(&v, tt.kind, tt.scalar, nil)
 
-			val := AsFloat(s)
+			val := AsFloat(v)
 			assert.InDelta(t, tt.expected, val, 0.0001)
 		})
 	}
@@ -116,10 +108,10 @@ func TestAsUint(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			var s metrics.Sample
-			setMetricValue(&s.Value, tc.kind, tc.scalar, nil)
+			var v metrics.Value
+			setMetricValue(&v, tc.kind, tc.scalar, nil)
 
-			val := AsUint(s)
+			val := AsUint(v)
 			assert.Equal(t, tc.expected, val)
 		})
 	}
@@ -130,10 +122,25 @@ func TestAsHistogram(t *testing.T) {
 
 	t.Run("ValidHistogram", func(t *testing.T) {
 		t.Parallel()
-		name := []string{MetricGCHeapAllocsBySize}
-		samples := ReadSamples(name)
+		collector := NewSampleCollector()
+		collector.Read()
 
-		histg := AsHistogram(samples[MetricGCHeapAllocsBySize])
+		// Find a histogram sample
+		var histValue metrics.Value
+		found := false
+		for _, s := range collector.samples {
+			if s.Value.Kind() == metrics.KindFloat64Histogram {
+				histValue = s.Value
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			t.Skip("No histogram metrics available in this environment")
+		}
+
+		histg := AsHistogram(histValue)
 		assert.NotNil(t, histg)
 		assert.NotEmpty(t, histg.Buckets)
 		assert.NotEmpty(t, histg.Counts)
@@ -141,12 +148,10 @@ func TestAsHistogram(t *testing.T) {
 
 	t.Run("InvalidHistogram", func(t *testing.T) {
 		t.Parallel()
-		// Constructing a fake Float64Histogram is complex because it involves pointers.
-		// Instead, we verify that non-histograms return nil.
-		var s metrics.Sample
-		setMetricValue(&s.Value, int(metrics.KindUint64), 123, nil)
+		var v metrics.Value
+		setMetricValue(&v, int(metrics.KindUint64), 123, nil)
 
-		h := AsHistogram(s)
+		h := AsHistogram(v)
 		assert.Nil(t, h)
 	})
 }

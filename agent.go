@@ -11,6 +11,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/TB004/pprof-viz-agent/internal"
+	"github.com/TB004/pprof-viz-agent/internal/proto"
 	"github.com/TB004/pprof-viz-agent/internal/proto/protoconnect"
 	"github.com/TB004/pprof-viz-agent/pkg/models"
 	"golang.org/x/net/http2"
@@ -59,182 +60,349 @@ func New(port int, proto *http.Protocols, tls *tls.Config) error {
 
 // SnapshotCgo retrieves a snapshot of cgo-related metrics.
 func SnapshotCgo() models.CgoResponse {
-	vals := internal.RetrieveCgoSamples()
+	c := internal.NewSampleCollector()
+	c.Read()
+	s := c.Collect(false)
 
 	return models.CgoResponse{
-		CgoCalls: internal.AsUint(vals[internal.MetricCgoGoToCCalls]),
+		CgoCalls: s.Cgo.CgoCalls,
 	}
 }
 
 // SnapshotGC retrieves a snapshot of GC-related metrics.
 func SnapshotGC() *models.GCResponse {
-	gcVals := internal.RetrieveGCSamples()
+	c := internal.NewSampleCollector()
+	c.Read()
+	s := c.Collect(true)
+
+	// Helper to convert proto.Histogram to models.Histogram
+	toModelHistogram := func(h *proto.Histogram) *models.Histogram {
+		if h == nil {
+			return nil
+		}
+		return &models.Histogram{
+			Counts:  h.Counts,
+			Buckets: h.Buckets,
+		}
+	}
+
 	return &models.GCResponse{
-		BytesAllocsBySize:        internal.AsHistogram(gcVals[internal.MetricGCHeapAllocsBySize]),
-		BytesFreesBySize:         internal.AsHistogram(gcVals[internal.MetricGCHeapFreesBySize]),
-		ExecutedCleanups:         internal.AsUint(gcVals[internal.MetricGCCleanupsExecuted]),
-		QueuedCleanups:           internal.AsUint(gcVals[internal.MetricGCCleanupsQueued]),
-		AutomaticCycles:          internal.AsUint(gcVals[internal.MetricGCCyclesAutomatic]),
-		ForcedCycles:             internal.AsUint(gcVals[internal.MetricGCCyclesForced]),
-		TotalCycles:              internal.AsUint(gcVals[internal.MetricGCCyclesTotal]),
-		ExecutedFinalizers:       internal.AsUint(gcVals[internal.MetricGCFinalizersExecuted]),
-		QueuedFinalizers:         internal.AsUint(gcVals[internal.MetricGCFinalizersQueued]),
-		MemoryLimitBytes:         internal.AsUint(gcVals[internal.MetricGCGOMemLimit]),
-		BytesAllocs:              internal.AsUint(gcVals[internal.MetricGCHeapAllocs]),
-		ObjectsAllocs:            internal.AsUint(gcVals[internal.MetricGCHeapAllocsObjects]),
-		BytesFrees:               internal.AsUint(gcVals[internal.MetricGCHeapFrees]),
-		ObjectsFrees:             internal.AsUint(gcVals[internal.MetricGCHeapFreesObjects]),
-		GoalHeapSizeBytes:        internal.AsUint(gcVals[internal.MetricGCHeapGoal]),
-		LiveOccupiedBytes:        internal.AsUint(gcVals[internal.MetricGCHeapLive]),
-		ObjectsOccupied:          internal.AsUint(gcVals[internal.MetricGCHeapObjects]),
-		TinyObjectsAllocs:        internal.AsUint(gcVals[internal.MetricGCHeapTinyAllocs]),
-		LimiterLastEnabledCycle:  internal.AsUint(gcVals[internal.MetricGCLimiterLastEnabled]),
-		GlobalScannedBytes:       internal.AsUint(gcVals[internal.MetricGCScanGlobals]),
-		HeapScannedBytes:         internal.AsUint(gcVals[internal.MetricGCScanHeap]),
-		StackScannedBytes:        internal.AsUint(gcVals[internal.MetricGCScanStack]),
-		TotalScannedBytes:        internal.AsUint(gcVals[internal.MetricGCScanTotal]),
-		StackStartingSize:        internal.AsUint(gcVals[internal.MetricGCScanStack]),
-		TargetHeapSizePercentage: internal.SafeUint32(internal.AsUint(gcVals[internal.MetricGCGOGC])),
+		BytesAllocsBySize:        toModelHistogram(s.Gc.BytesAllocsBySize),
+		BytesFreesBySize:         toModelHistogram(s.Gc.BytesFreesBySize),
+		ExecutedCleanups:         s.Gc.ExecutedCleanups,
+		QueuedCleanups:           s.Gc.QueuedCleanups,
+		AutomaticCycles:          s.Gc.AutomaticCycles,
+		ForcedCycles:             s.Gc.ForcedCycles,
+		TotalCycles:              s.Gc.TotalCycles,
+		ExecutedFinalizers:       s.Gc.ExecutedFinalizers,
+		QueuedFinalizers:         s.Gc.QueuedFinalizers,
+		MemoryLimitBytes:         s.Gc.MemoryLimitBytes,
+		BytesAllocs:              s.Gc.BytesAllocs,
+		ObjectsAllocs:            s.Gc.ObjectsAllocs,
+		BytesFrees:               s.Gc.BytesFrees,
+		ObjectsFrees:             s.Gc.ObjectsFrees,
+		GoalHeapSizeBytes:        s.Gc.GoalHeapSizeBytes,
+		LiveOccupiedBytes:        s.Gc.LiveOccupiedBytes,
+		ObjectsOccupied:          s.Gc.ObjectsOccupied,
+		TinyObjectsAllocs:        s.Gc.TinyObjectsAllocs,
+		LimiterLastEnabledCycle:  s.Gc.LimiterLastEnabledCycle,
+		GlobalScannedBytes:       s.Gc.GlobalScannedBytes,
+		HeapScannedBytes:         s.Gc.HeapScannedBytes,
+		StackScannedBytes:        s.Gc.StackScannedBytes,
+		TotalScannedBytes:        s.Gc.TotalScannedBytes,
+		StackStartingSize:        s.Gc.StackStartingSize,
+		TargetHeapSizePercentage: s.Gc.TargetHeapSizePercentage,
 	}
 }
 
 // SnapshotCPU retrieves a snapshot of CPU-related metrics.
 func SnapshotCPU() *models.CPUResponse {
-	cpuVals := internal.RetrieveCPUSamples()
+	c := internal.NewSampleCollector()
+	c.Read()
+	s := c.Collect(false)
+
 	return &models.CPUResponse{
-		GcAssistSeconds:           internal.AsFloat(cpuVals[internal.MetricCPUClassesGCMarkAssist]),
-		GcDedicatedSeconds:        internal.AsFloat(cpuVals[internal.MetricCPUClassesGCMarkDedicated]),
-		GcIdleSeconds:             internal.AsFloat(cpuVals[internal.MetricCPUClassesGCMarkIdle]),
-		GcPauseSeconds:            internal.AsFloat(cpuVals[internal.MetricCPUClassesGCPause]),
-		GcTotalSeconds:            internal.AsFloat(cpuVals[internal.MetricCPUClassesGCTotal]),
-		IdleSeconds:               internal.AsFloat(cpuVals[internal.MetricCPUClassesIdle]),
-		TotalSeconds:              internal.AsFloat(cpuVals[internal.MetricCPUClassesTotal]),
-		UserSeconds:               internal.AsFloat(cpuVals[internal.MetricCPUClassesUser]),
-		ScavengeAssistSeconds:     internal.AsFloat(cpuVals[internal.MetricCPUClassesScavengeAssist]),
-		ScavengeBackgroundSeconds: internal.AsFloat(cpuVals[internal.MetricCPUClassesScavengeBackground]),
-		ScavengeTotalSeconds:      internal.AsFloat(cpuVals[internal.MetricCPUClassesScavengeTotal]),
+		GcAssistSeconds:           s.Cpu.GcAssistSeconds,
+		GcDedicatedSeconds:        s.Cpu.GcDedicatedSeconds,
+		GcIdleSeconds:             s.Cpu.GcIdleSeconds,
+		GcPauseSeconds:            s.Cpu.GcPauseSeconds,
+		GcTotalSeconds:            s.Cpu.GcTotalSeconds,
+		IdleSeconds:               s.Cpu.IdleSeconds,
+		TotalSeconds:              s.Cpu.TotalSeconds,
+		UserSeconds:               s.Cpu.UserSeconds,
+		ScavengeAssistSeconds:     s.Cpu.ScavengeAssistSeconds,
+		ScavengeBackgroundSeconds: s.Cpu.ScavengeBackgroundSeconds,
+		ScavengeTotalSeconds:      s.Cpu.ScavengeTotalSeconds,
 	}
 }
 
 // SnapshotGoDebug retrieves a snapshot of godebug-related metrics.
 func SnapshotGoDebug() *models.GoDebugResponse {
-	gdVals := internal.RetrieveGoDebugSamples()
+	c := internal.NewSampleCollector()
+	c.Read()
+	s := c.Collect(false)
+
 	return &models.GoDebugResponse{
-		CacheHashEvents:                   internal.AsUint(gdVals[internal.MetricGoDebugGoCacheHash]),
-		CacheTestEvents:                   internal.AsUint(gdVals[internal.MetricGoDebugGoCacheTest]),
-		CacheVerifyEvents:                 internal.AsUint(gdVals[internal.MetricGoDebugGoCacheVerify]),
-		Http2ClientEvents:                 internal.AsUint(gdVals[internal.MetricGoDebugHTTP2Client]),
-		Http2ServerEvents:                 internal.AsUint(gdVals[internal.MetricGoDebugHTTP2Server]),
-		Tls10ServerEvents:                 internal.AsUint(gdVals[internal.MetricGoDebugTLS10Server]),
-		Tls3DesEvents:                     internal.AsUint(gdVals[internal.MetricGoDebugTLS3DES]),
-		TlsMaxRsaSizeEvents:               internal.AsUint(gdVals[internal.MetricGoDebugTLSMaxRSASize]),
-		TlsRsaKexEvents:                   internal.AsUint(gdVals[internal.MetricGoDebugTLSRSAKex]),
-		TlsSha1Events:                     internal.AsUint(gdVals[internal.MetricGoDebugTLSSHA1]),
-		TlsUnsafeEkmEvents:                internal.AsUint(gdVals[internal.MetricGoDebugTLSUnsafeEKM]),
-		HttpCookieMaxNumEvents:            internal.AsUint(gdVals[internal.MetricGoDebugHTTPCookieMaxNum]),
-		HttpLaxContentLengthEvents:        internal.AsUint(gdVals[internal.MetricGoDebugHTTPLaxContentLength]),
-		HttpMuxGo121Events:                internal.AsUint(gdVals[internal.MetricGoDebugHTTPMuxGo121]),
-		HttpServeContentKeepHeadersEvents: internal.AsUint(gdVals[internal.MetricGoDebugHTTPServeContentKeepHeaders]),
-		AllowMultipleVcsEvents:            internal.AsUint(gdVals[internal.MetricGoDebugAllowMultipleVCs]),
-		AsyncTimerChanEvents:              internal.AsUint(gdVals[internal.MetricGoDebugAsyncTimerChan]),
-		ContainerMaxProcsEvents:           internal.AsUint(gdVals[internal.MetricGoDebugContainerMaxProcs]),
-		CryptoCustomRandEvents:            internal.AsUint(gdVals[internal.MetricGoDebugCryptoCustomRand]),
-		EmbedFollowSymlinkEvents:          internal.AsUint(gdVals[internal.MetricGoDebugEmbedFollowSymlinks]),
-		ExecErrDotEvents:                  internal.AsUint(gdVals[internal.MetricGoDebugExecErrDot]),
-		TestJsonBuildTextEvents:           internal.AsUint(gdVals[internal.MetricGoDebugGoTypesAlias]),
-		TypeAliasEvents:                   internal.AsUint(gdVals[internal.MetricGoDebugGoTypesAlias]),
-		HtmlMetaContentUrlEscapedEvents:   internal.AsUint(gdVals[internal.MetricGoDebugHTMLMetaContentURLEscape]),
-		InstallGoRootEvents:               internal.AsUint(gdVals[internal.MetricGoDebugInstallGoroot]),
-		MultipartMaxHeadersEvents:         internal.AsUint(gdVals[internal.MetricGoDebugMultipartMaxHeaders]),
-		MultipartMaxPartsEvents:           internal.AsUint(gdVals[internal.MetricGoDebugMultipartMaxParts]),
-		MultipathTcpEvents:                internal.AsUint(gdVals[internal.MetricGoDebugMultipathTCP]),
-		NetEdns0Events:                    internal.AsUint(gdVals[internal.MetricGoDebugNetEdns0]),
-		PanicNilEvents:                    internal.AsUint(gdVals[internal.MetricGoDebugPanicNil]),
-		RandAutoSeedEvents:                internal.AsUint(gdVals[internal.MetricGoDebugRandAutoSeed]),
-		RandSeedNopEvents:                 internal.AsUint(gdVals[internal.MetricGoDebugRandSeedNop]),
-		Rsa1024MinEvents:                  internal.AsUint(gdVals[internal.MetricGoDebugRSA1024Min]),
-		TarInsecurePathEvents:             internal.AsUint(gdVals[internal.MetricGoDebugTarInsecurePath]),
-		UpdateMaxProcsEvents:              internal.AsUint(gdVals[internal.MetricGoDebugUpdateMaxProcs]),
-		UrlMaxQueryParamsEvents:           internal.AsUint(gdVals[internal.MetricGoDebugURLMaxQueryParams]),
-		UrlStrictColonsEvents:             internal.AsUint(gdVals[internal.MetricGoDebugURLStrictColons]),
-		WinReadLinkVolumeEvents:           internal.AsUint(gdVals[internal.MetricGoDebugWinReadLinkVolume]),
-		WinSymlinkEvents:                  internal.AsUint(gdVals[internal.MetricGoDebugWinSymlink]),
-		X509KeyparLeafEvents:              internal.AsUint(gdVals[internal.MetricGoDebugX509KeyPairLeaf]),
-		X509NegativSerialEvents:           internal.AsUint(gdVals[internal.MetricGoDebugX509NegativeSerial]),
-		X509RsaCrtEvents:                  internal.AsUint(gdVals[internal.MetricGoDebugX509RSACRT]),
-		X509Sha256SkidEvents:              internal.AsUint(gdVals[internal.MetricGoDebugX509SKID256]),
-		X509UseFallbackRootsEvents:        internal.AsUint(gdVals[internal.MetricGoDebugX509UseFallbackRoots]),
-		X509UsePoliciesEvents:             internal.AsUint(gdVals[internal.MetricGoDebugX509UsePolicies]),
-		ZipInsecurePathEvents:             internal.AsUint(gdVals[internal.MetricGoDebugZipInsecurePath]),
+		CacheHashEvents:                   s.GoDebug.CacheHashEvents,
+		CacheTestEvents:                   s.GoDebug.CacheTestEvents,
+		CacheVerifyEvents:                 s.GoDebug.CacheVerifyEvents,
+		Http2ClientEvents:                 s.GoDebug.Http2ClientEvents,
+		Http2ServerEvents:                 s.GoDebug.Http2ServerEvents,
+		Tls10ServerEvents:                 s.GoDebug.Tls10ServerEvents,
+		Tls3DesEvents:                     s.GoDebug.Tls3DesEvents,
+		TlsMaxRsaSizeEvents:               s.GoDebug.TlsMaxRsaSizeEvents,
+		TlsRsaKexEvents:                   s.GoDebug.TlsRsaKexEvents,
+		TlsSha1Events:                     s.GoDebug.TlsSha1Events,
+		TlsUnsafeEkmEvents:                s.GoDebug.TlsUnsafeEkmEvents,
+		HttpCookieMaxNumEvents:            s.GoDebug.HttpCookieMaxNumEvents,
+		HttpLaxContentLengthEvents:        s.GoDebug.HttpLaxContentLengthEvents,
+		HttpMuxGo121Events:                s.GoDebug.HttpMuxGo_121Events,
+		HttpServeContentKeepHeadersEvents: s.GoDebug.HttpServeContentKeepHeadersEvents,
+		AllowMultipleVcsEvents:            s.GoDebug.AllowMultipleVcsEvents,
+		AsyncTimerChanEvents:              s.GoDebug.AsyncTimerChanEvents,
+		ContainerMaxProcsEvents:           s.GoDebug.ContainerMaxProcsEvents,
+		CryptoCustomRandEvents:            s.GoDebug.CryptoCustomRandEvents,
+		EmbedFollowSymlinkEvents:          s.GoDebug.EmbedFollowSymlinkEvents,
+		ExecErrDotEvents:                  s.GoDebug.ExecErrDotEvents,
+		TestJsonBuildTextEvents:           s.GoDebug.TestJsonBuildTextEvents,
+		TypeAliasEvents:                   s.GoDebug.TypeAliasEvents,
+		HtmlMetaContentUrlEscapedEvents:   s.GoDebug.HtmlMetaContentUrlEscapedEvents,
+		InstallGoRootEvents:               s.GoDebug.InstallGoRootEvents,
+		MultipartMaxHeadersEvents:         s.GoDebug.MultipartMaxHeadersEvents,
+		MultipartMaxPartsEvents:           s.GoDebug.MultipartMaxPartsEvents,
+		MultipathTcpEvents:                s.GoDebug.MultipathTcpEvents,
+		NetEdns0Events:                    s.GoDebug.NetEdns0Events,
+		PanicNilEvents:                    s.GoDebug.PanicNilEvents,
+		RandAutoSeedEvents:                s.GoDebug.RandAutoSeedEvents,
+		RandSeedNopEvents:                 s.GoDebug.RandSeedNopEvents,
+		Rsa1024MinEvents:                  s.GoDebug.Rsa1024MinEvents,
+		TarInsecurePathEvents:             s.GoDebug.TarInsecurePathEvents,
+		UpdateMaxProcsEvents:              s.GoDebug.UpdateMaxProcsEvents,
+		UrlMaxQueryParamsEvents:           s.GoDebug.UrlMaxQueryParamsEvents,
+		UrlStrictColonsEvents:             s.GoDebug.UrlStrictColonsEvents,
+		WinReadLinkVolumeEvents:           s.GoDebug.WinReadLinkVolumeEvents,
+		WinSymlinkEvents:                  s.GoDebug.WinSymlinkEvents,
+		X509KeyparLeafEvents:              s.GoDebug.X509KeyparLeafEvents,
+		X509NegativSerialEvents:           s.GoDebug.X509NegativSerialEvents,
+		X509RsaCrtEvents:                  s.GoDebug.X509RsaCrtEvents,
+		X509Sha256SkidEvents:              s.GoDebug.X509Sha256SkidEvents,
+		X509UseFallbackRootsEvents:        s.GoDebug.X509UseFallbackRootsEvents,
+		X509UsePoliciesEvents:             s.GoDebug.X509UsePoliciesEvents,
+		ZipInsecurePathEvents:             s.GoDebug.ZipInsecurePathEvents,
 	}
 }
 
 // SnapshotMemory retrieves a snapshot of memory-related metrics.
 func SnapshotMemory() *models.MemoryResponse {
-	memVals := internal.RetrieveMemorySamples()
+	c := internal.NewSampleCollector()
+	c.Read()
+	s := c.Collect(false)
+
 	return &models.MemoryResponse{
-		HeapFreeBytes:        internal.AsUint(memVals[internal.MetricMemoryClassesHeapFree]),
-		HeapObjectBytes:      internal.AsUint(memVals[internal.MetricMemoryClassesHeapObjects]),
-		HeapReleasedBytes:    internal.AsUint(memVals[internal.MetricMemoryClassesHeapReleased]),
-		HeapStackBytes:       internal.AsUint(memVals[internal.MetricMemoryClassesHeapStacks]),
-		HeapUnusedBytes:      internal.AsUint(memVals[internal.MetricMemoryClassesHeapUnused]),
-		McacheFreeBytes:      internal.AsUint(memVals[internal.MetricMemoryClassesMetadataMCacheFree]),
-		McacheInuseBytes:     internal.AsUint(memVals[internal.MetricMemoryClassesMetadataMCacheInUse]),
-		MspanFreeBytes:       internal.AsUint(memVals[internal.MetricMemoryClassesMetadataMSpanFree]),
-		MspanInuseBytes:      internal.AsUint(memVals[internal.MetricMemoryClassesMetadataMSpanInUse]),
-		OtherMetadataBytes:   internal.AsUint(memVals[internal.MetricMemoryClassesMetadataOther]),
-		OsStackBytes:         internal.AsUint(memVals[internal.MetricMemoryClassesOSStacks]),
-		OtherBytes:           internal.AsUint(memVals[internal.MetricMemoryClassesOther]),
-		ProfilingBucketBytes: internal.AsUint(memVals[internal.MetricMemoryClassesProfilingBuckets]),
-		TotalBytes:           internal.AsUint(memVals[internal.MetricMemoryClassesTotal]),
+		HeapFreeBytes:        s.Memory.HeapFreeBytes,
+		HeapObjectBytes:      s.Memory.HeapObjectBytes,
+		HeapReleasedBytes:    s.Memory.HeapReleasedBytes,
+		HeapStackBytes:       s.Memory.HeapStackBytes,
+		HeapUnusedBytes:      s.Memory.HeapUnusedBytes,
+		McacheFreeBytes:      s.Memory.McacheFreeBytes,
+		McacheInuseBytes:     s.Memory.McacheInuseBytes,
+		MspanFreeBytes:       s.Memory.MspanFreeBytes,
+		MspanInuseBytes:      s.Memory.MspanInuseBytes,
+		OtherMetadataBytes:   s.Memory.OtherMetadataBytes,
+		OsStackBytes:         s.Memory.OsStackBytes,
+		OtherBytes:           s.Memory.OtherBytes,
+		ProfilingBucketBytes: s.Memory.ProfilingBucketBytes,
+		TotalBytes:           s.Memory.TotalBytes,
 	}
 }
 
 // SnapshotSchedular retrieves a snapshot of scheduler-related metrics.
 func SnapshotSchedular() *models.SchedulerResponse {
-	schedVals := internal.RetrieveSchedulerSamples()
+	c := internal.NewSampleCollector()
+	c.Read()
+	s := c.Collect(true)
+
+	// Helper to convert proto.Histogram to models.Histogram
+	toModelHistogram := func(h *proto.Histogram) *models.Histogram {
+		if h == nil {
+			return nil
+		}
+		return &models.Histogram{
+			Counts:  h.Counts,
+			Buckets: h.Buckets,
+		}
+	}
+
 	return &models.SchedulerResponse{
-		LatenciesSeconds:       internal.AsHistogram(schedVals[internal.MetricSchedLatencies]),
-		StoppingGcSeconds:      internal.AsHistogram(schedVals[internal.MetricSchedPausesStoppingGC]),
-		StoppingOtherSeconds:   internal.AsHistogram(schedVals[internal.MetricSchedPausesStoppingOther]),
-		TotalGcPauseSeconds:    internal.AsHistogram(schedVals[internal.MetricSchedPausesTotalGC]),
-		TotalOtherPauseSeconds: internal.AsHistogram(schedVals[internal.MetricSchedPausesTotalOther]),
-		GoroutinesCreated:      internal.AsUint(schedVals[internal.MetricSchedGoroutinesCreated]),
-		GomaxprocsThreads:      internal.SafeUint32(internal.AsUint(schedVals[internal.MetricSchedGOMAXPROCS])),
-		NotInGoGoroutines:      internal.SafeUint32(internal.AsUint(schedVals[internal.MetricSchedGoroutinesNotInGo])),
-		RunnableGoroutines:     internal.SafeUint32(internal.AsUint(schedVals[internal.MetricSchedGoroutinesRunnable])),
-		RunningGoroutines:      internal.SafeUint32(internal.AsUint(schedVals[internal.MetricSchedGoroutinesRunning])),
-		WaitingGoroutines:      internal.SafeUint32(internal.AsUint(schedVals[internal.MetricSchedGoroutinesWaiting])),
-		LiveGoroutines:         internal.SafeUint32(internal.AsUint(schedVals[internal.MetricSchedGoroutines])),
-		TotalLiveThreads:       internal.SafeUint32(internal.AsUint(schedVals[internal.MetricSchedThreadsTotal])),
+		LatenciesSeconds:       toModelHistogram(s.Scheduler.LatenciesSeconds),
+		StoppingGcSeconds:      toModelHistogram(s.Scheduler.StoppingGcSeconds),
+		StoppingOtherSeconds:   toModelHistogram(s.Scheduler.StoppingOtherSeconds),
+		TotalGcPauseSeconds:    toModelHistogram(s.Scheduler.TotalGcPauseSeconds),
+		TotalOtherPauseSeconds: toModelHistogram(s.Scheduler.TotalOtherPauseSeconds),
+		GoroutinesCreated:      s.Scheduler.GoroutinesCreated,
+		GomaxprocsThreads:      s.Scheduler.GomaxprocsThreads,
+		NotInGoGoroutines:      s.Scheduler.NotInGoGoroutines,
+		RunnableGoroutines:     s.Scheduler.RunnableGoroutines,
+		RunningGoroutines:      s.Scheduler.RunningGoroutines,
+		WaitingGoroutines:      s.Scheduler.WaitingGoroutines,
+		LiveGoroutines:         s.Scheduler.LiveGoroutines,
+		TotalLiveThreads:       s.Scheduler.TotalLiveThreads,
 	}
 }
 
 // SnapshotSync retrieves a snapshot of sync-related metrics.
 func SnapshotSync() models.SyncResponse {
-	syncVals := internal.RetrieveSyncSamples()
+	c := internal.NewSampleCollector()
+	c.Read()
+	s := c.Collect(false)
+
 	return models.SyncResponse{
-		TotalMutexWaitDurationSeconds: internal.AsFloat(syncVals[internal.MetricSyncMutexWaitTotal]),
+		TotalMutexWaitDurationSeconds: s.Sync.TotalMutexWaitDurationSeconds,
 	}
 }
 
 // SnapshotAll retrieves a single point-in-time capture of all supported Go runtime metrics.
 func SnapshotAll() models.AllResponse {
-	cgoResp := SnapshotCgo()
-	cpuResp := SnapshotCPU()
-	gcResp := SnapshotGC()
-	gdResp := SnapshotGoDebug()
-	memResp := SnapshotMemory()
-	schedResp := SnapshotSchedular()
-	syncResp := SnapshotSync()
+	c := internal.NewSampleCollector()
+	c.Read()
+	s := c.Collect(true)
+
+	// Helper to convert proto.Histogram to models.Histogram
+	toModelHistogram := func(h *proto.Histogram) *models.Histogram {
+		if h == nil {
+			return nil
+		}
+		return &models.Histogram{
+			Counts:  h.Counts,
+			Buckets: h.Buckets,
+		}
+	}
 
 	return models.AllResponse{
-		Cgo:       cgoResp,
-		Cpu:       cpuResp,
-		Gc:        gcResp,
-		GoDebug:   gdResp,
-		Memory:    memResp,
-		Scheduler: schedResp,
-		Sync:      syncResp,
+		Cgo: models.CgoResponse{
+			CgoCalls: s.Cgo.CgoCalls,
+		},
+		Cpu: &models.CPUResponse{
+			GcAssistSeconds:           s.Cpu.GcAssistSeconds,
+			GcDedicatedSeconds:        s.Cpu.GcDedicatedSeconds,
+			GcIdleSeconds:             s.Cpu.GcIdleSeconds,
+			GcPauseSeconds:            s.Cpu.GcPauseSeconds,
+			GcTotalSeconds:            s.Cpu.GcTotalSeconds,
+			IdleSeconds:               s.Cpu.IdleSeconds,
+			TotalSeconds:              s.Cpu.TotalSeconds,
+			UserSeconds:               s.Cpu.UserSeconds,
+			ScavengeAssistSeconds:     s.Cpu.ScavengeAssistSeconds,
+			ScavengeBackgroundSeconds: s.Cpu.ScavengeBackgroundSeconds,
+			ScavengeTotalSeconds:      s.Cpu.ScavengeTotalSeconds,
+		},
+		Gc: &models.GCResponse{
+			BytesAllocsBySize:        toModelHistogram(s.Gc.BytesAllocsBySize),
+			BytesFreesBySize:         toModelHistogram(s.Gc.BytesFreesBySize),
+			ExecutedCleanups:         s.Gc.ExecutedCleanups,
+			QueuedCleanups:           s.Gc.QueuedCleanups,
+			AutomaticCycles:          s.Gc.AutomaticCycles,
+			ForcedCycles:             s.Gc.ForcedCycles,
+			TotalCycles:              s.Gc.TotalCycles,
+			ExecutedFinalizers:       s.Gc.ExecutedFinalizers,
+			QueuedFinalizers:         s.Gc.QueuedFinalizers,
+			MemoryLimitBytes:         s.Gc.MemoryLimitBytes,
+			BytesAllocs:              s.Gc.BytesAllocs,
+			ObjectsAllocs:            s.Gc.ObjectsAllocs,
+			BytesFrees:               s.Gc.BytesFrees,
+			ObjectsFrees:             s.Gc.ObjectsFrees,
+			GoalHeapSizeBytes:        s.Gc.GoalHeapSizeBytes,
+			LiveOccupiedBytes:        s.Gc.LiveOccupiedBytes,
+			ObjectsOccupied:          s.Gc.ObjectsOccupied,
+			TinyObjectsAllocs:        s.Gc.TinyObjectsAllocs,
+			LimiterLastEnabledCycle:  s.Gc.LimiterLastEnabledCycle,
+			GlobalScannedBytes:       s.Gc.GlobalScannedBytes,
+			HeapScannedBytes:         s.Gc.HeapScannedBytes,
+			StackScannedBytes:        s.Gc.StackScannedBytes,
+			TotalScannedBytes:        s.Gc.TotalScannedBytes,
+			StackStartingSize:        s.Gc.StackStartingSize,
+			TargetHeapSizePercentage: s.Gc.TargetHeapSizePercentage,
+		},
+		GoDebug: &models.GoDebugResponse{
+			CacheHashEvents:                   s.GoDebug.CacheHashEvents,
+			CacheTestEvents:                   s.GoDebug.CacheTestEvents,
+			CacheVerifyEvents:                 s.GoDebug.CacheVerifyEvents,
+			Http2ClientEvents:                 s.GoDebug.Http2ClientEvents,
+			Http2ServerEvents:                 s.GoDebug.Http2ServerEvents,
+			Tls10ServerEvents:                 s.GoDebug.Tls10ServerEvents,
+			Tls3DesEvents:                     s.GoDebug.Tls3DesEvents,
+			TlsMaxRsaSizeEvents:               s.GoDebug.TlsMaxRsaSizeEvents,
+			TlsRsaKexEvents:                   s.GoDebug.TlsRsaKexEvents,
+			TlsSha1Events:                     s.GoDebug.TlsSha1Events,
+			TlsUnsafeEkmEvents:                s.GoDebug.TlsUnsafeEkmEvents,
+			HttpCookieMaxNumEvents:            s.GoDebug.HttpCookieMaxNumEvents,
+			HttpLaxContentLengthEvents:        s.GoDebug.HttpLaxContentLengthEvents,
+			HttpMuxGo121Events:                s.GoDebug.HttpMuxGo_121Events,
+			HttpServeContentKeepHeadersEvents: s.GoDebug.HttpServeContentKeepHeadersEvents,
+			AllowMultipleVcsEvents:            s.GoDebug.AllowMultipleVcsEvents,
+			AsyncTimerChanEvents:              s.GoDebug.AsyncTimerChanEvents,
+			ContainerMaxProcsEvents:           s.GoDebug.ContainerMaxProcsEvents,
+			CryptoCustomRandEvents:            s.GoDebug.CryptoCustomRandEvents,
+			EmbedFollowSymlinkEvents:          s.GoDebug.EmbedFollowSymlinkEvents,
+			ExecErrDotEvents:                  s.GoDebug.ExecErrDotEvents,
+			TestJsonBuildTextEvents:           s.GoDebug.TestJsonBuildTextEvents,
+			TypeAliasEvents:                   s.GoDebug.TypeAliasEvents,
+			HtmlMetaContentUrlEscapedEvents:   s.GoDebug.HtmlMetaContentUrlEscapedEvents,
+			InstallGoRootEvents:               s.GoDebug.InstallGoRootEvents,
+			MultipartMaxHeadersEvents:         s.GoDebug.MultipartMaxHeadersEvents,
+			MultipartMaxPartsEvents:           s.GoDebug.MultipartMaxPartsEvents,
+			MultipathTcpEvents:                s.GoDebug.MultipathTcpEvents,
+			NetEdns0Events:                    s.GoDebug.NetEdns0Events,
+			PanicNilEvents:                    s.GoDebug.PanicNilEvents,
+			RandAutoSeedEvents:                s.GoDebug.RandAutoSeedEvents,
+			RandSeedNopEvents:                 s.GoDebug.RandSeedNopEvents,
+			Rsa1024MinEvents:                  s.GoDebug.Rsa1024MinEvents,
+			TarInsecurePathEvents:             s.GoDebug.TarInsecurePathEvents,
+			UpdateMaxProcsEvents:              s.GoDebug.UpdateMaxProcsEvents,
+			UrlMaxQueryParamsEvents:           s.GoDebug.UrlMaxQueryParamsEvents,
+			UrlStrictColonsEvents:             s.GoDebug.UrlStrictColonsEvents,
+			WinReadLinkVolumeEvents:           s.GoDebug.WinReadLinkVolumeEvents,
+			WinSymlinkEvents:                  s.GoDebug.WinSymlinkEvents,
+			X509KeyparLeafEvents:              s.GoDebug.X509KeyparLeafEvents,
+			X509NegativSerialEvents:           s.GoDebug.X509NegativSerialEvents,
+			X509RsaCrtEvents:                  s.GoDebug.X509RsaCrtEvents,
+			X509Sha256SkidEvents:              s.GoDebug.X509Sha256SkidEvents,
+			X509UseFallbackRootsEvents:        s.GoDebug.X509UseFallbackRootsEvents,
+			X509UsePoliciesEvents:             s.GoDebug.X509UsePoliciesEvents,
+			ZipInsecurePathEvents:             s.GoDebug.ZipInsecurePathEvents,
+		},
+		Memory: &models.MemoryResponse{
+			HeapFreeBytes:        s.Memory.HeapFreeBytes,
+			HeapObjectBytes:      s.Memory.HeapObjectBytes,
+			HeapReleasedBytes:    s.Memory.HeapReleasedBytes,
+			HeapStackBytes:       s.Memory.HeapStackBytes,
+			HeapUnusedBytes:      s.Memory.HeapUnusedBytes,
+			McacheFreeBytes:      s.Memory.McacheFreeBytes,
+			McacheInuseBytes:     s.Memory.McacheInuseBytes,
+			MspanFreeBytes:       s.Memory.MspanFreeBytes,
+			MspanInuseBytes:      s.Memory.MspanInuseBytes,
+			OtherMetadataBytes:   s.Memory.OtherMetadataBytes,
+			OsStackBytes:         s.Memory.OsStackBytes,
+			OtherBytes:           s.Memory.OtherBytes,
+			ProfilingBucketBytes: s.Memory.ProfilingBucketBytes,
+			TotalBytes:           s.Memory.TotalBytes,
+		},
+		Scheduler: &models.SchedulerResponse{
+			LatenciesSeconds:       toModelHistogram(s.Scheduler.LatenciesSeconds),
+			StoppingGcSeconds:      toModelHistogram(s.Scheduler.StoppingGcSeconds),
+			StoppingOtherSeconds:   toModelHistogram(s.Scheduler.StoppingOtherSeconds),
+			TotalGcPauseSeconds:    toModelHistogram(s.Scheduler.TotalGcPauseSeconds),
+			TotalOtherPauseSeconds: toModelHistogram(s.Scheduler.TotalOtherPauseSeconds),
+			GoroutinesCreated:      s.Scheduler.GoroutinesCreated,
+			GomaxprocsThreads:      s.Scheduler.GomaxprocsThreads,
+			NotInGoGoroutines:      s.Scheduler.NotInGoGoroutines,
+			RunnableGoroutines:     s.Scheduler.RunnableGoroutines,
+			RunningGoroutines:      s.Scheduler.RunningGoroutines,
+			WaitingGoroutines:      s.Scheduler.WaitingGoroutines,
+			LiveGoroutines:         s.Scheduler.LiveGoroutines,
+			TotalLiveThreads:       s.Scheduler.TotalLiveThreads,
+		},
+		Sync: models.SyncResponse{
+			TotalMutexWaitDurationSeconds: s.Sync.TotalMutexWaitDurationSeconds,
+		},
 	}
 }

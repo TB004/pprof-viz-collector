@@ -10,26 +10,12 @@ import (
 	"github.com/TB004/pprof-viz-agent/pkg/models"
 )
 
-// ReadSamples reads the given metric names and returns a map from name to Sample.
-func ReadSamples(names []string) map[string]metrics.Sample {
-	samples := make([]metrics.Sample, len(names))
-	for i, n := range names {
-		samples[i].Name = n
-	}
-	metrics.Read(samples)
-	m := make(map[string]metrics.Sample, len(samples))
-	for _, s := range samples {
-		m[s.Name] = s
-	}
-	return m
-}
-
-// AsHistogram returns the sample as a models.Histogram when possible.
-func AsHistogram(s metrics.Sample) *models.Histogram {
-	if s.Value.Kind() != metrics.KindFloat64Histogram {
+// AsHistogram returns the value as a models.Histogram when possible.
+func AsHistogram(v metrics.Value) *models.Histogram {
+	if v.Kind() != metrics.KindFloat64Histogram {
 		return nil
 	}
-	h := s.Value.Float64Histogram()
+	h := v.Float64Histogram()
 
 	buckets := make([]float32, len(h.Buckets))
 	for i, b := range h.Buckets {
@@ -42,27 +28,27 @@ func AsHistogram(s metrics.Sample) *models.Histogram {
 	}
 }
 
-// AsFloat returns the sample as float64 when possible.
+// AsFloat returns the value as float64 when possible.
 // For KindFloat64 returns the float64 value. For KindUint64 returns float64(uint64).
-func AsFloat(s metrics.Sample) float64 {
-	switch s.Value.Kind() {
+func AsFloat(v metrics.Value) float64 {
+	switch v.Kind() {
 	case metrics.KindFloat64:
-		return s.Value.Float64()
+		return v.Float64()
 	case metrics.KindUint64:
-		return float64(s.Value.Uint64())
+		return float64(v.Uint64())
 	default:
 		return 0
 	}
 }
 
-// AsUint returns the sample as uint64 when possible.
+// AsUint returns the value as uint64 when possible.
 // For KindUint64 returns uint64. For KindFloat64 returns uint64(value) after truncation.
-func AsUint(s metrics.Sample) uint64 {
-	switch s.Value.Kind() {
+func AsUint(v metrics.Value) uint64 {
+	switch v.Kind() {
 	case metrics.KindUint64:
-		return s.Value.Uint64()
+		return v.Uint64()
 	case metrics.KindFloat64:
-		return uint64(s.Value.Float64())
+		return uint64(v.Float64())
 	default:
 		return 0
 	}
