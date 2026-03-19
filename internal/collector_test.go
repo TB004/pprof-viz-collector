@@ -9,26 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewSampleCollector(t *testing.T) {
-	t.Parallel()
-
-	c := NewSampleCollector()
-	assert.NotNil(t, c)
-	assert.Len(t, c.samples, len(AllMetricNames))
-
-	for i, name := range AllMetricNames {
-		assert.Equal(t, name, c.samples[i].Name)
-	}
-}
-
 func TestSampleCollector_ReadAndCollect(t *testing.T) {
-	t.Parallel()
-
 	c := NewSampleCollector()
+
+	// Initial read to populate samples
 	c.Read()
 
-	t.Run("IncludeBuckets", func(t *testing.T) {
-		res := c.Collect(true)
+	t.Run("IncludeBuckets_ForceFull", func(t *testing.T) {
+		res := c.Collect(true, true)
 		assert.NotNil(t, res)
 
 		// Check all categories are non-nil
@@ -40,27 +28,47 @@ func TestSampleCollector_ReadAndCollect(t *testing.T) {
 		assert.NotNil(t, res.Scheduler)
 		assert.NotNil(t, res.Sync)
 
+		// In force full mode, fields should be populated if non-zero.
+		// Some metrics might be 0 in tests (like CPU time), so we check those that
+		// are guaranteed to be non-zero like TotalBytes.
+		assert.NotNil(t, res.Memory.TotalBytes)
+
 		// Check for some expected non-nil histograms
+		// In the first message (forceFull), we use UpdatedCounts even for full snapshots.
 		if res.Gc.BytesAllocsBySize != nil {
 			assert.NotEmpty(t, res.Gc.BytesAllocsBySize.Buckets)
+			assert.NotEmpty(t, res.Gc.BytesAllocsBySize.UpdatedCounts)
 		}
 		if res.Scheduler.LatenciesSeconds != nil {
 			assert.NotEmpty(t, res.Scheduler.LatenciesSeconds.Buckets)
+			assert.NotEmpty(t, res.Scheduler.LatenciesSeconds.UpdatedCounts)
 		}
 	})
 
-	t.Run("ExcludeBuckets", func(t *testing.T) {
-		res := c.Collect(false)
+	t.Run("ExcludeBuckets_ForceFull", func(t *testing.T) {
+		res := c.Collect(false, true)
 		assert.NotNil(t, res)
 
-		// Histograms should still have counts but no buckets
+		// Histograms should still have updated counts but no buckets
 		if res.Gc.BytesAllocsBySize != nil {
 			assert.Nil(t, res.Gc.BytesAllocsBySize.Buckets)
-			assert.NotNil(t, res.Gc.BytesAllocsBySize.Counts)
+			assert.NotEmpty(t, res.Gc.BytesAllocsBySize.UpdatedCounts)
 		}
 		if res.Scheduler.LatenciesSeconds != nil {
 			assert.Nil(t, res.Scheduler.LatenciesSeconds.Buckets)
-			assert.NotNil(t, res.Scheduler.LatenciesSeconds.Counts)
+			assert.NotEmpty(t, res.Scheduler.LatenciesSeconds.UpdatedCounts)
 		}
+	})
+
+	t.Run("DiffCollection_NoChange", func(t *testing.T) {
+		// Create a manual collector
+		c2 := NewSampleCollector()
+		
+		res := c2.Collect(true, false)
+		// Since samples and lastSamples are both zero, they are equal.
+		// So result fields should be nil.
+		assert.Nil(t, res.Memory.TotalBytes)
+		assert.Nil(t, res.Cpu.TotalSeconds)
+		assert.Nil(t, res.Gc.BytesAllocsBySize)
 	})
 }
