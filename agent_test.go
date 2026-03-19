@@ -84,9 +84,9 @@ func TestSnapshotMemory(t *testing.T) {
 	assert.NotNil(t, resp)
 }
 
-func TestSnapshotSchedular(t *testing.T) {
+func TestSnapshotScheduler(t *testing.T) {
 	t.Parallel()
-	resp := SnapshotSchedular()
+	resp := SnapshotScheduler()
 	assert.NotNil(t, resp)
 }
 
