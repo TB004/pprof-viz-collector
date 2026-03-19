@@ -24,7 +24,8 @@ type AgentServiceHandler struct {
 func (h AgentServiceHandler) SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error) {
 	collector := NewSampleCollector()
 	collector.Read()
-	return collector.Collect(true), nil
+	// Force full collection for snapshot
+	return collector.Collect(true, true), nil
 }
 
 // GetMetadata returns the static bucket boundaries for all histogram metrics.
@@ -84,7 +85,8 @@ func (h AgentServiceHandler) StreamAll(ctx context.Context, req *proto.StreamCon
 			return nil
 		case <-ticker.C:
 			collector.Read()
-			all := collector.Collect(includeBuckets)
+			// Diff collection: only changed values are set
+			all := collector.Collect(includeBuckets, false)
 			if err := stream.Send(all); err != nil {
 				return err
 			}

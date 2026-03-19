@@ -141,8 +141,8 @@ func TestAgentServiceHandler_StreamAll(t *testing.T) {
 		assert.NotNil(t, msg)
 		// Buckets should be empty
 		assert.Empty(t, msg.Gc.BytesAllocsBySize.Buckets)
-		// Counts should still be present
-		assert.NotEmpty(t, msg.Gc.BytesAllocsBySize.Counts)
+		// UpdatedCounts should still be present
+		assert.NotEmpty(t, msg.Gc.BytesAllocsBySize.UpdatedCounts)
 
 		assert.False(t, stream.Receive())
 		assert.NoError(t, stream.Err())
@@ -186,7 +186,7 @@ func TestCollectSamples(t *testing.T) {
 	t.Parallel()
 	collector := NewSampleCollector()
 	collector.Read()
-	resp := collector.Collect(true)
+	resp := collector.Collect(true, true)
 	assert.NotNil(t, resp)
 	// Basic validation that we got some data populated
 	assert.NotNil(t, resp.Cpu)
