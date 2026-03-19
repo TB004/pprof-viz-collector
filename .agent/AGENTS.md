@@ -17,7 +17,7 @@ The project follows a refined Go library structure focused on a minimal public A
 - **`/agent.go`**: The primary entry point. Contains the `Bind()` (for existing servers) and `New()` (for standalone execution) functions.
 - **`/internal/`**: Private implementation details.
     - **`server.go`**: Implements the ConnectRPC service handlers.
-    - **`collector.go`**: Manages the `SampleCollector` for efficient, single-pass metric collection.
+    - **`collector.go`**: Manages the `SampleCollector` for efficient, single-pass metric collection. Supports differential updates to minimize bandwidth.
     - **`metrics.go` / `paths.go`**: Logic for interfacing with `runtime/metrics` and pre-calculating metric indices.
     - **`utils.go`**: Low-level conversion helpers for `metrics.Value`.
     - **`compression.go`**: Custom `zstd` compressor/decompressor for ConnectRPC.
@@ -46,6 +46,7 @@ All maintenance tasks should be performed using the `Justfile`.
 - **Performance**: 
     - Replaced map-based metric lookups with a pre-allocated `[]metrics.Sample` slice.
     - Use `GetIndex(name)` for O(1) index retrieval, initialized via `init()`.
+    - Use Go 1.26's `new(value)` for efficient, single-line pointer creation for `optional` fields.
 - **Documentation**: All exported functions and types must have descriptive comments.
 
 ### Testing Practices
@@ -56,6 +57,10 @@ All maintenance tasks should be performed using the `Justfile`.
 ### Protobuf & Network
 - **Wire Efficiency**: Prioritize tags 1-15 for frequently updated fields.
 - **Type Selection**: Use `uint32` for gauges (counts) and `double` for cumulative time counters to maintain precision.
+- **Differential Updates**: 
+    - Use `optional` scalar fields to support differential updates (only sending changed values) in streaming RPCs.
+    - Treat initial stream messages as a delta from the default (zero) state to omit 0-value fields.
+- **Sparse Histograms**: Use `map<uint32, uint64> updated_counts` to transmit only buckets that have changed since the last sample, including in the initial synchronization.
 - **Compression**: The agent uses a 256-byte threshold for `zstd` compression to balance CPU usage and bandwidth.
 
 ## 🤖 AI Interaction Guidelines

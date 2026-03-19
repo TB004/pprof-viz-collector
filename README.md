@@ -26,12 +26,16 @@ go get github.com/TB004/pprof-viz-agent
 
 ## Bandwidth Optimization
 
-For long-running streams, histogram bucket boundaries (which are static) can consume significant bandwidth. `pprof-viz-agent` supports a "Metadata + Data" pattern to optimize this:
+`pprof-viz-agent` employs several sophisticated strategies to minimize network usage during long-running streams:
 
-1.  Call `GetMetadata` once to retrieve the static bucket definitions.
-2.  Call `StreamAll` with `exclude_histogram_buckets = true`.
+1.  **Differential Updates**: The agent tracks the state of all metrics and only transmits values that have changed since the last sample. Unchanged fields are omitted from the wire entirely, drastically reducing payload size for stable applications.
+2.  **Zero-Value Omission**: The very first message of a stream is treated as a delta from the default state. Any metric that is zero (like many `goDebug` events) is omitted from the initial synchronization, ensuring the baseline is as small as possible.
+3.  **Sparse Histogram Updates**: Instead of sending full arrays of histogram counts, the agent uses a map-based "sparse update" approach. Only the specific buckets that have changed are transmitted. This is particularly effective for large histograms where only a few buckets (e.g., specific latency ranges) are active.
+4.  **Metadata Separation**: Histogram bucket boundaries are static and bandwidth-heavy. The agent supports a "Metadata + Data" pattern:
+    *   Call `GetMetadata` once to retrieve the static bucket definitions.
+    *   Call `StreamAll` with `exclude_histogram_buckets = true` to stream only the dynamic sparse counts.
 
-This ensures that only the dynamic `counts` are sent over the wire, reducing payload size significantly for histogram-heavy metrics.
+This combination ensures that the agent consumes negligible bandwidth when the runtime state is stable, while still providing high-fidelity data during activity spikes.
 
 ## Usage
 
