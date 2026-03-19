@@ -94,8 +94,8 @@ type GoDebugResponse struct {
 	UrlStrictColonsEvents             uint64 `json:"url_strict_colons_events"`
 	WinReadLinkVolumeEvents           uint64 `json:"win_read_link_volume_events"`
 	WinSymlinkEvents                  uint64 `json:"win_symlink_events"`
-	X509KeyparLeafEvents              uint64 `json:"x509_keypar_leaf_events"`
-	X509NegativSerialEvents           uint64 `json:"x509_negativ_serial_events"`
+	X509KeypairLeafEvents             uint64 `json:"x509_keypair_leaf_events"`
+	X509NegativeSerialEvents          uint64 `json:"x509_negative_serial_events"`
 	X509RsaCrtEvents                  uint64 `json:"x509_rsa_crt_events"`
 	X509Sha256SkidEvents              uint64 `json:"x509_sha256_skid_events"`
 	X509UseFallbackRootsEvents        uint64 `json:"x509_use_fallback_roots_events"`

@@ -89,6 +89,7 @@ type Histogram struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Counts        []uint64               `protobuf:"varint,1,rep,packed,name=counts,proto3" json:"counts,omitempty"`
 	Buckets       []float32              `protobuf:"fixed32,2,rep,packed,name=buckets,proto3" json:"buckets,omitempty"`
+	UpdatedCounts map[uint32]uint64      `protobuf:"bytes,3,rep,name=updated_counts,json=updatedCounts,proto3" json:"updated_counts,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -137,9 +138,16 @@ func (x *Histogram) GetBuckets() []float32 {
 	return nil
 }
 
+func (x *Histogram) GetUpdatedCounts() map[uint32]uint64 {
+	if x != nil {
+		return x.UpdatedCounts
+	}
+	return nil
+}
+
 type CgoResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CgoCalls      uint64                 `protobuf:"varint,1,opt,name=cgo_calls,json=cgoCalls,proto3" json:"cgo_calls,omitempty"`
+	CgoCalls      *uint64                `protobuf:"varint,1,opt,name=cgo_calls,json=cgoCalls,proto3,oneof" json:"cgo_calls,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -175,25 +183,25 @@ func (*CgoResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *CgoResponse) GetCgoCalls() uint64 {
-	if x != nil {
-		return x.CgoCalls
+	if x != nil && x.CgoCalls != nil {
+		return *x.CgoCalls
 	}
 	return 0
 }
 
 type CPUResponse struct {
 	state                     protoimpl.MessageState `protogen:"open.v1"`
-	GcAssistSeconds           float64                `protobuf:"fixed64,1,opt,name=gc_assist_seconds,json=gcAssistSeconds,proto3" json:"gc_assist_seconds,omitempty"`
-	GcDedicatedSeconds        float64                `protobuf:"fixed64,2,opt,name=gc_dedicated_seconds,json=gcDedicatedSeconds,proto3" json:"gc_dedicated_seconds,omitempty"`
-	GcIdleSeconds             float64                `protobuf:"fixed64,3,opt,name=gc_idle_seconds,json=gcIdleSeconds,proto3" json:"gc_idle_seconds,omitempty"`
-	GcPauseSeconds            float64                `protobuf:"fixed64,4,opt,name=gc_pause_seconds,json=gcPauseSeconds,proto3" json:"gc_pause_seconds,omitempty"`
-	GcTotalSeconds            float64                `protobuf:"fixed64,5,opt,name=gc_total_seconds,json=gcTotalSeconds,proto3" json:"gc_total_seconds,omitempty"`
-	IdleSeconds               float64                `protobuf:"fixed64,6,opt,name=idle_seconds,json=idleSeconds,proto3" json:"idle_seconds,omitempty"`
-	TotalSeconds              float64                `protobuf:"fixed64,7,opt,name=total_seconds,json=totalSeconds,proto3" json:"total_seconds,omitempty"`
-	UserSeconds               float64                `protobuf:"fixed64,8,opt,name=user_seconds,json=userSeconds,proto3" json:"user_seconds,omitempty"`
-	ScavengeAssistSeconds     float64                `protobuf:"fixed64,9,opt,name=scavenge_assist_seconds,json=scavengeAssistSeconds,proto3" json:"scavenge_assist_seconds,omitempty"`
-	ScavengeBackgroundSeconds float64                `protobuf:"fixed64,10,opt,name=scavenge_background_seconds,json=scavengeBackgroundSeconds,proto3" json:"scavenge_background_seconds,omitempty"`
-	ScavengeTotalSeconds      float64                `protobuf:"fixed64,11,opt,name=scavenge_total_seconds,json=scavengeTotalSeconds,proto3" json:"scavenge_total_seconds,omitempty"`
+	GcAssistSeconds           *float64               `protobuf:"fixed64,1,opt,name=gc_assist_seconds,json=gcAssistSeconds,proto3,oneof" json:"gc_assist_seconds,omitempty"`
+	GcDedicatedSeconds        *float64               `protobuf:"fixed64,2,opt,name=gc_dedicated_seconds,json=gcDedicatedSeconds,proto3,oneof" json:"gc_dedicated_seconds,omitempty"`
+	GcIdleSeconds             *float64               `protobuf:"fixed64,3,opt,name=gc_idle_seconds,json=gcIdleSeconds,proto3,oneof" json:"gc_idle_seconds,omitempty"`
+	GcPauseSeconds            *float64               `protobuf:"fixed64,4,opt,name=gc_pause_seconds,json=gcPauseSeconds,proto3,oneof" json:"gc_pause_seconds,omitempty"`
+	GcTotalSeconds            *float64               `protobuf:"fixed64,5,opt,name=gc_total_seconds,json=gcTotalSeconds,proto3,oneof" json:"gc_total_seconds,omitempty"`
+	IdleSeconds               *float64               `protobuf:"fixed64,6,opt,name=idle_seconds,json=idleSeconds,proto3,oneof" json:"idle_seconds,omitempty"`
+	TotalSeconds              *float64               `protobuf:"fixed64,7,opt,name=total_seconds,json=totalSeconds,proto3,oneof" json:"total_seconds,omitempty"`
+	UserSeconds               *float64               `protobuf:"fixed64,8,opt,name=user_seconds,json=userSeconds,proto3,oneof" json:"user_seconds,omitempty"`
+	ScavengeAssistSeconds     *float64               `protobuf:"fixed64,9,opt,name=scavenge_assist_seconds,json=scavengeAssistSeconds,proto3,oneof" json:"scavenge_assist_seconds,omitempty"`
+	ScavengeBackgroundSeconds *float64               `protobuf:"fixed64,10,opt,name=scavenge_background_seconds,json=scavengeBackgroundSeconds,proto3,oneof" json:"scavenge_background_seconds,omitempty"`
+	ScavengeTotalSeconds      *float64               `protobuf:"fixed64,11,opt,name=scavenge_total_seconds,json=scavengeTotalSeconds,proto3,oneof" json:"scavenge_total_seconds,omitempty"`
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
 }
@@ -229,78 +237,78 @@ func (*CPUResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *CPUResponse) GetGcAssistSeconds() float64 {
-	if x != nil {
-		return x.GcAssistSeconds
+	if x != nil && x.GcAssistSeconds != nil {
+		return *x.GcAssistSeconds
 	}
 	return 0
 }
 
 func (x *CPUResponse) GetGcDedicatedSeconds() float64 {
-	if x != nil {
-		return x.GcDedicatedSeconds
+	if x != nil && x.GcDedicatedSeconds != nil {
+		return *x.GcDedicatedSeconds
 	}
 	return 0
 }
 
 func (x *CPUResponse) GetGcIdleSeconds() float64 {
-	if x != nil {
-		return x.GcIdleSeconds
+	if x != nil && x.GcIdleSeconds != nil {
+		return *x.GcIdleSeconds
 	}
 	return 0
 }
 
 func (x *CPUResponse) GetGcPauseSeconds() float64 {
-	if x != nil {
-		return x.GcPauseSeconds
+	if x != nil && x.GcPauseSeconds != nil {
+		return *x.GcPauseSeconds
 	}
 	return 0
 }
 
 func (x *CPUResponse) GetGcTotalSeconds() float64 {
-	if x != nil {
-		return x.GcTotalSeconds
+	if x != nil && x.GcTotalSeconds != nil {
+		return *x.GcTotalSeconds
 	}
 	return 0
 }
 
 func (x *CPUResponse) GetIdleSeconds() float64 {
-	if x != nil {
-		return x.IdleSeconds
+	if x != nil && x.IdleSeconds != nil {
+		return *x.IdleSeconds
 	}
 	return 0
 }
 
 func (x *CPUResponse) GetTotalSeconds() float64 {
-	if x != nil {
-		return x.TotalSeconds
+	if x != nil && x.TotalSeconds != nil {
+		return *x.TotalSeconds
 	}
 	return 0
 }
 
 func (x *CPUResponse) GetUserSeconds() float64 {
-	if x != nil {
-		return x.UserSeconds
+	if x != nil && x.UserSeconds != nil {
+		return *x.UserSeconds
 	}
 	return 0
 }
 
 func (x *CPUResponse) GetScavengeAssistSeconds() float64 {
-	if x != nil {
-		return x.ScavengeAssistSeconds
+	if x != nil && x.ScavengeAssistSeconds != nil {
+		return *x.ScavengeAssistSeconds
 	}
 	return 0
 }
 
 func (x *CPUResponse) GetScavengeBackgroundSeconds() float64 {
-	if x != nil {
-		return x.ScavengeBackgroundSeconds
+	if x != nil && x.ScavengeBackgroundSeconds != nil {
+		return *x.ScavengeBackgroundSeconds
 	}
 	return 0
 }
 
 func (x *CPUResponse) GetScavengeTotalSeconds() float64 {
-	if x != nil {
-		return x.ScavengeTotalSeconds
+	if x != nil && x.ScavengeTotalSeconds != nil {
+		return *x.ScavengeTotalSeconds
 	}
 	return 0
 }
@@ -490,30 +498,30 @@ type GCResponse struct {
 	// 8-byte types and pointers first (Tag 1-15)
 	BytesAllocsBySize       *Histogram `protobuf:"bytes,1,opt,name=bytes_allocs_by_size,json=bytesAllocsBySize,proto3" json:"bytes_allocs_by_size,omitempty"`
 	BytesFreesBySize        *Histogram `protobuf:"bytes,2,opt,name=bytes_frees_by_size,json=bytesFreesBySize,proto3" json:"bytes_frees_by_size,omitempty"`
-	ExecutedCleanups        uint64     `protobuf:"varint,3,opt,name=executed_cleanups,json=executedCleanups,proto3" json:"executed_cleanups,omitempty"`
-	QueuedCleanups          uint64     `protobuf:"varint,4,opt,name=queued_cleanups,json=queuedCleanups,proto3" json:"queued_cleanups,omitempty"`
-	AutomaticCycles         uint64     `protobuf:"varint,5,opt,name=automatic_cycles,json=automaticCycles,proto3" json:"automatic_cycles,omitempty"`
-	ForcedCycles            uint64     `protobuf:"varint,6,opt,name=forced_cycles,json=forcedCycles,proto3" json:"forced_cycles,omitempty"`
-	TotalCycles             uint64     `protobuf:"varint,7,opt,name=total_cycles,json=totalCycles,proto3" json:"total_cycles,omitempty"`
-	ExecutedFinalizers      uint64     `protobuf:"varint,8,opt,name=executed_finalizers,json=executedFinalizers,proto3" json:"executed_finalizers,omitempty"`
-	QueuedFinalizers        uint64     `protobuf:"varint,9,opt,name=queued_finalizers,json=queuedFinalizers,proto3" json:"queued_finalizers,omitempty"`
-	MemoryLimitBytes        uint64     `protobuf:"varint,10,opt,name=memory_limit_bytes,json=memoryLimitBytes,proto3" json:"memory_limit_bytes,omitempty"`
-	BytesAllocs             uint64     `protobuf:"varint,11,opt,name=bytes_allocs,json=bytesAllocs,proto3" json:"bytes_allocs,omitempty"`
-	ObjectsAllocs           uint64     `protobuf:"varint,12,opt,name=objects_allocs,json=objectsAllocs,proto3" json:"objects_allocs,omitempty"`
-	BytesFrees              uint64     `protobuf:"varint,13,opt,name=bytes_frees,json=bytesFrees,proto3" json:"bytes_frees,omitempty"`
-	ObjectsFrees            uint64     `protobuf:"varint,14,opt,name=objects_frees,json=objectsFrees,proto3" json:"objects_frees,omitempty"`
-	GoalHeapSizeBytes       uint64     `protobuf:"varint,15,opt,name=goal_heap_size_bytes,json=goalHeapSizeBytes,proto3" json:"goal_heap_size_bytes,omitempty"`
-	LiveOccupiedBytes       uint64     `protobuf:"varint,16,opt,name=live_occupied_bytes,json=liveOccupiedBytes,proto3" json:"live_occupied_bytes,omitempty"`
-	ObjectsOccupied         uint64     `protobuf:"varint,17,opt,name=objects_occupied,json=objectsOccupied,proto3" json:"objects_occupied,omitempty"`
-	TinyObjectsAllocs       uint64     `protobuf:"varint,18,opt,name=tiny_objects_allocs,json=tinyObjectsAllocs,proto3" json:"tiny_objects_allocs,omitempty"`
-	LimiterLastEnabledCycle uint64     `protobuf:"varint,19,opt,name=limiter_last_enabled_cycle,json=limiterLastEnabledCycle,proto3" json:"limiter_last_enabled_cycle,omitempty"`
-	GlobalScannedBytes      uint64     `protobuf:"varint,20,opt,name=global_scanned_bytes,json=globalScannedBytes,proto3" json:"global_scanned_bytes,omitempty"`
-	HeapScannedBytes        uint64     `protobuf:"varint,21,opt,name=heap_scanned_bytes,json=heapScannedBytes,proto3" json:"heap_scanned_bytes,omitempty"`
-	StackScannedBytes       uint64     `protobuf:"varint,22,opt,name=stack_scanned_bytes,json=stackScannedBytes,proto3" json:"stack_scanned_bytes,omitempty"`
-	TotalScannedBytes       uint64     `protobuf:"varint,23,opt,name=total_scanned_bytes,json=totalScannedBytes,proto3" json:"total_scanned_bytes,omitempty"`
-	StackStartingSize       uint64     `protobuf:"varint,24,opt,name=stack_starting_size,json=stackStartingSize,proto3" json:"stack_starting_size,omitempty"`
+	ExecutedCleanups        *uint64    `protobuf:"varint,3,opt,name=executed_cleanups,json=executedCleanups,proto3,oneof" json:"executed_cleanups,omitempty"`
+	QueuedCleanups          *uint64    `protobuf:"varint,4,opt,name=queued_cleanups,json=queuedCleanups,proto3,oneof" json:"queued_cleanups,omitempty"`
+	AutomaticCycles         *uint64    `protobuf:"varint,5,opt,name=automatic_cycles,json=automaticCycles,proto3,oneof" json:"automatic_cycles,omitempty"`
+	ForcedCycles            *uint64    `protobuf:"varint,6,opt,name=forced_cycles,json=forcedCycles,proto3,oneof" json:"forced_cycles,omitempty"`
+	TotalCycles             *uint64    `protobuf:"varint,7,opt,name=total_cycles,json=totalCycles,proto3,oneof" json:"total_cycles,omitempty"`
+	ExecutedFinalizers      *uint64    `protobuf:"varint,8,opt,name=executed_finalizers,json=executedFinalizers,proto3,oneof" json:"executed_finalizers,omitempty"`
+	QueuedFinalizers        *uint64    `protobuf:"varint,9,opt,name=queued_finalizers,json=queuedFinalizers,proto3,oneof" json:"queued_finalizers,omitempty"`
+	MemoryLimitBytes        *uint64    `protobuf:"varint,10,opt,name=memory_limit_bytes,json=memoryLimitBytes,proto3,oneof" json:"memory_limit_bytes,omitempty"`
+	BytesAllocs             *uint64    `protobuf:"varint,11,opt,name=bytes_allocs,json=bytesAllocs,proto3,oneof" json:"bytes_allocs,omitempty"`
+	ObjectsAllocs           *uint64    `protobuf:"varint,12,opt,name=objects_allocs,json=objectsAllocs,proto3,oneof" json:"objects_allocs,omitempty"`
+	BytesFrees              *uint64    `protobuf:"varint,13,opt,name=bytes_frees,json=bytesFrees,proto3,oneof" json:"bytes_frees,omitempty"`
+	ObjectsFrees            *uint64    `protobuf:"varint,14,opt,name=objects_frees,json=objectsFrees,proto3,oneof" json:"objects_frees,omitempty"`
+	GoalHeapSizeBytes       *uint64    `protobuf:"varint,15,opt,name=goal_heap_size_bytes,json=goalHeapSizeBytes,proto3,oneof" json:"goal_heap_size_bytes,omitempty"`
+	LiveOccupiedBytes       *uint64    `protobuf:"varint,16,opt,name=live_occupied_bytes,json=liveOccupiedBytes,proto3,oneof" json:"live_occupied_bytes,omitempty"`
+	ObjectsOccupied         *uint64    `protobuf:"varint,17,opt,name=objects_occupied,json=objectsOccupied,proto3,oneof" json:"objects_occupied,omitempty"`
+	TinyObjectsAllocs       *uint64    `protobuf:"varint,18,opt,name=tiny_objects_allocs,json=tinyObjectsAllocs,proto3,oneof" json:"tiny_objects_allocs,omitempty"`
+	LimiterLastEnabledCycle *uint64    `protobuf:"varint,19,opt,name=limiter_last_enabled_cycle,json=limiterLastEnabledCycle,proto3,oneof" json:"limiter_last_enabled_cycle,omitempty"`
+	GlobalScannedBytes      *uint64    `protobuf:"varint,20,opt,name=global_scanned_bytes,json=globalScannedBytes,proto3,oneof" json:"global_scanned_bytes,omitempty"`
+	HeapScannedBytes        *uint64    `protobuf:"varint,21,opt,name=heap_scanned_bytes,json=heapScannedBytes,proto3,oneof" json:"heap_scanned_bytes,omitempty"`
+	StackScannedBytes       *uint64    `protobuf:"varint,22,opt,name=stack_scanned_bytes,json=stackScannedBytes,proto3,oneof" json:"stack_scanned_bytes,omitempty"`
+	TotalScannedBytes       *uint64    `protobuf:"varint,23,opt,name=total_scanned_bytes,json=totalScannedBytes,proto3,oneof" json:"total_scanned_bytes,omitempty"`
+	StackStartingSize       *uint64    `protobuf:"varint,24,opt,name=stack_starting_size,json=stackStartingSize,proto3,oneof" json:"stack_starting_size,omitempty"`
 	// 4-byte types at the end
-	TargetHeapSizePercentage uint32 `protobuf:"varint,25,opt,name=target_heap_size_percentage,json=targetHeapSizePercentage,proto3" json:"target_heap_size_percentage,omitempty"`
+	TargetHeapSizePercentage *uint32 `protobuf:"varint,25,opt,name=target_heap_size_percentage,json=targetHeapSizePercentage,proto3,oneof" json:"target_heap_size_percentage,omitempty"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -563,162 +571,162 @@ func (x *GCResponse) GetBytesFreesBySize() *Histogram {
 }
 
 func (x *GCResponse) GetExecutedCleanups() uint64 {
-	if x != nil {
-		return x.ExecutedCleanups
+	if x != nil && x.ExecutedCleanups != nil {
+		return *x.ExecutedCleanups
 	}
 	return 0
 }
 
 func (x *GCResponse) GetQueuedCleanups() uint64 {
-	if x != nil {
-		return x.QueuedCleanups
+	if x != nil && x.QueuedCleanups != nil {
+		return *x.QueuedCleanups
 	}
 	return 0
 }
 
 func (x *GCResponse) GetAutomaticCycles() uint64 {
-	if x != nil {
-		return x.AutomaticCycles
+	if x != nil && x.AutomaticCycles != nil {
+		return *x.AutomaticCycles
 	}
 	return 0
 }
 
 func (x *GCResponse) GetForcedCycles() uint64 {
-	if x != nil {
-		return x.ForcedCycles
+	if x != nil && x.ForcedCycles != nil {
+		return *x.ForcedCycles
 	}
 	return 0
 }
 
 func (x *GCResponse) GetTotalCycles() uint64 {
-	if x != nil {
-		return x.TotalCycles
+	if x != nil && x.TotalCycles != nil {
+		return *x.TotalCycles
 	}
 	return 0
 }
 
 func (x *GCResponse) GetExecutedFinalizers() uint64 {
-	if x != nil {
-		return x.ExecutedFinalizers
+	if x != nil && x.ExecutedFinalizers != nil {
+		return *x.ExecutedFinalizers
 	}
 	return 0
 }
 
 func (x *GCResponse) GetQueuedFinalizers() uint64 {
-	if x != nil {
-		return x.QueuedFinalizers
+	if x != nil && x.QueuedFinalizers != nil {
+		return *x.QueuedFinalizers
 	}
 	return 0
 }
 
 func (x *GCResponse) GetMemoryLimitBytes() uint64 {
-	if x != nil {
-		return x.MemoryLimitBytes
+	if x != nil && x.MemoryLimitBytes != nil {
+		return *x.MemoryLimitBytes
 	}
 	return 0
 }
 
 func (x *GCResponse) GetBytesAllocs() uint64 {
-	if x != nil {
-		return x.BytesAllocs
+	if x != nil && x.BytesAllocs != nil {
+		return *x.BytesAllocs
 	}
 	return 0
 }
 
 func (x *GCResponse) GetObjectsAllocs() uint64 {
-	if x != nil {
-		return x.ObjectsAllocs
+	if x != nil && x.ObjectsAllocs != nil {
+		return *x.ObjectsAllocs
 	}
 	return 0
 }
 
 func (x *GCResponse) GetBytesFrees() uint64 {
-	if x != nil {
-		return x.BytesFrees
+	if x != nil && x.BytesFrees != nil {
+		return *x.BytesFrees
 	}
 	return 0
 }
 
 func (x *GCResponse) GetObjectsFrees() uint64 {
-	if x != nil {
-		return x.ObjectsFrees
+	if x != nil && x.ObjectsFrees != nil {
+		return *x.ObjectsFrees
 	}
 	return 0
 }
 
 func (x *GCResponse) GetGoalHeapSizeBytes() uint64 {
-	if x != nil {
-		return x.GoalHeapSizeBytes
+	if x != nil && x.GoalHeapSizeBytes != nil {
+		return *x.GoalHeapSizeBytes
 	}
 	return 0
 }
 
 func (x *GCResponse) GetLiveOccupiedBytes() uint64 {
-	if x != nil {
-		return x.LiveOccupiedBytes
+	if x != nil && x.LiveOccupiedBytes != nil {
+		return *x.LiveOccupiedBytes
 	}
 	return 0
 }
 
 func (x *GCResponse) GetObjectsOccupied() uint64 {
-	if x != nil {
-		return x.ObjectsOccupied
+	if x != nil && x.ObjectsOccupied != nil {
+		return *x.ObjectsOccupied
 	}
 	return 0
 }
 
 func (x *GCResponse) GetTinyObjectsAllocs() uint64 {
-	if x != nil {
-		return x.TinyObjectsAllocs
+	if x != nil && x.TinyObjectsAllocs != nil {
+		return *x.TinyObjectsAllocs
 	}
 	return 0
 }
 
 func (x *GCResponse) GetLimiterLastEnabledCycle() uint64 {
-	if x != nil {
-		return x.LimiterLastEnabledCycle
+	if x != nil && x.LimiterLastEnabledCycle != nil {
+		return *x.LimiterLastEnabledCycle
 	}
 	return 0
 }
 
 func (x *GCResponse) GetGlobalScannedBytes() uint64 {
-	if x != nil {
-		return x.GlobalScannedBytes
+	if x != nil && x.GlobalScannedBytes != nil {
+		return *x.GlobalScannedBytes
 	}
 	return 0
 }
 
 func (x *GCResponse) GetHeapScannedBytes() uint64 {
-	if x != nil {
-		return x.HeapScannedBytes
+	if x != nil && x.HeapScannedBytes != nil {
+		return *x.HeapScannedBytes
 	}
 	return 0
 }
 
 func (x *GCResponse) GetStackScannedBytes() uint64 {
-	if x != nil {
-		return x.StackScannedBytes
+	if x != nil && x.StackScannedBytes != nil {
+		return *x.StackScannedBytes
 	}
 	return 0
 }
 
 func (x *GCResponse) GetTotalScannedBytes() uint64 {
-	if x != nil {
-		return x.TotalScannedBytes
+	if x != nil && x.TotalScannedBytes != nil {
+		return *x.TotalScannedBytes
 	}
 	return 0
 }
 
 func (x *GCResponse) GetStackStartingSize() uint64 {
-	if x != nil {
-		return x.StackStartingSize
+	if x != nil && x.StackStartingSize != nil {
+		return *x.StackStartingSize
 	}
 	return 0
 }
 
 func (x *GCResponse) GetTargetHeapSizePercentage() uint32 {
-	if x != nil {
-		return x.TargetHeapSizePercentage
+	if x != nil && x.TargetHeapSizePercentage != nil {
+		return *x.TargetHeapSizePercentage
 	}
 	return 0
 }
@@ -727,53 +735,53 @@ type GoDebugResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Most "active" metrics moved to tags 1-15 for 1-byte encoding.
 	// Gocache, HTTP2, and TLS are frequently reported events.
-	CacheHashEvents                   uint64 `protobuf:"varint,1,opt,name=cache_hash_events,json=cacheHashEvents,proto3" json:"cache_hash_events,omitempty"`
-	CacheTestEvents                   uint64 `protobuf:"varint,2,opt,name=cache_test_events,json=cacheTestEvents,proto3" json:"cache_test_events,omitempty"`
-	CacheVerifyEvents                 uint64 `protobuf:"varint,3,opt,name=cache_verify_events,json=cacheVerifyEvents,proto3" json:"cache_verify_events,omitempty"`
-	Http2ClientEvents                 uint64 `protobuf:"varint,4,opt,name=http2_client_events,json=http2ClientEvents,proto3" json:"http2_client_events,omitempty"`
-	Http2ServerEvents                 uint64 `protobuf:"varint,5,opt,name=http2_server_events,json=http2ServerEvents,proto3" json:"http2_server_events,omitempty"`
-	Tls10ServerEvents                 uint64 `protobuf:"varint,6,opt,name=tls10_server_events,json=tls10ServerEvents,proto3" json:"tls10_server_events,omitempty"`
-	Tls3DesEvents                     uint64 `protobuf:"varint,7,opt,name=tls3_des_events,json=tls3DesEvents,proto3" json:"tls3_des_events,omitempty"`
-	TlsMaxRsaSizeEvents               uint64 `protobuf:"varint,8,opt,name=tls_max_rsa_size_events,json=tlsMaxRsaSizeEvents,proto3" json:"tls_max_rsa_size_events,omitempty"`
-	TlsRsaKexEvents                   uint64 `protobuf:"varint,9,opt,name=tls_rsa_kex_events,json=tlsRsaKexEvents,proto3" json:"tls_rsa_kex_events,omitempty"`
-	TlsSha1Events                     uint64 `protobuf:"varint,10,opt,name=tls_sha1_events,json=tlsSha1Events,proto3" json:"tls_sha1_events,omitempty"`
-	TlsUnsafeEkmEvents                uint64 `protobuf:"varint,11,opt,name=tls_unsafe_ekm_events,json=tlsUnsafeEkmEvents,proto3" json:"tls_unsafe_ekm_events,omitempty"`
-	HttpCookieMaxNumEvents            uint64 `protobuf:"varint,12,opt,name=http_cookie_max_num_events,json=httpCookieMaxNumEvents,proto3" json:"http_cookie_max_num_events,omitempty"`
-	HttpLaxContentLengthEvents        uint64 `protobuf:"varint,13,opt,name=http_lax_content_length_events,json=httpLaxContentLengthEvents,proto3" json:"http_lax_content_length_events,omitempty"`
-	HttpMuxGo_121Events               uint64 `protobuf:"varint,14,opt,name=http_mux_go_121_events,json=httpMuxGo121Events,proto3" json:"http_mux_go_121_events,omitempty"`
-	HttpServeContentKeepHeadersEvents uint64 `protobuf:"varint,15,opt,name=http_serve_content_keep_headers_events,json=httpServeContentKeepHeadersEvents,proto3" json:"http_serve_content_keep_headers_events,omitempty"`
+	CacheHashEvents                   *uint64 `protobuf:"varint,1,opt,name=cache_hash_events,json=cacheHashEvents,proto3,oneof" json:"cache_hash_events,omitempty"`
+	CacheTestEvents                   *uint64 `protobuf:"varint,2,opt,name=cache_test_events,json=cacheTestEvents,proto3,oneof" json:"cache_test_events,omitempty"`
+	CacheVerifyEvents                 *uint64 `protobuf:"varint,3,opt,name=cache_verify_events,json=cacheVerifyEvents,proto3,oneof" json:"cache_verify_events,omitempty"`
+	Http2ClientEvents                 *uint64 `protobuf:"varint,4,opt,name=http2_client_events,json=http2ClientEvents,proto3,oneof" json:"http2_client_events,omitempty"`
+	Http2ServerEvents                 *uint64 `protobuf:"varint,5,opt,name=http2_server_events,json=http2ServerEvents,proto3,oneof" json:"http2_server_events,omitempty"`
+	Tls10ServerEvents                 *uint64 `protobuf:"varint,6,opt,name=tls10_server_events,json=tls10ServerEvents,proto3,oneof" json:"tls10_server_events,omitempty"`
+	Tls3DesEvents                     *uint64 `protobuf:"varint,7,opt,name=tls3_des_events,json=tls3DesEvents,proto3,oneof" json:"tls3_des_events,omitempty"`
+	TlsMaxRsaSizeEvents               *uint64 `protobuf:"varint,8,opt,name=tls_max_rsa_size_events,json=tlsMaxRsaSizeEvents,proto3,oneof" json:"tls_max_rsa_size_events,omitempty"`
+	TlsRsaKexEvents                   *uint64 `protobuf:"varint,9,opt,name=tls_rsa_kex_events,json=tlsRsaKexEvents,proto3,oneof" json:"tls_rsa_kex_events,omitempty"`
+	TlsSha1Events                     *uint64 `protobuf:"varint,10,opt,name=tls_sha1_events,json=tlsSha1Events,proto3,oneof" json:"tls_sha1_events,omitempty"`
+	TlsUnsafeEkmEvents                *uint64 `protobuf:"varint,11,opt,name=tls_unsafe_ekm_events,json=tlsUnsafeEkmEvents,proto3,oneof" json:"tls_unsafe_ekm_events,omitempty"`
+	HttpCookieMaxNumEvents            *uint64 `protobuf:"varint,12,opt,name=http_cookie_max_num_events,json=httpCookieMaxNumEvents,proto3,oneof" json:"http_cookie_max_num_events,omitempty"`
+	HttpLaxContentLengthEvents        *uint64 `protobuf:"varint,13,opt,name=http_lax_content_length_events,json=httpLaxContentLengthEvents,proto3,oneof" json:"http_lax_content_length_events,omitempty"`
+	HttpMuxGo_121Events               *uint64 `protobuf:"varint,14,opt,name=http_mux_go_121_events,json=httpMuxGo121Events,proto3,oneof" json:"http_mux_go_121_events,omitempty"`
+	HttpServeContentKeepHeadersEvents *uint64 `protobuf:"varint,15,opt,name=http_serve_content_keep_headers_events,json=httpServeContentKeepHeadersEvents,proto3,oneof" json:"http_serve_content_keep_headers_events,omitempty"`
 	// Remaining uint64 fields (Tag 16+)
-	AllowMultipleVcsEvents          uint64 `protobuf:"varint,16,opt,name=allow_multiple_vcs_events,json=allowMultipleVcsEvents,proto3" json:"allow_multiple_vcs_events,omitempty"`
-	AsyncTimerChanEvents            uint64 `protobuf:"varint,17,opt,name=async_timer_chan_events,json=asyncTimerChanEvents,proto3" json:"async_timer_chan_events,omitempty"`
-	ContainerMaxProcsEvents         uint64 `protobuf:"varint,18,opt,name=container_max_procs_events,json=containerMaxProcsEvents,proto3" json:"container_max_procs_events,omitempty"`
-	CryptoCustomRandEvents          uint64 `protobuf:"varint,19,opt,name=crypto_custom_rand_events,json=cryptoCustomRandEvents,proto3" json:"crypto_custom_rand_events,omitempty"`
-	EmbedFollowSymlinkEvents        uint64 `protobuf:"varint,20,opt,name=embed_follow_symlink_events,json=embedFollowSymlinkEvents,proto3" json:"embed_follow_symlink_events,omitempty"`
-	ExecErrDotEvents                uint64 `protobuf:"varint,21,opt,name=exec_err_dot_events,json=execErrDotEvents,proto3" json:"exec_err_dot_events,omitempty"`
-	TestJsonBuildTextEvents         uint64 `protobuf:"varint,22,opt,name=test_json_build_text_events,json=testJsonBuildTextEvents,proto3" json:"test_json_build_text_events,omitempty"`
-	TypeAliasEvents                 uint64 `protobuf:"varint,23,opt,name=type_alias_events,json=typeAliasEvents,proto3" json:"type_alias_events,omitempty"`
-	HtmlMetaContentUrlEscapedEvents uint64 `protobuf:"varint,24,opt,name=html_meta_content_url_escaped_events,json=htmlMetaContentUrlEscapedEvents,proto3" json:"html_meta_content_url_escaped_events,omitempty"`
-	InstallGoRootEvents             uint64 `protobuf:"varint,25,opt,name=install_go_root_events,json=installGoRootEvents,proto3" json:"install_go_root_events,omitempty"`
-	MultipartMaxHeadersEvents       uint64 `protobuf:"varint,26,opt,name=multipart_max_headers_events,json=multipartMaxHeadersEvents,proto3" json:"multipart_max_headers_events,omitempty"`
-	MultipartMaxPartsEvents         uint64 `protobuf:"varint,27,opt,name=multipart_max_parts_events,json=multipartMaxPartsEvents,proto3" json:"multipart_max_parts_events,omitempty"`
-	MultipathTcpEvents              uint64 `protobuf:"varint,28,opt,name=multipath_tcp_events,json=multipathTcpEvents,proto3" json:"multipath_tcp_events,omitempty"`
-	NetEdns0Events                  uint64 `protobuf:"varint,29,opt,name=net_edns0_events,json=netEdns0Events,proto3" json:"net_edns0_events,omitempty"`
-	PanicNilEvents                  uint64 `protobuf:"varint,30,opt,name=panic_nil_events,json=panicNilEvents,proto3" json:"panic_nil_events,omitempty"`
-	RandAutoSeedEvents              uint64 `protobuf:"varint,31,opt,name=rand_auto_seed_events,json=randAutoSeedEvents,proto3" json:"rand_auto_seed_events,omitempty"`
-	RandSeedNopEvents               uint64 `protobuf:"varint,32,opt,name=rand_seed_nop_events,json=randSeedNopEvents,proto3" json:"rand_seed_nop_events,omitempty"`
-	Rsa1024MinEvents                uint64 `protobuf:"varint,33,opt,name=rsa1024_min_events,json=rsa1024MinEvents,proto3" json:"rsa1024_min_events,omitempty"`
-	TarInsecurePathEvents           uint64 `protobuf:"varint,34,opt,name=tar_insecure_path_events,json=tarInsecurePathEvents,proto3" json:"tar_insecure_path_events,omitempty"`
-	UpdateMaxProcsEvents            uint64 `protobuf:"varint,35,opt,name=update_max_procs_events,json=updateMaxProcsEvents,proto3" json:"update_max_procs_events,omitempty"`
-	UrlMaxQueryParamsEvents         uint64 `protobuf:"varint,36,opt,name=url_max_query_params_events,json=urlMaxQueryParamsEvents,proto3" json:"url_max_query_params_events,omitempty"`
-	UrlStrictColonsEvents           uint64 `protobuf:"varint,37,opt,name=url_strict_colons_events,json=urlStrictColonsEvents,proto3" json:"url_strict_colons_events,omitempty"`
-	WinReadLinkVolumeEvents         uint64 `protobuf:"varint,38,opt,name=win_read_link_volume_events,json=winReadLinkVolumeEvents,proto3" json:"win_read_link_volume_events,omitempty"`
-	WinSymlinkEvents                uint64 `protobuf:"varint,39,opt,name=win_symlink_events,json=winSymlinkEvents,proto3" json:"win_symlink_events,omitempty"`
-	X509KeyparLeafEvents            uint64 `protobuf:"varint,40,opt,name=x509_keypar_leaf_events,json=x509KeyparLeafEvents,proto3" json:"x509_keypar_leaf_events,omitempty"`
-	X509NegativSerialEvents         uint64 `protobuf:"varint,41,opt,name=x509_negativ_serial_events,json=x509NegativSerialEvents,proto3" json:"x509_negativ_serial_events,omitempty"`
-	X509RsaCrtEvents                uint64 `protobuf:"varint,42,opt,name=x509_rsa_crt_events,json=x509RsaCrtEvents,proto3" json:"x509_rsa_crt_events,omitempty"`
-	X509Sha256SkidEvents            uint64 `protobuf:"varint,43,opt,name=x509_sha256_skid_events,json=x509Sha256SkidEvents,proto3" json:"x509_sha256_skid_events,omitempty"`
-	X509UseFallbackRootsEvents      uint64 `protobuf:"varint,44,opt,name=x509_use_fallback_roots_events,json=x509UseFallbackRootsEvents,proto3" json:"x509_use_fallback_roots_events,omitempty"`
-	X509UsePoliciesEvents           uint64 `protobuf:"varint,45,opt,name=x509_use_policies_events,json=x509UsePoliciesEvents,proto3" json:"x509_use_policies_events,omitempty"`
-	ZipInsecurePathEvents           uint64 `protobuf:"varint,46,opt,name=zip_insecure_path_events,json=zipInsecurePathEvents,proto3" json:"zip_insecure_path_events,omitempty"`
+	AllowMultipleVcsEvents          *uint64 `protobuf:"varint,16,opt,name=allow_multiple_vcs_events,json=allowMultipleVcsEvents,proto3,oneof" json:"allow_multiple_vcs_events,omitempty"`
+	AsyncTimerChanEvents            *uint64 `protobuf:"varint,17,opt,name=async_timer_chan_events,json=asyncTimerChanEvents,proto3,oneof" json:"async_timer_chan_events,omitempty"`
+	ContainerMaxProcsEvents         *uint64 `protobuf:"varint,18,opt,name=container_max_procs_events,json=containerMaxProcsEvents,proto3,oneof" json:"container_max_procs_events,omitempty"`
+	CryptoCustomRandEvents          *uint64 `protobuf:"varint,19,opt,name=crypto_custom_rand_events,json=cryptoCustomRandEvents,proto3,oneof" json:"crypto_custom_rand_events,omitempty"`
+	EmbedFollowSymlinkEvents        *uint64 `protobuf:"varint,20,opt,name=embed_follow_symlink_events,json=embedFollowSymlinkEvents,proto3,oneof" json:"embed_follow_symlink_events,omitempty"`
+	ExecErrDotEvents                *uint64 `protobuf:"varint,21,opt,name=exec_err_dot_events,json=execErrDotEvents,proto3,oneof" json:"exec_err_dot_events,omitempty"`
+	TestJsonBuildTextEvents         *uint64 `protobuf:"varint,22,opt,name=test_json_build_text_events,json=testJsonBuildTextEvents,proto3,oneof" json:"test_json_build_text_events,omitempty"`
+	TypeAliasEvents                 *uint64 `protobuf:"varint,23,opt,name=type_alias_events,json=typeAliasEvents,proto3,oneof" json:"type_alias_events,omitempty"`
+	HtmlMetaContentUrlEscapedEvents *uint64 `protobuf:"varint,24,opt,name=html_meta_content_url_escaped_events,json=htmlMetaContentUrlEscapedEvents,proto3,oneof" json:"html_meta_content_url_escaped_events,omitempty"`
+	InstallGoRootEvents             *uint64 `protobuf:"varint,25,opt,name=install_go_root_events,json=installGoRootEvents,proto3,oneof" json:"install_go_root_events,omitempty"`
+	MultipartMaxHeadersEvents       *uint64 `protobuf:"varint,26,opt,name=multipart_max_headers_events,json=multipartMaxHeadersEvents,proto3,oneof" json:"multipart_max_headers_events,omitempty"`
+	MultipartMaxPartsEvents         *uint64 `protobuf:"varint,27,opt,name=multipart_max_parts_events,json=multipartMaxPartsEvents,proto3,oneof" json:"multipart_max_parts_events,omitempty"`
+	MultipathTcpEvents              *uint64 `protobuf:"varint,28,opt,name=multipath_tcp_events,json=multipathTcpEvents,proto3,oneof" json:"multipath_tcp_events,omitempty"`
+	NetEdns0Events                  *uint64 `protobuf:"varint,29,opt,name=net_edns0_events,json=netEdns0Events,proto3,oneof" json:"net_edns0_events,omitempty"`
+	PanicNilEvents                  *uint64 `protobuf:"varint,30,opt,name=panic_nil_events,json=panicNilEvents,proto3,oneof" json:"panic_nil_events,omitempty"`
+	RandAutoSeedEvents              *uint64 `protobuf:"varint,31,opt,name=rand_auto_seed_events,json=randAutoSeedEvents,proto3,oneof" json:"rand_auto_seed_events,omitempty"`
+	RandSeedNopEvents               *uint64 `protobuf:"varint,32,opt,name=rand_seed_nop_events,json=randSeedNopEvents,proto3,oneof" json:"rand_seed_nop_events,omitempty"`
+	Rsa1024MinEvents                *uint64 `protobuf:"varint,33,opt,name=rsa1024_min_events,json=rsa1024MinEvents,proto3,oneof" json:"rsa1024_min_events,omitempty"`
+	TarInsecurePathEvents           *uint64 `protobuf:"varint,34,opt,name=tar_insecure_path_events,json=tarInsecurePathEvents,proto3,oneof" json:"tar_insecure_path_events,omitempty"`
+	UpdateMaxProcsEvents            *uint64 `protobuf:"varint,35,opt,name=update_max_procs_events,json=updateMaxProcsEvents,proto3,oneof" json:"update_max_procs_events,omitempty"`
+	UrlMaxQueryParamsEvents         *uint64 `protobuf:"varint,36,opt,name=url_max_query_params_events,json=urlMaxQueryParamsEvents,proto3,oneof" json:"url_max_query_params_events,omitempty"`
+	UrlStrictColonsEvents           *uint64 `protobuf:"varint,37,opt,name=url_strict_colons_events,json=urlStrictColonsEvents,proto3,oneof" json:"url_strict_colons_events,omitempty"`
+	WinReadLinkVolumeEvents         *uint64 `protobuf:"varint,38,opt,name=win_read_link_volume_events,json=winReadLinkVolumeEvents,proto3,oneof" json:"win_read_link_volume_events,omitempty"`
+	WinSymlinkEvents                *uint64 `protobuf:"varint,39,opt,name=win_symlink_events,json=winSymlinkEvents,proto3,oneof" json:"win_symlink_events,omitempty"`
+	X509KeypairLeafEvents           *uint64 `protobuf:"varint,40,opt,name=x509_keypair_leaf_events,json=x509KeypairLeafEvents,proto3,oneof" json:"x509_keypair_leaf_events,omitempty"`
+	X509NegativeSerialEvents        *uint64 `protobuf:"varint,41,opt,name=x509_negative_serial_events,json=x509NegativeSerialEvents,proto3,oneof" json:"x509_negative_serial_events,omitempty"`
+	X509RsaCrtEvents                *uint64 `protobuf:"varint,42,opt,name=x509_rsa_crt_events,json=x509RsaCrtEvents,proto3,oneof" json:"x509_rsa_crt_events,omitempty"`
+	X509Sha256SkidEvents            *uint64 `protobuf:"varint,43,opt,name=x509_sha256_skid_events,json=x509Sha256SkidEvents,proto3,oneof" json:"x509_sha256_skid_events,omitempty"`
+	X509UseFallbackRootsEvents      *uint64 `protobuf:"varint,44,opt,name=x509_use_fallback_roots_events,json=x509UseFallbackRootsEvents,proto3,oneof" json:"x509_use_fallback_roots_events,omitempty"`
+	X509UsePoliciesEvents           *uint64 `protobuf:"varint,45,opt,name=x509_use_policies_events,json=x509UsePoliciesEvents,proto3,oneof" json:"x509_use_policies_events,omitempty"`
+	ZipInsecurePathEvents           *uint64 `protobuf:"varint,46,opt,name=zip_insecure_path_events,json=zipInsecurePathEvents,proto3,oneof" json:"zip_insecure_path_events,omitempty"`
 	unknownFields                   protoimpl.UnknownFields
 	sizeCache                       protoimpl.SizeCache
 }
@@ -809,343 +817,343 @@ func (*GoDebugResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *GoDebugResponse) GetCacheHashEvents() uint64 {
-	if x != nil {
-		return x.CacheHashEvents
+	if x != nil && x.CacheHashEvents != nil {
+		return *x.CacheHashEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetCacheTestEvents() uint64 {
-	if x != nil {
-		return x.CacheTestEvents
+	if x != nil && x.CacheTestEvents != nil {
+		return *x.CacheTestEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetCacheVerifyEvents() uint64 {
-	if x != nil {
-		return x.CacheVerifyEvents
+	if x != nil && x.CacheVerifyEvents != nil {
+		return *x.CacheVerifyEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetHttp2ClientEvents() uint64 {
-	if x != nil {
-		return x.Http2ClientEvents
+	if x != nil && x.Http2ClientEvents != nil {
+		return *x.Http2ClientEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetHttp2ServerEvents() uint64 {
-	if x != nil {
-		return x.Http2ServerEvents
+	if x != nil && x.Http2ServerEvents != nil {
+		return *x.Http2ServerEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetTls10ServerEvents() uint64 {
-	if x != nil {
-		return x.Tls10ServerEvents
+	if x != nil && x.Tls10ServerEvents != nil {
+		return *x.Tls10ServerEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetTls3DesEvents() uint64 {
-	if x != nil {
-		return x.Tls3DesEvents
+	if x != nil && x.Tls3DesEvents != nil {
+		return *x.Tls3DesEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetTlsMaxRsaSizeEvents() uint64 {
-	if x != nil {
-		return x.TlsMaxRsaSizeEvents
+	if x != nil && x.TlsMaxRsaSizeEvents != nil {
+		return *x.TlsMaxRsaSizeEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetTlsRsaKexEvents() uint64 {
-	if x != nil {
-		return x.TlsRsaKexEvents
+	if x != nil && x.TlsRsaKexEvents != nil {
+		return *x.TlsRsaKexEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetTlsSha1Events() uint64 {
-	if x != nil {
-		return x.TlsSha1Events
+	if x != nil && x.TlsSha1Events != nil {
+		return *x.TlsSha1Events
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetTlsUnsafeEkmEvents() uint64 {
-	if x != nil {
-		return x.TlsUnsafeEkmEvents
+	if x != nil && x.TlsUnsafeEkmEvents != nil {
+		return *x.TlsUnsafeEkmEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetHttpCookieMaxNumEvents() uint64 {
-	if x != nil {
-		return x.HttpCookieMaxNumEvents
+	if x != nil && x.HttpCookieMaxNumEvents != nil {
+		return *x.HttpCookieMaxNumEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetHttpLaxContentLengthEvents() uint64 {
-	if x != nil {
-		return x.HttpLaxContentLengthEvents
+	if x != nil && x.HttpLaxContentLengthEvents != nil {
+		return *x.HttpLaxContentLengthEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetHttpMuxGo_121Events() uint64 {
-	if x != nil {
-		return x.HttpMuxGo_121Events
+	if x != nil && x.HttpMuxGo_121Events != nil {
+		return *x.HttpMuxGo_121Events
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetHttpServeContentKeepHeadersEvents() uint64 {
-	if x != nil {
-		return x.HttpServeContentKeepHeadersEvents
+	if x != nil && x.HttpServeContentKeepHeadersEvents != nil {
+		return *x.HttpServeContentKeepHeadersEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetAllowMultipleVcsEvents() uint64 {
-	if x != nil {
-		return x.AllowMultipleVcsEvents
+	if x != nil && x.AllowMultipleVcsEvents != nil {
+		return *x.AllowMultipleVcsEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetAsyncTimerChanEvents() uint64 {
-	if x != nil {
-		return x.AsyncTimerChanEvents
+	if x != nil && x.AsyncTimerChanEvents != nil {
+		return *x.AsyncTimerChanEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetContainerMaxProcsEvents() uint64 {
-	if x != nil {
-		return x.ContainerMaxProcsEvents
+	if x != nil && x.ContainerMaxProcsEvents != nil {
+		return *x.ContainerMaxProcsEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetCryptoCustomRandEvents() uint64 {
-	if x != nil {
-		return x.CryptoCustomRandEvents
+	if x != nil && x.CryptoCustomRandEvents != nil {
+		return *x.CryptoCustomRandEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetEmbedFollowSymlinkEvents() uint64 {
-	if x != nil {
-		return x.EmbedFollowSymlinkEvents
+	if x != nil && x.EmbedFollowSymlinkEvents != nil {
+		return *x.EmbedFollowSymlinkEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetExecErrDotEvents() uint64 {
-	if x != nil {
-		return x.ExecErrDotEvents
+	if x != nil && x.ExecErrDotEvents != nil {
+		return *x.ExecErrDotEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetTestJsonBuildTextEvents() uint64 {
-	if x != nil {
-		return x.TestJsonBuildTextEvents
+	if x != nil && x.TestJsonBuildTextEvents != nil {
+		return *x.TestJsonBuildTextEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetTypeAliasEvents() uint64 {
-	if x != nil {
-		return x.TypeAliasEvents
+	if x != nil && x.TypeAliasEvents != nil {
+		return *x.TypeAliasEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetHtmlMetaContentUrlEscapedEvents() uint64 {
-	if x != nil {
-		return x.HtmlMetaContentUrlEscapedEvents
+	if x != nil && x.HtmlMetaContentUrlEscapedEvents != nil {
+		return *x.HtmlMetaContentUrlEscapedEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetInstallGoRootEvents() uint64 {
-	if x != nil {
-		return x.InstallGoRootEvents
+	if x != nil && x.InstallGoRootEvents != nil {
+		return *x.InstallGoRootEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetMultipartMaxHeadersEvents() uint64 {
-	if x != nil {
-		return x.MultipartMaxHeadersEvents
+	if x != nil && x.MultipartMaxHeadersEvents != nil {
+		return *x.MultipartMaxHeadersEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetMultipartMaxPartsEvents() uint64 {
-	if x != nil {
-		return x.MultipartMaxPartsEvents
+	if x != nil && x.MultipartMaxPartsEvents != nil {
+		return *x.MultipartMaxPartsEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetMultipathTcpEvents() uint64 {
-	if x != nil {
-		return x.MultipathTcpEvents
+	if x != nil && x.MultipathTcpEvents != nil {
+		return *x.MultipathTcpEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetNetEdns0Events() uint64 {
-	if x != nil {
-		return x.NetEdns0Events
+	if x != nil && x.NetEdns0Events != nil {
+		return *x.NetEdns0Events
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetPanicNilEvents() uint64 {
-	if x != nil {
-		return x.PanicNilEvents
+	if x != nil && x.PanicNilEvents != nil {
+		return *x.PanicNilEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetRandAutoSeedEvents() uint64 {
-	if x != nil {
-		return x.RandAutoSeedEvents
+	if x != nil && x.RandAutoSeedEvents != nil {
+		return *x.RandAutoSeedEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetRandSeedNopEvents() uint64 {
-	if x != nil {
-		return x.RandSeedNopEvents
+	if x != nil && x.RandSeedNopEvents != nil {
+		return *x.RandSeedNopEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetRsa1024MinEvents() uint64 {
-	if x != nil {
-		return x.Rsa1024MinEvents
+	if x != nil && x.Rsa1024MinEvents != nil {
+		return *x.Rsa1024MinEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetTarInsecurePathEvents() uint64 {
-	if x != nil {
-		return x.TarInsecurePathEvents
+	if x != nil && x.TarInsecurePathEvents != nil {
+		return *x.TarInsecurePathEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetUpdateMaxProcsEvents() uint64 {
-	if x != nil {
-		return x.UpdateMaxProcsEvents
+	if x != nil && x.UpdateMaxProcsEvents != nil {
+		return *x.UpdateMaxProcsEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetUrlMaxQueryParamsEvents() uint64 {
-	if x != nil {
-		return x.UrlMaxQueryParamsEvents
+	if x != nil && x.UrlMaxQueryParamsEvents != nil {
+		return *x.UrlMaxQueryParamsEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetUrlStrictColonsEvents() uint64 {
-	if x != nil {
-		return x.UrlStrictColonsEvents
+	if x != nil && x.UrlStrictColonsEvents != nil {
+		return *x.UrlStrictColonsEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetWinReadLinkVolumeEvents() uint64 {
-	if x != nil {
-		return x.WinReadLinkVolumeEvents
+	if x != nil && x.WinReadLinkVolumeEvents != nil {
+		return *x.WinReadLinkVolumeEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetWinSymlinkEvents() uint64 {
-	if x != nil {
-		return x.WinSymlinkEvents
+	if x != nil && x.WinSymlinkEvents != nil {
+		return *x.WinSymlinkEvents
 	}
 	return 0
 }
 
-func (x *GoDebugResponse) GetX509KeyparLeafEvents() uint64 {
-	if x != nil {
-		return x.X509KeyparLeafEvents
+func (x *GoDebugResponse) GetX509KeypairLeafEvents() uint64 {
+	if x != nil && x.X509KeypairLeafEvents != nil {
+		return *x.X509KeypairLeafEvents
 	}
 	return 0
 }
 
-func (x *GoDebugResponse) GetX509NegativSerialEvents() uint64 {
-	if x != nil {
-		return x.X509NegativSerialEvents
+func (x *GoDebugResponse) GetX509NegativeSerialEvents() uint64 {
+	if x != nil && x.X509NegativeSerialEvents != nil {
+		return *x.X509NegativeSerialEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetX509RsaCrtEvents() uint64 {
-	if x != nil {
-		return x.X509RsaCrtEvents
+	if x != nil && x.X509RsaCrtEvents != nil {
+		return *x.X509RsaCrtEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetX509Sha256SkidEvents() uint64 {
-	if x != nil {
-		return x.X509Sha256SkidEvents
+	if x != nil && x.X509Sha256SkidEvents != nil {
+		return *x.X509Sha256SkidEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetX509UseFallbackRootsEvents() uint64 {
-	if x != nil {
-		return x.X509UseFallbackRootsEvents
+	if x != nil && x.X509UseFallbackRootsEvents != nil {
+		return *x.X509UseFallbackRootsEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetX509UsePoliciesEvents() uint64 {
-	if x != nil {
-		return x.X509UsePoliciesEvents
+	if x != nil && x.X509UsePoliciesEvents != nil {
+		return *x.X509UsePoliciesEvents
 	}
 	return 0
 }
 
 func (x *GoDebugResponse) GetZipInsecurePathEvents() uint64 {
-	if x != nil {
-		return x.ZipInsecurePathEvents
+	if x != nil && x.ZipInsecurePathEvents != nil {
+		return *x.ZipInsecurePathEvents
 	}
 	return 0
 }
 
 type MemoryResponse struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
-	HeapFreeBytes        uint64                 `protobuf:"varint,1,opt,name=heap_free_bytes,json=heapFreeBytes,proto3" json:"heap_free_bytes,omitempty"`
-	HeapObjectBytes      uint64                 `protobuf:"varint,2,opt,name=heap_object_bytes,json=heapObjectBytes,proto3" json:"heap_object_bytes,omitempty"`
-	HeapReleasedBytes    uint64                 `protobuf:"varint,3,opt,name=heap_released_bytes,json=heapReleasedBytes,proto3" json:"heap_released_bytes,omitempty"`
-	HeapStackBytes       uint64                 `protobuf:"varint,4,opt,name=heap_stack_bytes,json=heapStackBytes,proto3" json:"heap_stack_bytes,omitempty"`
-	HeapUnusedBytes      uint64                 `protobuf:"varint,5,opt,name=heap_unused_bytes,json=heapUnusedBytes,proto3" json:"heap_unused_bytes,omitempty"`
-	McacheFreeBytes      uint64                 `protobuf:"varint,6,opt,name=mcache_free_bytes,json=mcacheFreeBytes,proto3" json:"mcache_free_bytes,omitempty"`
-	McacheInuseBytes     uint64                 `protobuf:"varint,7,opt,name=mcache_inuse_bytes,json=mcacheInuseBytes,proto3" json:"mcache_inuse_bytes,omitempty"`
-	MspanFreeBytes       uint64                 `protobuf:"varint,8,opt,name=mspan_free_bytes,json=mspanFreeBytes,proto3" json:"mspan_free_bytes,omitempty"`
-	MspanInuseBytes      uint64                 `protobuf:"varint,9,opt,name=mspan_inuse_bytes,json=mspanInuseBytes,proto3" json:"mspan_inuse_bytes,omitempty"`
-	OtherMetadataBytes   uint64                 `protobuf:"varint,10,opt,name=other_metadata_bytes,json=otherMetadataBytes,proto3" json:"other_metadata_bytes,omitempty"`
-	OsStackBytes         uint64                 `protobuf:"varint,11,opt,name=os_stack_bytes,json=osStackBytes,proto3" json:"os_stack_bytes,omitempty"`
-	OtherBytes           uint64                 `protobuf:"varint,12,opt,name=other_bytes,json=otherBytes,proto3" json:"other_bytes,omitempty"`
-	ProfilingBucketBytes uint64                 `protobuf:"varint,13,opt,name=profiling_bucket_bytes,json=profilingBucketBytes,proto3" json:"profiling_bucket_bytes,omitempty"`
-	TotalBytes           uint64                 `protobuf:"varint,14,opt,name=total_bytes,json=totalBytes,proto3" json:"total_bytes,omitempty"`
+	HeapFreeBytes        *uint64                `protobuf:"varint,1,opt,name=heap_free_bytes,json=heapFreeBytes,proto3,oneof" json:"heap_free_bytes,omitempty"`
+	HeapObjectBytes      *uint64                `protobuf:"varint,2,opt,name=heap_object_bytes,json=heapObjectBytes,proto3,oneof" json:"heap_object_bytes,omitempty"`
+	HeapReleasedBytes    *uint64                `protobuf:"varint,3,opt,name=heap_released_bytes,json=heapReleasedBytes,proto3,oneof" json:"heap_released_bytes,omitempty"`
+	HeapStackBytes       *uint64                `protobuf:"varint,4,opt,name=heap_stack_bytes,json=heapStackBytes,proto3,oneof" json:"heap_stack_bytes,omitempty"`
+	HeapUnusedBytes      *uint64                `protobuf:"varint,5,opt,name=heap_unused_bytes,json=heapUnusedBytes,proto3,oneof" json:"heap_unused_bytes,omitempty"`
+	McacheFreeBytes      *uint64                `protobuf:"varint,6,opt,name=mcache_free_bytes,json=mcacheFreeBytes,proto3,oneof" json:"mcache_free_bytes,omitempty"`
+	McacheInuseBytes     *uint64                `protobuf:"varint,7,opt,name=mcache_inuse_bytes,json=mcacheInuseBytes,proto3,oneof" json:"mcache_inuse_bytes,omitempty"`
+	MspanFreeBytes       *uint64                `protobuf:"varint,8,opt,name=mspan_free_bytes,json=mspanFreeBytes,proto3,oneof" json:"mspan_free_bytes,omitempty"`
+	MspanInuseBytes      *uint64                `protobuf:"varint,9,opt,name=mspan_inuse_bytes,json=mspanInuseBytes,proto3,oneof" json:"mspan_inuse_bytes,omitempty"`
+	OtherMetadataBytes   *uint64                `protobuf:"varint,10,opt,name=other_metadata_bytes,json=otherMetadataBytes,proto3,oneof" json:"other_metadata_bytes,omitempty"`
+	OsStackBytes         *uint64                `protobuf:"varint,11,opt,name=os_stack_bytes,json=osStackBytes,proto3,oneof" json:"os_stack_bytes,omitempty"`
+	OtherBytes           *uint64                `protobuf:"varint,12,opt,name=other_bytes,json=otherBytes,proto3,oneof" json:"other_bytes,omitempty"`
+	ProfilingBucketBytes *uint64                `protobuf:"varint,13,opt,name=profiling_bucket_bytes,json=profilingBucketBytes,proto3,oneof" json:"profiling_bucket_bytes,omitempty"`
+	TotalBytes           *uint64                `protobuf:"varint,14,opt,name=total_bytes,json=totalBytes,proto3,oneof" json:"total_bytes,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -1181,99 +1189,99 @@ func (*MemoryResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *MemoryResponse) GetHeapFreeBytes() uint64 {
-	if x != nil {
-		return x.HeapFreeBytes
+	if x != nil && x.HeapFreeBytes != nil {
+		return *x.HeapFreeBytes
 	}
 	return 0
 }
 
 func (x *MemoryResponse) GetHeapObjectBytes() uint64 {
-	if x != nil {
-		return x.HeapObjectBytes
+	if x != nil && x.HeapObjectBytes != nil {
+		return *x.HeapObjectBytes
 	}
 	return 0
 }
 
 func (x *MemoryResponse) GetHeapReleasedBytes() uint64 {
-	if x != nil {
-		return x.HeapReleasedBytes
+	if x != nil && x.HeapReleasedBytes != nil {
+		return *x.HeapReleasedBytes
 	}
 	return 0
 }
 
 func (x *MemoryResponse) GetHeapStackBytes() uint64 {
-	if x != nil {
-		return x.HeapStackBytes
+	if x != nil && x.HeapStackBytes != nil {
+		return *x.HeapStackBytes
 	}
 	return 0
 }
 
 func (x *MemoryResponse) GetHeapUnusedBytes() uint64 {
-	if x != nil {
-		return x.HeapUnusedBytes
+	if x != nil && x.HeapUnusedBytes != nil {
+		return *x.HeapUnusedBytes
 	}
 	return 0
 }
 
 func (x *MemoryResponse) GetMcacheFreeBytes() uint64 {
-	if x != nil {
-		return x.McacheFreeBytes
+	if x != nil && x.McacheFreeBytes != nil {
+		return *x.McacheFreeBytes
 	}
 	return 0
 }
 
 func (x *MemoryResponse) GetMcacheInuseBytes() uint64 {
-	if x != nil {
-		return x.McacheInuseBytes
+	if x != nil && x.McacheInuseBytes != nil {
+		return *x.McacheInuseBytes
 	}
 	return 0
 }
 
 func (x *MemoryResponse) GetMspanFreeBytes() uint64 {
-	if x != nil {
-		return x.MspanFreeBytes
+	if x != nil && x.MspanFreeBytes != nil {
+		return *x.MspanFreeBytes
 	}
 	return 0
 }
 
 func (x *MemoryResponse) GetMspanInuseBytes() uint64 {
-	if x != nil {
-		return x.MspanInuseBytes
+	if x != nil && x.MspanInuseBytes != nil {
+		return *x.MspanInuseBytes
 	}
 	return 0
 }
 
 func (x *MemoryResponse) GetOtherMetadataBytes() uint64 {
-	if x != nil {
-		return x.OtherMetadataBytes
+	if x != nil && x.OtherMetadataBytes != nil {
+		return *x.OtherMetadataBytes
 	}
 	return 0
 }
 
 func (x *MemoryResponse) GetOsStackBytes() uint64 {
-	if x != nil {
-		return x.OsStackBytes
+	if x != nil && x.OsStackBytes != nil {
+		return *x.OsStackBytes
 	}
 	return 0
 }
 
 func (x *MemoryResponse) GetOtherBytes() uint64 {
-	if x != nil {
-		return x.OtherBytes
+	if x != nil && x.OtherBytes != nil {
+		return *x.OtherBytes
 	}
 	return 0
 }
 
 func (x *MemoryResponse) GetProfilingBucketBytes() uint64 {
-	if x != nil {
-		return x.ProfilingBucketBytes
+	if x != nil && x.ProfilingBucketBytes != nil {
+		return *x.ProfilingBucketBytes
 	}
 	return 0
 }
 
 func (x *MemoryResponse) GetTotalBytes() uint64 {
-	if x != nil {
-		return x.TotalBytes
+	if x != nil && x.TotalBytes != nil {
+		return *x.TotalBytes
 	}
 	return 0
 }
@@ -1286,15 +1294,15 @@ type SchedulerResponse struct {
 	StoppingOtherSeconds   *Histogram `protobuf:"bytes,3,opt,name=stopping_other_seconds,json=stoppingOtherSeconds,proto3" json:"stopping_other_seconds,omitempty"`
 	TotalGcPauseSeconds    *Histogram `protobuf:"bytes,4,opt,name=total_gc_pause_seconds,json=totalGcPauseSeconds,proto3" json:"total_gc_pause_seconds,omitempty"`
 	TotalOtherPauseSeconds *Histogram `protobuf:"bytes,5,opt,name=total_other_pause_seconds,json=totalOtherPauseSeconds,proto3" json:"total_other_pause_seconds,omitempty"`
-	GoroutinesCreated      uint64     `protobuf:"varint,6,opt,name=goroutines_created,json=goroutinesCreated,proto3" json:"goroutines_created,omitempty"`
+	GoroutinesCreated      *uint64    `protobuf:"varint,6,opt,name=goroutines_created,json=goroutinesCreated,proto3,oneof" json:"goroutines_created,omitempty"`
 	// 4-byte types
-	GomaxprocsThreads  uint32 `protobuf:"varint,7,opt,name=gomaxprocs_threads,json=gomaxprocsThreads,proto3" json:"gomaxprocs_threads,omitempty"`
-	NotInGoGoroutines  uint32 `protobuf:"varint,8,opt,name=not_in_go_goroutines,json=notInGoGoroutines,proto3" json:"not_in_go_goroutines,omitempty"`
-	RunnableGoroutines uint32 `protobuf:"varint,9,opt,name=runnable_goroutines,json=runnableGoroutines,proto3" json:"runnable_goroutines,omitempty"`
-	RunningGoroutines  uint32 `protobuf:"varint,10,opt,name=running_goroutines,json=runningGoroutines,proto3" json:"running_goroutines,omitempty"`
-	WaitingGoroutines  uint32 `protobuf:"varint,11,opt,name=waiting_goroutines,json=waitingGoroutines,proto3" json:"waiting_goroutines,omitempty"`
-	LiveGoroutines     uint32 `protobuf:"varint,12,opt,name=live_goroutines,json=liveGoroutines,proto3" json:"live_goroutines,omitempty"`
-	TotalLiveThreads   uint32 `protobuf:"varint,13,opt,name=total_live_threads,json=totalLiveThreads,proto3" json:"total_live_threads,omitempty"`
+	GomaxprocsThreads  *uint32 `protobuf:"varint,7,opt,name=gomaxprocs_threads,json=gomaxprocsThreads,proto3,oneof" json:"gomaxprocs_threads,omitempty"`
+	NotInGoGoroutines  *uint32 `protobuf:"varint,8,opt,name=not_in_go_goroutines,json=notInGoGoroutines,proto3,oneof" json:"not_in_go_goroutines,omitempty"`
+	RunnableGoroutines *uint32 `protobuf:"varint,9,opt,name=runnable_goroutines,json=runnableGoroutines,proto3,oneof" json:"runnable_goroutines,omitempty"`
+	RunningGoroutines  *uint32 `protobuf:"varint,10,opt,name=running_goroutines,json=runningGoroutines,proto3,oneof" json:"running_goroutines,omitempty"`
+	WaitingGoroutines  *uint32 `protobuf:"varint,11,opt,name=waiting_goroutines,json=waitingGoroutines,proto3,oneof" json:"waiting_goroutines,omitempty"`
+	LiveGoroutines     *uint32 `protobuf:"varint,12,opt,name=live_goroutines,json=liveGoroutines,proto3,oneof" json:"live_goroutines,omitempty"`
+	TotalLiveThreads   *uint32 `protobuf:"varint,13,opt,name=total_live_threads,json=totalLiveThreads,proto3,oneof" json:"total_live_threads,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1365,64 +1373,64 @@ func (x *SchedulerResponse) GetTotalOtherPauseSeconds() *Histogram {
 }
 
 func (x *SchedulerResponse) GetGoroutinesCreated() uint64 {
-	if x != nil {
-		return x.GoroutinesCreated
+	if x != nil && x.GoroutinesCreated != nil {
+		return *x.GoroutinesCreated
 	}
 	return 0
 }
 
 func (x *SchedulerResponse) GetGomaxprocsThreads() uint32 {
-	if x != nil {
-		return x.GomaxprocsThreads
+	if x != nil && x.GomaxprocsThreads != nil {
+		return *x.GomaxprocsThreads
 	}
 	return 0
 }
 
 func (x *SchedulerResponse) GetNotInGoGoroutines() uint32 {
-	if x != nil {
-		return x.NotInGoGoroutines
+	if x != nil && x.NotInGoGoroutines != nil {
+		return *x.NotInGoGoroutines
 	}
 	return 0
 }
 
 func (x *SchedulerResponse) GetRunnableGoroutines() uint32 {
-	if x != nil {
-		return x.RunnableGoroutines
+	if x != nil && x.RunnableGoroutines != nil {
+		return *x.RunnableGoroutines
 	}
 	return 0
 }
 
 func (x *SchedulerResponse) GetRunningGoroutines() uint32 {
-	if x != nil {
-		return x.RunningGoroutines
+	if x != nil && x.RunningGoroutines != nil {
+		return *x.RunningGoroutines
 	}
 	return 0
 }
 
 func (x *SchedulerResponse) GetWaitingGoroutines() uint32 {
-	if x != nil {
-		return x.WaitingGoroutines
+	if x != nil && x.WaitingGoroutines != nil {
+		return *x.WaitingGoroutines
 	}
 	return 0
 }
 
 func (x *SchedulerResponse) GetLiveGoroutines() uint32 {
-	if x != nil {
-		return x.LiveGoroutines
+	if x != nil && x.LiveGoroutines != nil {
+		return *x.LiveGoroutines
 	}
 	return 0
 }
 
 func (x *SchedulerResponse) GetTotalLiveThreads() uint32 {
-	if x != nil {
-		return x.TotalLiveThreads
+	if x != nil && x.TotalLiveThreads != nil {
+		return *x.TotalLiveThreads
 	}
 	return 0
 }
 
 type SyncResponse struct {
 	state                         protoimpl.MessageState `protogen:"open.v1"`
-	TotalMutexWaitDurationSeconds float64                `protobuf:"fixed64,1,opt,name=total_mutex_wait_duration_seconds,json=totalMutexWaitDurationSeconds,proto3" json:"total_mutex_wait_duration_seconds,omitempty"`
+	TotalMutexWaitDurationSeconds *float64               `protobuf:"fixed64,1,opt,name=total_mutex_wait_duration_seconds,json=totalMutexWaitDurationSeconds,proto3,oneof" json:"total_mutex_wait_duration_seconds,omitempty"`
 	unknownFields                 protoimpl.UnknownFields
 	sizeCache                     protoimpl.SizeCache
 }
@@ -1458,8 +1466,8 @@ func (*SyncResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *SyncResponse) GetTotalMutexWaitDurationSeconds() float64 {
-	if x != nil {
-		return x.TotalMutexWaitDurationSeconds
+	if x != nil && x.TotalMutexWaitDurationSeconds != nil {
+		return *x.TotalMutexWaitDurationSeconds
 	}
 	return 0
 }
@@ -1564,25 +1572,43 @@ const file_proto_agent_proto_rawDesc = "" +
 	"\x13StreamConfigRequest\x12)\n" +
 	"\x10interval_seconds\x18\x01 \x01(\rR\x0fintervalSeconds\x12(\n" +
 	"\x10number_of_cycles\x18\x02 \x01(\rR\x0enumberOfCycles\x12:\n" +
-	"\x19exclude_histogram_buckets\x18\x03 \x01(\bR\x17excludeHistogramBuckets\"=\n" +
+	"\x19exclude_histogram_buckets\x18\x03 \x01(\bR\x17excludeHistogramBuckets\"\xcb\x01\n" +
 	"\tHistogram\x12\x16\n" +
 	"\x06counts\x18\x01 \x03(\x04R\x06counts\x12\x18\n" +
-	"\abuckets\x18\x02 \x03(\x02R\abuckets\"*\n" +
-	"\vCgoResponse\x12\x1b\n" +
-	"\tcgo_calls\x18\x01 \x01(\x04R\bcgoCalls\"\x80\x04\n" +
-	"\vCPUResponse\x12*\n" +
-	"\x11gc_assist_seconds\x18\x01 \x01(\x01R\x0fgcAssistSeconds\x120\n" +
-	"\x14gc_dedicated_seconds\x18\x02 \x01(\x01R\x12gcDedicatedSeconds\x12&\n" +
-	"\x0fgc_idle_seconds\x18\x03 \x01(\x01R\rgcIdleSeconds\x12(\n" +
-	"\x10gc_pause_seconds\x18\x04 \x01(\x01R\x0egcPauseSeconds\x12(\n" +
-	"\x10gc_total_seconds\x18\x05 \x01(\x01R\x0egcTotalSeconds\x12!\n" +
-	"\fidle_seconds\x18\x06 \x01(\x01R\vidleSeconds\x12#\n" +
-	"\rtotal_seconds\x18\a \x01(\x01R\ftotalSeconds\x12!\n" +
-	"\fuser_seconds\x18\b \x01(\x01R\vuserSeconds\x126\n" +
-	"\x17scavenge_assist_seconds\x18\t \x01(\x01R\x15scavengeAssistSeconds\x12>\n" +
+	"\abuckets\x18\x02 \x03(\x02R\abuckets\x12J\n" +
+	"\x0eupdated_counts\x18\x03 \x03(\v2#.proto.Histogram.UpdatedCountsEntryR\rupdatedCounts\x1a@\n" +
+	"\x12UpdatedCountsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\rR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x04R\x05value:\x028\x01\"=\n" +
+	"\vCgoResponse\x12 \n" +
+	"\tcgo_calls\x18\x01 \x01(\x04H\x00R\bcgoCalls\x88\x01\x01B\f\n" +
+	"\n" +
+	"_cgo_calls\"\xaf\x06\n" +
+	"\vCPUResponse\x12/\n" +
+	"\x11gc_assist_seconds\x18\x01 \x01(\x01H\x00R\x0fgcAssistSeconds\x88\x01\x01\x125\n" +
+	"\x14gc_dedicated_seconds\x18\x02 \x01(\x01H\x01R\x12gcDedicatedSeconds\x88\x01\x01\x12+\n" +
+	"\x0fgc_idle_seconds\x18\x03 \x01(\x01H\x02R\rgcIdleSeconds\x88\x01\x01\x12-\n" +
+	"\x10gc_pause_seconds\x18\x04 \x01(\x01H\x03R\x0egcPauseSeconds\x88\x01\x01\x12-\n" +
+	"\x10gc_total_seconds\x18\x05 \x01(\x01H\x04R\x0egcTotalSeconds\x88\x01\x01\x12&\n" +
+	"\fidle_seconds\x18\x06 \x01(\x01H\x05R\vidleSeconds\x88\x01\x01\x12(\n" +
+	"\rtotal_seconds\x18\a \x01(\x01H\x06R\ftotalSeconds\x88\x01\x01\x12&\n" +
+	"\fuser_seconds\x18\b \x01(\x01H\aR\vuserSeconds\x88\x01\x01\x12;\n" +
+	"\x17scavenge_assist_seconds\x18\t \x01(\x01H\bR\x15scavengeAssistSeconds\x88\x01\x01\x12C\n" +
 	"\x1bscavenge_background_seconds\x18\n" +
-	" \x01(\x01R\x19scavengeBackgroundSeconds\x124\n" +
-	"\x16scavenge_total_seconds\x18\v \x01(\x01R\x14scavengeTotalSeconds\"\x8a\x01\n" +
+	" \x01(\x01H\tR\x19scavengeBackgroundSeconds\x88\x01\x01\x129\n" +
+	"\x16scavenge_total_seconds\x18\v \x01(\x01H\n" +
+	"R\x14scavengeTotalSeconds\x88\x01\x01B\x14\n" +
+	"\x12_gc_assist_secondsB\x17\n" +
+	"\x15_gc_dedicated_secondsB\x12\n" +
+	"\x10_gc_idle_secondsB\x13\n" +
+	"\x11_gc_pause_secondsB\x13\n" +
+	"\x11_gc_total_secondsB\x0f\n" +
+	"\r_idle_secondsB\x10\n" +
+	"\x0e_total_secondsB\x0f\n" +
+	"\r_user_secondsB\x1a\n" +
+	"\x18_scavenge_assist_secondsB\x1e\n" +
+	"\x1c_scavenge_background_secondsB\x19\n" +
+	"\x17_scavenge_total_seconds\"\x8a\x01\n" +
 	"\n" +
 	"GCMetadata\x12>\n" +
 	"\x1cbytes_allocs_by_size_buckets\x18\x01 \x03(\x02R\x18bytesAllocsBySizeBuckets\x12<\n" +
@@ -1595,119 +1621,214 @@ const file_proto_agent_proto_rawDesc = "" +
 	"!total_other_pause_seconds_buckets\x18\x05 \x03(\x02R\x1dtotalOtherPauseSecondsBuckets\"m\n" +
 	"\x10MetadataResponse\x12!\n" +
 	"\x02gc\x18\x01 \x01(\v2\x11.proto.GCMetadataR\x02gc\x126\n" +
-	"\tscheduler\x18\x02 \x01(\v2\x18.proto.SchedulerMetadataR\tscheduler\"\x9d\t\n" +
+	"\tscheduler\x18\x02 \x01(\v2\x18.proto.SchedulerMetadataR\tscheduler\"\x92\x0e\n" +
 	"\n" +
 	"GCResponse\x12A\n" +
 	"\x14bytes_allocs_by_size\x18\x01 \x01(\v2\x10.proto.HistogramR\x11bytesAllocsBySize\x12?\n" +
-	"\x13bytes_frees_by_size\x18\x02 \x01(\v2\x10.proto.HistogramR\x10bytesFreesBySize\x12+\n" +
-	"\x11executed_cleanups\x18\x03 \x01(\x04R\x10executedCleanups\x12'\n" +
-	"\x0fqueued_cleanups\x18\x04 \x01(\x04R\x0equeuedCleanups\x12)\n" +
-	"\x10automatic_cycles\x18\x05 \x01(\x04R\x0fautomaticCycles\x12#\n" +
-	"\rforced_cycles\x18\x06 \x01(\x04R\fforcedCycles\x12!\n" +
-	"\ftotal_cycles\x18\a \x01(\x04R\vtotalCycles\x12/\n" +
-	"\x13executed_finalizers\x18\b \x01(\x04R\x12executedFinalizers\x12+\n" +
-	"\x11queued_finalizers\x18\t \x01(\x04R\x10queuedFinalizers\x12,\n" +
+	"\x13bytes_frees_by_size\x18\x02 \x01(\v2\x10.proto.HistogramR\x10bytesFreesBySize\x120\n" +
+	"\x11executed_cleanups\x18\x03 \x01(\x04H\x00R\x10executedCleanups\x88\x01\x01\x12,\n" +
+	"\x0fqueued_cleanups\x18\x04 \x01(\x04H\x01R\x0equeuedCleanups\x88\x01\x01\x12.\n" +
+	"\x10automatic_cycles\x18\x05 \x01(\x04H\x02R\x0fautomaticCycles\x88\x01\x01\x12(\n" +
+	"\rforced_cycles\x18\x06 \x01(\x04H\x03R\fforcedCycles\x88\x01\x01\x12&\n" +
+	"\ftotal_cycles\x18\a \x01(\x04H\x04R\vtotalCycles\x88\x01\x01\x124\n" +
+	"\x13executed_finalizers\x18\b \x01(\x04H\x05R\x12executedFinalizers\x88\x01\x01\x120\n" +
+	"\x11queued_finalizers\x18\t \x01(\x04H\x06R\x10queuedFinalizers\x88\x01\x01\x121\n" +
 	"\x12memory_limit_bytes\x18\n" +
-	" \x01(\x04R\x10memoryLimitBytes\x12!\n" +
-	"\fbytes_allocs\x18\v \x01(\x04R\vbytesAllocs\x12%\n" +
-	"\x0eobjects_allocs\x18\f \x01(\x04R\robjectsAllocs\x12\x1f\n" +
-	"\vbytes_frees\x18\r \x01(\x04R\n" +
-	"bytesFrees\x12#\n" +
-	"\robjects_frees\x18\x0e \x01(\x04R\fobjectsFrees\x12/\n" +
-	"\x14goal_heap_size_bytes\x18\x0f \x01(\x04R\x11goalHeapSizeBytes\x12.\n" +
-	"\x13live_occupied_bytes\x18\x10 \x01(\x04R\x11liveOccupiedBytes\x12)\n" +
-	"\x10objects_occupied\x18\x11 \x01(\x04R\x0fobjectsOccupied\x12.\n" +
-	"\x13tiny_objects_allocs\x18\x12 \x01(\x04R\x11tinyObjectsAllocs\x12;\n" +
-	"\x1alimiter_last_enabled_cycle\x18\x13 \x01(\x04R\x17limiterLastEnabledCycle\x120\n" +
-	"\x14global_scanned_bytes\x18\x14 \x01(\x04R\x12globalScannedBytes\x12,\n" +
-	"\x12heap_scanned_bytes\x18\x15 \x01(\x04R\x10heapScannedBytes\x12.\n" +
-	"\x13stack_scanned_bytes\x18\x16 \x01(\x04R\x11stackScannedBytes\x12.\n" +
-	"\x13total_scanned_bytes\x18\x17 \x01(\x04R\x11totalScannedBytes\x12.\n" +
-	"\x13stack_starting_size\x18\x18 \x01(\x04R\x11stackStartingSize\x12=\n" +
-	"\x1btarget_heap_size_percentage\x18\x19 \x01(\rR\x18targetHeapSizePercentage\"\xd5\x13\n" +
-	"\x0fGoDebugResponse\x12*\n" +
-	"\x11cache_hash_events\x18\x01 \x01(\x04R\x0fcacheHashEvents\x12*\n" +
-	"\x11cache_test_events\x18\x02 \x01(\x04R\x0fcacheTestEvents\x12.\n" +
-	"\x13cache_verify_events\x18\x03 \x01(\x04R\x11cacheVerifyEvents\x12.\n" +
-	"\x13http2_client_events\x18\x04 \x01(\x04R\x11http2ClientEvents\x12.\n" +
-	"\x13http2_server_events\x18\x05 \x01(\x04R\x11http2ServerEvents\x12.\n" +
-	"\x13tls10_server_events\x18\x06 \x01(\x04R\x11tls10ServerEvents\x12&\n" +
-	"\x0ftls3_des_events\x18\a \x01(\x04R\rtls3DesEvents\x124\n" +
-	"\x17tls_max_rsa_size_events\x18\b \x01(\x04R\x13tlsMaxRsaSizeEvents\x12+\n" +
-	"\x12tls_rsa_kex_events\x18\t \x01(\x04R\x0ftlsRsaKexEvents\x12&\n" +
+	" \x01(\x04H\aR\x10memoryLimitBytes\x88\x01\x01\x12&\n" +
+	"\fbytes_allocs\x18\v \x01(\x04H\bR\vbytesAllocs\x88\x01\x01\x12*\n" +
+	"\x0eobjects_allocs\x18\f \x01(\x04H\tR\robjectsAllocs\x88\x01\x01\x12$\n" +
+	"\vbytes_frees\x18\r \x01(\x04H\n" +
+	"R\n" +
+	"bytesFrees\x88\x01\x01\x12(\n" +
+	"\robjects_frees\x18\x0e \x01(\x04H\vR\fobjectsFrees\x88\x01\x01\x124\n" +
+	"\x14goal_heap_size_bytes\x18\x0f \x01(\x04H\fR\x11goalHeapSizeBytes\x88\x01\x01\x123\n" +
+	"\x13live_occupied_bytes\x18\x10 \x01(\x04H\rR\x11liveOccupiedBytes\x88\x01\x01\x12.\n" +
+	"\x10objects_occupied\x18\x11 \x01(\x04H\x0eR\x0fobjectsOccupied\x88\x01\x01\x123\n" +
+	"\x13tiny_objects_allocs\x18\x12 \x01(\x04H\x0fR\x11tinyObjectsAllocs\x88\x01\x01\x12@\n" +
+	"\x1alimiter_last_enabled_cycle\x18\x13 \x01(\x04H\x10R\x17limiterLastEnabledCycle\x88\x01\x01\x125\n" +
+	"\x14global_scanned_bytes\x18\x14 \x01(\x04H\x11R\x12globalScannedBytes\x88\x01\x01\x121\n" +
+	"\x12heap_scanned_bytes\x18\x15 \x01(\x04H\x12R\x10heapScannedBytes\x88\x01\x01\x123\n" +
+	"\x13stack_scanned_bytes\x18\x16 \x01(\x04H\x13R\x11stackScannedBytes\x88\x01\x01\x123\n" +
+	"\x13total_scanned_bytes\x18\x17 \x01(\x04H\x14R\x11totalScannedBytes\x88\x01\x01\x123\n" +
+	"\x13stack_starting_size\x18\x18 \x01(\x04H\x15R\x11stackStartingSize\x88\x01\x01\x12B\n" +
+	"\x1btarget_heap_size_percentage\x18\x19 \x01(\rH\x16R\x18targetHeapSizePercentage\x88\x01\x01B\x14\n" +
+	"\x12_executed_cleanupsB\x12\n" +
+	"\x10_queued_cleanupsB\x13\n" +
+	"\x11_automatic_cyclesB\x10\n" +
+	"\x0e_forced_cyclesB\x0f\n" +
+	"\r_total_cyclesB\x16\n" +
+	"\x14_executed_finalizersB\x14\n" +
+	"\x12_queued_finalizersB\x15\n" +
+	"\x13_memory_limit_bytesB\x0f\n" +
+	"\r_bytes_allocsB\x11\n" +
+	"\x0f_objects_allocsB\x0e\n" +
+	"\f_bytes_freesB\x10\n" +
+	"\x0e_objects_freesB\x17\n" +
+	"\x15_goal_heap_size_bytesB\x16\n" +
+	"\x14_live_occupied_bytesB\x13\n" +
+	"\x11_objects_occupiedB\x16\n" +
+	"\x14_tiny_objects_allocsB\x1d\n" +
+	"\x1b_limiter_last_enabled_cycleB\x17\n" +
+	"\x15_global_scanned_bytesB\x15\n" +
+	"\x13_heap_scanned_bytesB\x16\n" +
+	"\x14_stack_scanned_bytesB\x16\n" +
+	"\x14_total_scanned_bytesB\x16\n" +
+	"\x14_stack_starting_sizeB\x1e\n" +
+	"\x1c_target_heap_size_percentage\"\xb9\x1f\n" +
+	"\x0fGoDebugResponse\x12/\n" +
+	"\x11cache_hash_events\x18\x01 \x01(\x04H\x00R\x0fcacheHashEvents\x88\x01\x01\x12/\n" +
+	"\x11cache_test_events\x18\x02 \x01(\x04H\x01R\x0fcacheTestEvents\x88\x01\x01\x123\n" +
+	"\x13cache_verify_events\x18\x03 \x01(\x04H\x02R\x11cacheVerifyEvents\x88\x01\x01\x123\n" +
+	"\x13http2_client_events\x18\x04 \x01(\x04H\x03R\x11http2ClientEvents\x88\x01\x01\x123\n" +
+	"\x13http2_server_events\x18\x05 \x01(\x04H\x04R\x11http2ServerEvents\x88\x01\x01\x123\n" +
+	"\x13tls10_server_events\x18\x06 \x01(\x04H\x05R\x11tls10ServerEvents\x88\x01\x01\x12+\n" +
+	"\x0ftls3_des_events\x18\a \x01(\x04H\x06R\rtls3DesEvents\x88\x01\x01\x129\n" +
+	"\x17tls_max_rsa_size_events\x18\b \x01(\x04H\aR\x13tlsMaxRsaSizeEvents\x88\x01\x01\x120\n" +
+	"\x12tls_rsa_kex_events\x18\t \x01(\x04H\bR\x0ftlsRsaKexEvents\x88\x01\x01\x12+\n" +
 	"\x0ftls_sha1_events\x18\n" +
-	" \x01(\x04R\rtlsSha1Events\x121\n" +
-	"\x15tls_unsafe_ekm_events\x18\v \x01(\x04R\x12tlsUnsafeEkmEvents\x12:\n" +
-	"\x1ahttp_cookie_max_num_events\x18\f \x01(\x04R\x16httpCookieMaxNumEvents\x12B\n" +
-	"\x1ehttp_lax_content_length_events\x18\r \x01(\x04R\x1ahttpLaxContentLengthEvents\x122\n" +
-	"\x16http_mux_go_121_events\x18\x0e \x01(\x04R\x12httpMuxGo121Events\x12Q\n" +
-	"&http_serve_content_keep_headers_events\x18\x0f \x01(\x04R!httpServeContentKeepHeadersEvents\x129\n" +
-	"\x19allow_multiple_vcs_events\x18\x10 \x01(\x04R\x16allowMultipleVcsEvents\x125\n" +
-	"\x17async_timer_chan_events\x18\x11 \x01(\x04R\x14asyncTimerChanEvents\x12;\n" +
-	"\x1acontainer_max_procs_events\x18\x12 \x01(\x04R\x17containerMaxProcsEvents\x129\n" +
-	"\x19crypto_custom_rand_events\x18\x13 \x01(\x04R\x16cryptoCustomRandEvents\x12=\n" +
-	"\x1bembed_follow_symlink_events\x18\x14 \x01(\x04R\x18embedFollowSymlinkEvents\x12-\n" +
-	"\x13exec_err_dot_events\x18\x15 \x01(\x04R\x10execErrDotEvents\x12<\n" +
-	"\x1btest_json_build_text_events\x18\x16 \x01(\x04R\x17testJsonBuildTextEvents\x12*\n" +
-	"\x11type_alias_events\x18\x17 \x01(\x04R\x0ftypeAliasEvents\x12M\n" +
-	"$html_meta_content_url_escaped_events\x18\x18 \x01(\x04R\x1fhtmlMetaContentUrlEscapedEvents\x123\n" +
-	"\x16install_go_root_events\x18\x19 \x01(\x04R\x13installGoRootEvents\x12?\n" +
-	"\x1cmultipart_max_headers_events\x18\x1a \x01(\x04R\x19multipartMaxHeadersEvents\x12;\n" +
-	"\x1amultipart_max_parts_events\x18\x1b \x01(\x04R\x17multipartMaxPartsEvents\x120\n" +
-	"\x14multipath_tcp_events\x18\x1c \x01(\x04R\x12multipathTcpEvents\x12(\n" +
-	"\x10net_edns0_events\x18\x1d \x01(\x04R\x0enetEdns0Events\x12(\n" +
-	"\x10panic_nil_events\x18\x1e \x01(\x04R\x0epanicNilEvents\x121\n" +
-	"\x15rand_auto_seed_events\x18\x1f \x01(\x04R\x12randAutoSeedEvents\x12/\n" +
-	"\x14rand_seed_nop_events\x18  \x01(\x04R\x11randSeedNopEvents\x12,\n" +
-	"\x12rsa1024_min_events\x18! \x01(\x04R\x10rsa1024MinEvents\x127\n" +
-	"\x18tar_insecure_path_events\x18\" \x01(\x04R\x15tarInsecurePathEvents\x125\n" +
-	"\x17update_max_procs_events\x18# \x01(\x04R\x14updateMaxProcsEvents\x12<\n" +
-	"\x1burl_max_query_params_events\x18$ \x01(\x04R\x17urlMaxQueryParamsEvents\x127\n" +
-	"\x18url_strict_colons_events\x18% \x01(\x04R\x15urlStrictColonsEvents\x12<\n" +
-	"\x1bwin_read_link_volume_events\x18& \x01(\x04R\x17winReadLinkVolumeEvents\x12,\n" +
-	"\x12win_symlink_events\x18' \x01(\x04R\x10winSymlinkEvents\x125\n" +
-	"\x17x509_keypar_leaf_events\x18( \x01(\x04R\x14x509KeyparLeafEvents\x12;\n" +
-	"\x1ax509_negativ_serial_events\x18) \x01(\x04R\x17x509NegativSerialEvents\x12-\n" +
-	"\x13x509_rsa_crt_events\x18* \x01(\x04R\x10x509RsaCrtEvents\x125\n" +
-	"\x17x509_sha256_skid_events\x18+ \x01(\x04R\x14x509Sha256SkidEvents\x12B\n" +
-	"\x1ex509_use_fallback_roots_events\x18, \x01(\x04R\x1ax509UseFallbackRootsEvents\x127\n" +
-	"\x18x509_use_policies_events\x18- \x01(\x04R\x15x509UsePoliciesEvents\x127\n" +
-	"\x18zip_insecure_path_events\x18. \x01(\x04R\x15zipInsecurePathEvents\"\xea\x04\n" +
-	"\x0eMemoryResponse\x12&\n" +
-	"\x0fheap_free_bytes\x18\x01 \x01(\x04R\rheapFreeBytes\x12*\n" +
-	"\x11heap_object_bytes\x18\x02 \x01(\x04R\x0fheapObjectBytes\x12.\n" +
-	"\x13heap_released_bytes\x18\x03 \x01(\x04R\x11heapReleasedBytes\x12(\n" +
-	"\x10heap_stack_bytes\x18\x04 \x01(\x04R\x0eheapStackBytes\x12*\n" +
-	"\x11heap_unused_bytes\x18\x05 \x01(\x04R\x0fheapUnusedBytes\x12*\n" +
-	"\x11mcache_free_bytes\x18\x06 \x01(\x04R\x0fmcacheFreeBytes\x12,\n" +
-	"\x12mcache_inuse_bytes\x18\a \x01(\x04R\x10mcacheInuseBytes\x12(\n" +
-	"\x10mspan_free_bytes\x18\b \x01(\x04R\x0emspanFreeBytes\x12*\n" +
-	"\x11mspan_inuse_bytes\x18\t \x01(\x04R\x0fmspanInuseBytes\x120\n" +
+	" \x01(\x04H\tR\rtlsSha1Events\x88\x01\x01\x126\n" +
+	"\x15tls_unsafe_ekm_events\x18\v \x01(\x04H\n" +
+	"R\x12tlsUnsafeEkmEvents\x88\x01\x01\x12?\n" +
+	"\x1ahttp_cookie_max_num_events\x18\f \x01(\x04H\vR\x16httpCookieMaxNumEvents\x88\x01\x01\x12G\n" +
+	"\x1ehttp_lax_content_length_events\x18\r \x01(\x04H\fR\x1ahttpLaxContentLengthEvents\x88\x01\x01\x127\n" +
+	"\x16http_mux_go_121_events\x18\x0e \x01(\x04H\rR\x12httpMuxGo121Events\x88\x01\x01\x12V\n" +
+	"&http_serve_content_keep_headers_events\x18\x0f \x01(\x04H\x0eR!httpServeContentKeepHeadersEvents\x88\x01\x01\x12>\n" +
+	"\x19allow_multiple_vcs_events\x18\x10 \x01(\x04H\x0fR\x16allowMultipleVcsEvents\x88\x01\x01\x12:\n" +
+	"\x17async_timer_chan_events\x18\x11 \x01(\x04H\x10R\x14asyncTimerChanEvents\x88\x01\x01\x12@\n" +
+	"\x1acontainer_max_procs_events\x18\x12 \x01(\x04H\x11R\x17containerMaxProcsEvents\x88\x01\x01\x12>\n" +
+	"\x19crypto_custom_rand_events\x18\x13 \x01(\x04H\x12R\x16cryptoCustomRandEvents\x88\x01\x01\x12B\n" +
+	"\x1bembed_follow_symlink_events\x18\x14 \x01(\x04H\x13R\x18embedFollowSymlinkEvents\x88\x01\x01\x122\n" +
+	"\x13exec_err_dot_events\x18\x15 \x01(\x04H\x14R\x10execErrDotEvents\x88\x01\x01\x12A\n" +
+	"\x1btest_json_build_text_events\x18\x16 \x01(\x04H\x15R\x17testJsonBuildTextEvents\x88\x01\x01\x12/\n" +
+	"\x11type_alias_events\x18\x17 \x01(\x04H\x16R\x0ftypeAliasEvents\x88\x01\x01\x12R\n" +
+	"$html_meta_content_url_escaped_events\x18\x18 \x01(\x04H\x17R\x1fhtmlMetaContentUrlEscapedEvents\x88\x01\x01\x128\n" +
+	"\x16install_go_root_events\x18\x19 \x01(\x04H\x18R\x13installGoRootEvents\x88\x01\x01\x12D\n" +
+	"\x1cmultipart_max_headers_events\x18\x1a \x01(\x04H\x19R\x19multipartMaxHeadersEvents\x88\x01\x01\x12@\n" +
+	"\x1amultipart_max_parts_events\x18\x1b \x01(\x04H\x1aR\x17multipartMaxPartsEvents\x88\x01\x01\x125\n" +
+	"\x14multipath_tcp_events\x18\x1c \x01(\x04H\x1bR\x12multipathTcpEvents\x88\x01\x01\x12-\n" +
+	"\x10net_edns0_events\x18\x1d \x01(\x04H\x1cR\x0enetEdns0Events\x88\x01\x01\x12-\n" +
+	"\x10panic_nil_events\x18\x1e \x01(\x04H\x1dR\x0epanicNilEvents\x88\x01\x01\x126\n" +
+	"\x15rand_auto_seed_events\x18\x1f \x01(\x04H\x1eR\x12randAutoSeedEvents\x88\x01\x01\x124\n" +
+	"\x14rand_seed_nop_events\x18  \x01(\x04H\x1fR\x11randSeedNopEvents\x88\x01\x01\x121\n" +
+	"\x12rsa1024_min_events\x18! \x01(\x04H R\x10rsa1024MinEvents\x88\x01\x01\x12<\n" +
+	"\x18tar_insecure_path_events\x18\" \x01(\x04H!R\x15tarInsecurePathEvents\x88\x01\x01\x12:\n" +
+	"\x17update_max_procs_events\x18# \x01(\x04H\"R\x14updateMaxProcsEvents\x88\x01\x01\x12A\n" +
+	"\x1burl_max_query_params_events\x18$ \x01(\x04H#R\x17urlMaxQueryParamsEvents\x88\x01\x01\x12<\n" +
+	"\x18url_strict_colons_events\x18% \x01(\x04H$R\x15urlStrictColonsEvents\x88\x01\x01\x12A\n" +
+	"\x1bwin_read_link_volume_events\x18& \x01(\x04H%R\x17winReadLinkVolumeEvents\x88\x01\x01\x121\n" +
+	"\x12win_symlink_events\x18' \x01(\x04H&R\x10winSymlinkEvents\x88\x01\x01\x12<\n" +
+	"\x18x509_keypair_leaf_events\x18( \x01(\x04H'R\x15x509KeypairLeafEvents\x88\x01\x01\x12B\n" +
+	"\x1bx509_negative_serial_events\x18) \x01(\x04H(R\x18x509NegativeSerialEvents\x88\x01\x01\x122\n" +
+	"\x13x509_rsa_crt_events\x18* \x01(\x04H)R\x10x509RsaCrtEvents\x88\x01\x01\x12:\n" +
+	"\x17x509_sha256_skid_events\x18+ \x01(\x04H*R\x14x509Sha256SkidEvents\x88\x01\x01\x12G\n" +
+	"\x1ex509_use_fallback_roots_events\x18, \x01(\x04H+R\x1ax509UseFallbackRootsEvents\x88\x01\x01\x12<\n" +
+	"\x18x509_use_policies_events\x18- \x01(\x04H,R\x15x509UsePoliciesEvents\x88\x01\x01\x12<\n" +
+	"\x18zip_insecure_path_events\x18. \x01(\x04H-R\x15zipInsecurePathEvents\x88\x01\x01B\x14\n" +
+	"\x12_cache_hash_eventsB\x14\n" +
+	"\x12_cache_test_eventsB\x16\n" +
+	"\x14_cache_verify_eventsB\x16\n" +
+	"\x14_http2_client_eventsB\x16\n" +
+	"\x14_http2_server_eventsB\x16\n" +
+	"\x14_tls10_server_eventsB\x12\n" +
+	"\x10_tls3_des_eventsB\x1a\n" +
+	"\x18_tls_max_rsa_size_eventsB\x15\n" +
+	"\x13_tls_rsa_kex_eventsB\x12\n" +
+	"\x10_tls_sha1_eventsB\x18\n" +
+	"\x16_tls_unsafe_ekm_eventsB\x1d\n" +
+	"\x1b_http_cookie_max_num_eventsB!\n" +
+	"\x1f_http_lax_content_length_eventsB\x19\n" +
+	"\x17_http_mux_go_121_eventsB)\n" +
+	"'_http_serve_content_keep_headers_eventsB\x1c\n" +
+	"\x1a_allow_multiple_vcs_eventsB\x1a\n" +
+	"\x18_async_timer_chan_eventsB\x1d\n" +
+	"\x1b_container_max_procs_eventsB\x1c\n" +
+	"\x1a_crypto_custom_rand_eventsB\x1e\n" +
+	"\x1c_embed_follow_symlink_eventsB\x16\n" +
+	"\x14_exec_err_dot_eventsB\x1e\n" +
+	"\x1c_test_json_build_text_eventsB\x14\n" +
+	"\x12_type_alias_eventsB'\n" +
+	"%_html_meta_content_url_escaped_eventsB\x19\n" +
+	"\x17_install_go_root_eventsB\x1f\n" +
+	"\x1d_multipart_max_headers_eventsB\x1d\n" +
+	"\x1b_multipart_max_parts_eventsB\x17\n" +
+	"\x15_multipath_tcp_eventsB\x13\n" +
+	"\x11_net_edns0_eventsB\x13\n" +
+	"\x11_panic_nil_eventsB\x18\n" +
+	"\x16_rand_auto_seed_eventsB\x17\n" +
+	"\x15_rand_seed_nop_eventsB\x15\n" +
+	"\x13_rsa1024_min_eventsB\x1b\n" +
+	"\x19_tar_insecure_path_eventsB\x1a\n" +
+	"\x18_update_max_procs_eventsB\x1e\n" +
+	"\x1c_url_max_query_params_eventsB\x1b\n" +
+	"\x19_url_strict_colons_eventsB\x1e\n" +
+	"\x1c_win_read_link_volume_eventsB\x15\n" +
+	"\x13_win_symlink_eventsB\x1b\n" +
+	"\x19_x509_keypair_leaf_eventsB\x1e\n" +
+	"\x1c_x509_negative_serial_eventsB\x16\n" +
+	"\x14_x509_rsa_crt_eventsB\x1a\n" +
+	"\x18_x509_sha256_skid_eventsB!\n" +
+	"\x1f_x509_use_fallback_roots_eventsB\x1b\n" +
+	"\x19_x509_use_policies_eventsB\x1b\n" +
+	"\x19_zip_insecure_path_events\"\xdc\a\n" +
+	"\x0eMemoryResponse\x12+\n" +
+	"\x0fheap_free_bytes\x18\x01 \x01(\x04H\x00R\rheapFreeBytes\x88\x01\x01\x12/\n" +
+	"\x11heap_object_bytes\x18\x02 \x01(\x04H\x01R\x0fheapObjectBytes\x88\x01\x01\x123\n" +
+	"\x13heap_released_bytes\x18\x03 \x01(\x04H\x02R\x11heapReleasedBytes\x88\x01\x01\x12-\n" +
+	"\x10heap_stack_bytes\x18\x04 \x01(\x04H\x03R\x0eheapStackBytes\x88\x01\x01\x12/\n" +
+	"\x11heap_unused_bytes\x18\x05 \x01(\x04H\x04R\x0fheapUnusedBytes\x88\x01\x01\x12/\n" +
+	"\x11mcache_free_bytes\x18\x06 \x01(\x04H\x05R\x0fmcacheFreeBytes\x88\x01\x01\x121\n" +
+	"\x12mcache_inuse_bytes\x18\a \x01(\x04H\x06R\x10mcacheInuseBytes\x88\x01\x01\x12-\n" +
+	"\x10mspan_free_bytes\x18\b \x01(\x04H\aR\x0emspanFreeBytes\x88\x01\x01\x12/\n" +
+	"\x11mspan_inuse_bytes\x18\t \x01(\x04H\bR\x0fmspanInuseBytes\x88\x01\x01\x125\n" +
 	"\x14other_metadata_bytes\x18\n" +
-	" \x01(\x04R\x12otherMetadataBytes\x12$\n" +
-	"\x0eos_stack_bytes\x18\v \x01(\x04R\fosStackBytes\x12\x1f\n" +
-	"\vother_bytes\x18\f \x01(\x04R\n" +
-	"otherBytes\x124\n" +
-	"\x16profiling_bucket_bytes\x18\r \x01(\x04R\x14profilingBucketBytes\x12\x1f\n" +
-	"\vtotal_bytes\x18\x0e \x01(\x04R\n" +
-	"totalBytes\"\xe5\x05\n" +
+	" \x01(\x04H\tR\x12otherMetadataBytes\x88\x01\x01\x12)\n" +
+	"\x0eos_stack_bytes\x18\v \x01(\x04H\n" +
+	"R\fosStackBytes\x88\x01\x01\x12$\n" +
+	"\vother_bytes\x18\f \x01(\x04H\vR\n" +
+	"otherBytes\x88\x01\x01\x129\n" +
+	"\x16profiling_bucket_bytes\x18\r \x01(\x04H\fR\x14profilingBucketBytes\x88\x01\x01\x12$\n" +
+	"\vtotal_bytes\x18\x0e \x01(\x04H\rR\n" +
+	"totalBytes\x88\x01\x01B\x12\n" +
+	"\x10_heap_free_bytesB\x14\n" +
+	"\x12_heap_object_bytesB\x16\n" +
+	"\x14_heap_released_bytesB\x13\n" +
+	"\x11_heap_stack_bytesB\x14\n" +
+	"\x12_heap_unused_bytesB\x14\n" +
+	"\x12_mcache_free_bytesB\x15\n" +
+	"\x13_mcache_inuse_bytesB\x13\n" +
+	"\x11_mspan_free_bytesB\x14\n" +
+	"\x12_mspan_inuse_bytesB\x17\n" +
+	"\x15_other_metadata_bytesB\x11\n" +
+	"\x0f_os_stack_bytesB\x0e\n" +
+	"\f_other_bytesB\x19\n" +
+	"\x17_profiling_bucket_bytesB\x0e\n" +
+	"\f_total_bytes\"\xc5\a\n" +
 	"\x11SchedulerResponse\x12=\n" +
 	"\x11latencies_seconds\x18\x01 \x01(\v2\x10.proto.HistogramR\x10latenciesSeconds\x12@\n" +
 	"\x13stopping_gc_seconds\x18\x02 \x01(\v2\x10.proto.HistogramR\x11stoppingGcSeconds\x12F\n" +
 	"\x16stopping_other_seconds\x18\x03 \x01(\v2\x10.proto.HistogramR\x14stoppingOtherSeconds\x12E\n" +
 	"\x16total_gc_pause_seconds\x18\x04 \x01(\v2\x10.proto.HistogramR\x13totalGcPauseSeconds\x12K\n" +
-	"\x19total_other_pause_seconds\x18\x05 \x01(\v2\x10.proto.HistogramR\x16totalOtherPauseSeconds\x12-\n" +
-	"\x12goroutines_created\x18\x06 \x01(\x04R\x11goroutinesCreated\x12-\n" +
-	"\x12gomaxprocs_threads\x18\a \x01(\rR\x11gomaxprocsThreads\x12/\n" +
-	"\x14not_in_go_goroutines\x18\b \x01(\rR\x11notInGoGoroutines\x12/\n" +
-	"\x13runnable_goroutines\x18\t \x01(\rR\x12runnableGoroutines\x12-\n" +
+	"\x19total_other_pause_seconds\x18\x05 \x01(\v2\x10.proto.HistogramR\x16totalOtherPauseSeconds\x122\n" +
+	"\x12goroutines_created\x18\x06 \x01(\x04H\x00R\x11goroutinesCreated\x88\x01\x01\x122\n" +
+	"\x12gomaxprocs_threads\x18\a \x01(\rH\x01R\x11gomaxprocsThreads\x88\x01\x01\x124\n" +
+	"\x14not_in_go_goroutines\x18\b \x01(\rH\x02R\x11notInGoGoroutines\x88\x01\x01\x124\n" +
+	"\x13runnable_goroutines\x18\t \x01(\rH\x03R\x12runnableGoroutines\x88\x01\x01\x122\n" +
 	"\x12running_goroutines\x18\n" +
-	" \x01(\rR\x11runningGoroutines\x12-\n" +
-	"\x12waiting_goroutines\x18\v \x01(\rR\x11waitingGoroutines\x12'\n" +
-	"\x0flive_goroutines\x18\f \x01(\rR\x0eliveGoroutines\x12,\n" +
-	"\x12total_live_threads\x18\r \x01(\rR\x10totalLiveThreads\"X\n" +
-	"\fSyncResponse\x12H\n" +
-	"!total_mutex_wait_duration_seconds\x18\x01 \x01(\x01R\x1dtotalMutexWaitDurationSeconds\"\xbf\x02\n" +
+	" \x01(\rH\x04R\x11runningGoroutines\x88\x01\x01\x122\n" +
+	"\x12waiting_goroutines\x18\v \x01(\rH\x05R\x11waitingGoroutines\x88\x01\x01\x12,\n" +
+	"\x0flive_goroutines\x18\f \x01(\rH\x06R\x0eliveGoroutines\x88\x01\x01\x121\n" +
+	"\x12total_live_threads\x18\r \x01(\rH\aR\x10totalLiveThreads\x88\x01\x01B\x15\n" +
+	"\x13_goroutines_createdB\x15\n" +
+	"\x13_gomaxprocs_threadsB\x17\n" +
+	"\x15_not_in_go_goroutinesB\x16\n" +
+	"\x14_runnable_goroutinesB\x15\n" +
+	"\x13_running_goroutinesB\x15\n" +
+	"\x13_waiting_goroutinesB\x12\n" +
+	"\x10_live_goroutinesB\x15\n" +
+	"\x13_total_live_threads\"\x83\x01\n" +
+	"\fSyncResponse\x12M\n" +
+	"!total_mutex_wait_duration_seconds\x18\x01 \x01(\x01H\x00R\x1dtotalMutexWaitDurationSeconds\x88\x01\x01B$\n" +
+	"\"_total_mutex_wait_duration_seconds\"\xbf\x02\n" +
 	"\vAllResponse\x126\n" +
 	"\tscheduler\x18\x01 \x01(\v2\x18.proto.SchedulerResponseR\tscheduler\x121\n" +
 	"\bgo_debug\x18\x02 \x01(\v2\x16.proto.GoDebugResponseR\agoDebug\x12!\n" +
@@ -1735,7 +1856,7 @@ func file_proto_agent_proto_rawDescGZIP() []byte {
 	return file_proto_agent_proto_rawDescData
 }
 
-var file_proto_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_proto_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_proto_agent_proto_goTypes = []any{
 	(*StreamConfigRequest)(nil), // 0: proto.StreamConfigRequest
 	(*Histogram)(nil),           // 1: proto.Histogram
@@ -1750,36 +1871,38 @@ var file_proto_agent_proto_goTypes = []any{
 	(*SchedulerResponse)(nil),   // 10: proto.SchedulerResponse
 	(*SyncResponse)(nil),        // 11: proto.SyncResponse
 	(*AllResponse)(nil),         // 12: proto.AllResponse
-	(*emptypb.Empty)(nil),       // 13: google.protobuf.Empty
+	nil,                         // 13: proto.Histogram.UpdatedCountsEntry
+	(*emptypb.Empty)(nil),       // 14: google.protobuf.Empty
 }
 var file_proto_agent_proto_depIdxs = []int32{
-	4,  // 0: proto.MetadataResponse.gc:type_name -> proto.GCMetadata
-	5,  // 1: proto.MetadataResponse.scheduler:type_name -> proto.SchedulerMetadata
-	1,  // 2: proto.GCResponse.bytes_allocs_by_size:type_name -> proto.Histogram
-	1,  // 3: proto.GCResponse.bytes_frees_by_size:type_name -> proto.Histogram
-	1,  // 4: proto.SchedulerResponse.latencies_seconds:type_name -> proto.Histogram
-	1,  // 5: proto.SchedulerResponse.stopping_gc_seconds:type_name -> proto.Histogram
-	1,  // 6: proto.SchedulerResponse.stopping_other_seconds:type_name -> proto.Histogram
-	1,  // 7: proto.SchedulerResponse.total_gc_pause_seconds:type_name -> proto.Histogram
-	1,  // 8: proto.SchedulerResponse.total_other_pause_seconds:type_name -> proto.Histogram
-	10, // 9: proto.AllResponse.scheduler:type_name -> proto.SchedulerResponse
-	8,  // 10: proto.AllResponse.go_debug:type_name -> proto.GoDebugResponse
-	7,  // 11: proto.AllResponse.gc:type_name -> proto.GCResponse
-	9,  // 12: proto.AllResponse.memory:type_name -> proto.MemoryResponse
-	3,  // 13: proto.AllResponse.cpu:type_name -> proto.CPUResponse
-	2,  // 14: proto.AllResponse.cgo:type_name -> proto.CgoResponse
-	11, // 15: proto.AllResponse.sync:type_name -> proto.SyncResponse
-	13, // 16: proto.AgentService.SnapshotAll:input_type -> google.protobuf.Empty
-	0,  // 17: proto.AgentService.StreamAll:input_type -> proto.StreamConfigRequest
-	13, // 18: proto.AgentService.GetMetadata:input_type -> google.protobuf.Empty
-	12, // 19: proto.AgentService.SnapshotAll:output_type -> proto.AllResponse
-	12, // 20: proto.AgentService.StreamAll:output_type -> proto.AllResponse
-	6,  // 21: proto.AgentService.GetMetadata:output_type -> proto.MetadataResponse
-	19, // [19:22] is the sub-list for method output_type
-	16, // [16:19] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	13, // 0: proto.Histogram.updated_counts:type_name -> proto.Histogram.UpdatedCountsEntry
+	4,  // 1: proto.MetadataResponse.gc:type_name -> proto.GCMetadata
+	5,  // 2: proto.MetadataResponse.scheduler:type_name -> proto.SchedulerMetadata
+	1,  // 3: proto.GCResponse.bytes_allocs_by_size:type_name -> proto.Histogram
+	1,  // 4: proto.GCResponse.bytes_frees_by_size:type_name -> proto.Histogram
+	1,  // 5: proto.SchedulerResponse.latencies_seconds:type_name -> proto.Histogram
+	1,  // 6: proto.SchedulerResponse.stopping_gc_seconds:type_name -> proto.Histogram
+	1,  // 7: proto.SchedulerResponse.stopping_other_seconds:type_name -> proto.Histogram
+	1,  // 8: proto.SchedulerResponse.total_gc_pause_seconds:type_name -> proto.Histogram
+	1,  // 9: proto.SchedulerResponse.total_other_pause_seconds:type_name -> proto.Histogram
+	10, // 10: proto.AllResponse.scheduler:type_name -> proto.SchedulerResponse
+	8,  // 11: proto.AllResponse.go_debug:type_name -> proto.GoDebugResponse
+	7,  // 12: proto.AllResponse.gc:type_name -> proto.GCResponse
+	9,  // 13: proto.AllResponse.memory:type_name -> proto.MemoryResponse
+	3,  // 14: proto.AllResponse.cpu:type_name -> proto.CPUResponse
+	2,  // 15: proto.AllResponse.cgo:type_name -> proto.CgoResponse
+	11, // 16: proto.AllResponse.sync:type_name -> proto.SyncResponse
+	14, // 17: proto.AgentService.SnapshotAll:input_type -> google.protobuf.Empty
+	0,  // 18: proto.AgentService.StreamAll:input_type -> proto.StreamConfigRequest
+	14, // 19: proto.AgentService.GetMetadata:input_type -> google.protobuf.Empty
+	12, // 20: proto.AgentService.SnapshotAll:output_type -> proto.AllResponse
+	12, // 21: proto.AgentService.StreamAll:output_type -> proto.AllResponse
+	6,  // 22: proto.AgentService.GetMetadata:output_type -> proto.MetadataResponse
+	20, // [20:23] is the sub-list for method output_type
+	17, // [17:20] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_proto_agent_proto_init() }
@@ -1787,13 +1910,20 @@ func file_proto_agent_proto_init() {
 	if File_proto_agent_proto != nil {
 		return
 	}
+	file_proto_agent_proto_msgTypes[2].OneofWrappers = []any{}
+	file_proto_agent_proto_msgTypes[3].OneofWrappers = []any{}
+	file_proto_agent_proto_msgTypes[7].OneofWrappers = []any{}
+	file_proto_agent_proto_msgTypes[8].OneofWrappers = []any{}
+	file_proto_agent_proto_msgTypes[9].OneofWrappers = []any{}
+	file_proto_agent_proto_msgTypes[10].OneofWrappers = []any{}
+	file_proto_agent_proto_msgTypes[11].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_agent_proto_rawDesc), len(file_proto_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
