@@ -14,7 +14,8 @@ While standard `pprof` is indispensable for deep-dive analysis and stack-trace i
 
 - **High Fidelity**: Exposes the full range of `runtime/metrics` (CPU, Memory, GC, Scheduler, etc.).
 - **Modern Protocol**: Built on ConnectRPC for type-safe, performant streaming over HTTP/2.
-- **Optimized**: Uses `zstd` compression and intelligent field alignment to minimize network and memory footprint.
+- **Low Overhead**: Optimized for zero-alloc collection loops using a single-pass `runtime/metrics.Read` approach and O(1) metric indexing.
+- **Efficient**: Uses `zstd` compression and intelligent field alignment to minimize network and memory footprint.
 - **Easy Integration**: Zero-config setup for both existing web services and standalone CLI tools.
 
 ## Installation
@@ -22,6 +23,19 @@ While standard `pprof` is indispensable for deep-dive analysis and stack-trace i
 ```bash
 go get github.com/TB004/pprof-viz-agent
 ```
+
+## Bandwidth Optimization
+
+`pprof-viz-agent` employs several sophisticated strategies to minimize network usage during long-running streams:
+
+1.  **Differential Updates**: The agent tracks the state of all metrics and only transmits values that have changed since the last sample. Unchanged fields are omitted from the wire entirely, drastically reducing payload size for stable applications.
+2.  **Zero-Value Omission**: The very first message of a stream is treated as a delta from the default state. Any metric that is zero (like many `goDebug` events) is omitted from the initial synchronization, ensuring the baseline is as small as possible.
+3.  **Sparse Histogram Updates**: Instead of sending full arrays of histogram counts, the agent uses a map-based "sparse update" approach. Only the specific buckets that have changed are transmitted. This is particularly effective for large histograms where only a few buckets (e.g., specific latency ranges) are active.
+4.  **Metadata Separation**: Histogram bucket boundaries are static and bandwidth-heavy. The agent supports a "Metadata + Data" pattern:
+    *   Call `GetMetadata` once to retrieve the static bucket definitions.
+    *   Call `StreamAll` with `exclude_histogram_buckets = true` to stream only the dynamic sparse counts.
+
+This combination ensures that the agent consumes negligible bandwidth when the runtime state is stable, while still providing high-fidelity data during activity spikes.
 
 ## Usage
 
@@ -36,7 +50,8 @@ package main
 
 import (
     "net/http"
-    "github.com/TB004/pprof-viz-agent"
+    
+    pprofvizagent "github.com/TB004/pprof-viz-agent"
 )
 
 func main() {
@@ -63,7 +78,8 @@ package main
 
 import (
     "log"
-    "github.com/TB004/pprof-viz-agent"
+    
+    pprofvizagent "github.com/TB004/pprof-viz-agent"
 )
 
 func main() {
