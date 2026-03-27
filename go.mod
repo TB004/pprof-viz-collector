@@ -9,7 +9,7 @@ tool (
 
 require (
 	connectrpc.com/connect v1.19.1
-	github.com/klauspost/compress v1.18.4
+	github.com/klauspost/compress v1.18.5
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/net v0.52.0
 	google.golang.org/protobuf v1.36.11
