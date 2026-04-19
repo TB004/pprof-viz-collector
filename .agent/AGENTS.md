@@ -6,7 +6,7 @@ This document serves as the foundational mandate for all AI interactions within 
 `pprof-viz-agent` is a lightweight, high-fidelity observability agent for Go applications. It exposes comprehensive Go runtime metrics (CPU, Memory, GC, Scheduler) via a performant ConnectRPC API, optimized for real-time streaming and visualization.
 
 ### Tech Stack
-- **Language**: Go 1.26.1+
+- **Language**: Go 1.26+
 - **Protocol**: ConnectRPC (Protobuf over HTTP/2)
 - **Compression**: `zstd` (with a 256-byte threshold)
 - **Task Runner**: `just`
