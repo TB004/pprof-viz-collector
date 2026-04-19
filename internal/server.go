@@ -29,12 +29,11 @@ func (h AgentServiceHandler) Ping(context.Context, *emptypb.Empty) (*emptypb.Emp
 func (h AgentServiceHandler) SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error) {
 	collector := NewSampleCollector()
 	collector.Read()
-	// Force full collection for snapshot
-	return collector.Collect(true, true), nil
+	return collector.Collect(), nil
 }
 
 // GetMetadata returns the static bucket boundaries for all histogram metrics.
-// Clients should call this once and then use StreamAll with exclude_histogram_buckets=true.
+// Clients should call this once before streaming; StreamAll never sends bucket boundaries.
 func (h AgentServiceHandler) GetMetadata(context.Context, *emptypb.Empty) (*proto.MetadataResponse, error) {
 	collector := NewSampleCollector()
 	collector.Read()
@@ -77,7 +76,6 @@ func (h AgentServiceHandler) StreamAll(ctx context.Context, req *proto.StreamCon
 	}
 
 	numCycles := int(req.GetNumberOfCycles())
-	includeBuckets := !req.GetExcludeHistogramBuckets()
 
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	defer ticker.Stop()
@@ -90,8 +88,7 @@ func (h AgentServiceHandler) StreamAll(ctx context.Context, req *proto.StreamCon
 			return nil
 		case <-ticker.C:
 			collector.Read()
-			// Diff collection: only changed values are set
-			all := collector.Collect(includeBuckets, false)
+			all := collector.Collect()
 			if err := stream.Send(all); err != nil {
 				return err
 			}

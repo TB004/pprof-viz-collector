@@ -41,7 +41,7 @@ func TestAgentServiceHandler_SnapshotAll(t *testing.T) {
 	assert.NotNil(t, resp.Cpu)
 	assert.NotNil(t, resp.Memory)
 	assert.NotNil(t, resp.Gc)
-	assert.NotEmpty(t, resp.Gc.BytesAllocsBySize.Buckets)
+	assert.NotEmpty(t, resp.Gc.BytesAllocsBySize.UpdatedCounts)
 }
 
 func TestAgentServiceHandler_GetMetadata(t *testing.T) {
@@ -91,35 +91,11 @@ func TestAgentServiceHandler_StreamAll(t *testing.T) {
 		msg := stream.Msg()
 		assert.NotNil(t, msg)
 		assert.NotNil(t, msg.Cpu)
-		// By default (ExcludeHistogramBuckets=false), buckets should be present
-		assert.NotEmpty(t, msg.Gc.BytesAllocsBySize.Buckets)
+		assert.Empty(t, msg.Gc.BytesAllocsBySize.Buckets)
+		assert.NotEmpty(t, msg.Gc.BytesAllocsBySize.UpdatedCounts)
 
 		// We expect stream to close after 1 cycle
 		assert.False(t, stream.Receive(), "expected stream to close after 1 cycle")
-		assert.NoError(t, stream.Err())
-	})
-
-	t.Run("StreamWithoutBuckets", func(t *testing.T) {
-		t.Parallel()
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-
-		stream, err := newTestClient(t).StreamAll(ctx, &proto.StreamConfigRequest{
-			IntervalSeconds:         1,
-			NumberOfCycles:          1,
-			ExcludeHistogramBuckets: true,
-		})
-		assert.NoError(t, err)
-
-		assert.True(t, stream.Receive())
-		msg := stream.Msg()
-		assert.NotNil(t, msg)
-		// Buckets should be empty
-		assert.Empty(t, msg.Gc.BytesAllocsBySize.Buckets)
-		// UpdatedCounts should still be present
-		assert.NotEmpty(t, msg.Gc.BytesAllocsBySize.UpdatedCounts)
-
-		assert.False(t, stream.Receive())
 		assert.NoError(t, stream.Err())
 	})
 
@@ -152,7 +128,7 @@ func TestCollectSamples(t *testing.T) {
 	t.Parallel()
 	collector := NewSampleCollector()
 	collector.Read()
-	resp := collector.Collect(true, true)
+	resp := collector.Collect()
 	assert.NotNil(t, resp)
 	// Basic validation that we got some data populated
 	assert.NotNil(t, resp.Cpu)

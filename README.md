@@ -33,7 +33,7 @@ go get github.com/TB004/pprof-viz-agent
 3.  **Sparse Histogram Updates**: Instead of sending full arrays of histogram counts, the agent uses a map-based "sparse update" approach. Only the specific buckets that have changed are transmitted. This is particularly effective for large histograms where only a few buckets (e.g., specific latency ranges) are active.
 4.  **Metadata Separation**: Histogram bucket boundaries are static and bandwidth-heavy. The agent supports a "Metadata + Data" pattern:
     *   Call `GetMetadata` once to retrieve the static bucket definitions.
-    *   Call `StreamAll` with `exclude_histogram_buckets = true` to stream only the dynamic sparse counts.
+    *   Call `StreamAll` which always streams only the sparse changed counts — bucket boundaries are never re-sent.
 
 This combination ensures that the agent consumes negligible bandwidth when the runtime state is stable, while still providing high-fidelity data during activity spikes.
 

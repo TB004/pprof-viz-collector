@@ -37,15 +37,12 @@ func (c *SampleCollector) Read() {
 	ReadAllSamples(c.samples)
 }
 
-// Collect maps the current samples into a proto response.
-// If forceFull is true, all fields are populated.
-// If forceFull is false, only fields that changed since the last Read are populated.
-func (c *SampleCollector) Collect(includeBuckets bool, forceFull bool) *proto.AllResponse {
+// Collect maps the current samples into a proto response, returning only fields that changed
+// since the last Read. On a fresh collector, all non-zero fields are returned.
+// Histogram bucket boundaries are never included; use GetMetadata to retrieve them once.
+func (c *SampleCollector) Collect() *proto.AllResponse {
 	// Helpers for diffing and value extraction
 	hasChanged := func(idx int) bool {
-		if forceFull {
-			return true
-		}
 		cur := c.samples[idx].Value
 		last := c.lastSamples[idx].Value
 
@@ -111,11 +108,7 @@ func (c *SampleCollector) Collect(includeBuckets bool, forceFull bool) *proto.Al
 		if !hasChanged(idx) {
 			return nil
 		}
-		val := AsUint(c.samples[idx].Value)
-		if forceFull && val == 0 {
-			return nil
-		}
-		return new(val)
+		return new(AsUint(c.samples[idx].Value))
 	}
 
 	vFloat := func(name string) *float64 {
@@ -123,11 +116,7 @@ func (c *SampleCollector) Collect(includeBuckets bool, forceFull bool) *proto.Al
 		if !hasChanged(idx) {
 			return nil
 		}
-		val := AsFloat(c.samples[idx].Value)
-		if forceFull && val == 0 {
-			return nil
-		}
-		return new(val)
+		return new(AsFloat(c.samples[idx].Value))
 	}
 
 	vUint32 := func(name string) *uint32 {
@@ -135,11 +124,7 @@ func (c *SampleCollector) Collect(includeBuckets bool, forceFull bool) *proto.Al
 		if !hasChanged(idx) {
 			return nil
 		}
-		val := SafeUint32(AsUint(c.samples[idx].Value))
-		if forceFull && val == 0 {
-			return nil
-		}
-		return new(val)
+		return new(SafeUint32(AsUint(c.samples[idx].Value)))
 	}
 
 	vHist := func(name string) *proto.Histogram {
@@ -153,18 +138,9 @@ func (c *SampleCollector) Collect(includeBuckets bool, forceFull bool) *proto.Al
 			return nil
 		}
 
-		buckets := h.Buckets
-		if !includeBuckets {
-			buckets = nil
-		}
-
-		// Always use UpdatedCounts for delta-from-last (or delta-from-zero if first/forceFull)
 		var lastCounts []uint64
-		last := c.lastSamples[idx].Value
-		// We only use lastCounts if we are NOT in forceFull mode AND we have valid last histogram data.
-		if !forceFull && last.Kind() == metrics.KindFloat64Histogram {
-			hLast := last.Float64Histogram()
-			if hLast != nil {
+		if last := c.lastSamples[idx].Value; last.Kind() == metrics.KindFloat64Histogram {
+			if hLast := last.Float64Histogram(); hLast != nil {
 				lastCounts = hLast.Counts
 			}
 		}
@@ -180,13 +156,12 @@ func (c *SampleCollector) Collect(includeBuckets bool, forceFull bool) *proto.Al
 			}
 		}
 
-		if len(updated) == 0 && buckets == nil {
+		if len(updated) == 0 {
 			return nil
 		}
 
 		return &proto.Histogram{
 			UpdatedCounts: updated,
-			Buckets:       buckets,
 		}
 	}
 

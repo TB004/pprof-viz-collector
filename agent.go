@@ -105,7 +105,7 @@ func toModelHistogram(h *proto.Histogram) *models.Histogram {
 func SnapshotCgo() models.CgoResponse {
 	c := internal.NewSampleCollector()
 	c.Read()
-	s := c.Collect(false, true)
+	s := c.Collect()
 
 	return models.CgoResponse{
 		CgoCalls: vUint(s.Cgo.CgoCalls),
@@ -116,7 +116,7 @@ func SnapshotCgo() models.CgoResponse {
 func SnapshotGC() *models.GCResponse {
 	c := internal.NewSampleCollector()
 	c.Read()
-	s := c.Collect(true, true)
+	s := c.Collect()
 
 	return &models.GCResponse{
 		BytesAllocsBySize:        vHist(s.Gc.BytesAllocsBySize),
@@ -151,7 +151,7 @@ func SnapshotGC() *models.GCResponse {
 func SnapshotCPU() *models.CPUResponse {
 	c := internal.NewSampleCollector()
 	c.Read()
-	s := c.Collect(false, true)
+	s := c.Collect()
 
 	return &models.CPUResponse{
 		GcAssistSeconds:           vFloat(s.Cpu.GcAssistSeconds),
@@ -172,7 +172,7 @@ func SnapshotCPU() *models.CPUResponse {
 func SnapshotGoDebug() *models.GoDebugResponse {
 	c := internal.NewSampleCollector()
 	c.Read()
-	s := c.Collect(false, true)
+	s := c.Collect()
 
 	return &models.GoDebugResponse{
 		CacheHashEvents:                   vUint(s.GoDebug.CacheHashEvents),
@@ -228,7 +228,7 @@ func SnapshotGoDebug() *models.GoDebugResponse {
 func SnapshotMemory() *models.MemoryResponse {
 	c := internal.NewSampleCollector()
 	c.Read()
-	s := c.Collect(false, true)
+	s := c.Collect()
 
 	return &models.MemoryResponse{
 		HeapFreeBytes:        vUint(s.Memory.HeapFreeBytes),
@@ -252,7 +252,7 @@ func SnapshotMemory() *models.MemoryResponse {
 func SnapshotScheduler() *models.SchedulerResponse {
 	c := internal.NewSampleCollector()
 	c.Read()
-	s := c.Collect(true, true)
+	s := c.Collect()
 
 	return &models.SchedulerResponse{
 		LatenciesSeconds:       toModelHistogram(s.Scheduler.LatenciesSeconds),
@@ -275,7 +275,7 @@ func SnapshotScheduler() *models.SchedulerResponse {
 func SnapshotSync() models.SyncResponse {
 	c := internal.NewSampleCollector()
 	c.Read()
-	s := c.Collect(false, true)
+	s := c.Collect()
 
 	return models.SyncResponse{
 		TotalMutexWaitDurationSeconds: vFloat(s.Sync.TotalMutexWaitDurationSeconds),
@@ -286,7 +286,7 @@ func SnapshotSync() models.SyncResponse {
 func SnapshotAll() models.AllResponse {
 	c := internal.NewSampleCollector()
 	c.Read()
-	s := c.Collect(true, true)
+	s := c.Collect()
 
 	return models.AllResponse{
 		Cgo: models.CgoResponse{

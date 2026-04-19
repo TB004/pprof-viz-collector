@@ -10,12 +10,13 @@
 package proto
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -26,12 +27,11 @@ const (
 )
 
 type StreamConfigRequest struct {
-	state                   protoimpl.MessageState `protogen:"open.v1"`
-	IntervalSeconds         uint32                 `protobuf:"varint,1,opt,name=interval_seconds,json=intervalSeconds,proto3" json:"interval_seconds,omitempty"`
-	NumberOfCycles          uint32                 `protobuf:"varint,2,opt,name=number_of_cycles,json=numberOfCycles,proto3" json:"number_of_cycles,omitempty"`
-	ExcludeHistogramBuckets bool                   `protobuf:"varint,3,opt,name=exclude_histogram_buckets,json=excludeHistogramBuckets,proto3" json:"exclude_histogram_buckets,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	IntervalSeconds uint32                 `protobuf:"varint,1,opt,name=interval_seconds,json=intervalSeconds,proto3" json:"interval_seconds,omitempty"`
+	NumberOfCycles  uint32                 `protobuf:"varint,2,opt,name=number_of_cycles,json=numberOfCycles,proto3" json:"number_of_cycles,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *StreamConfigRequest) Reset() {
@@ -76,13 +76,6 @@ func (x *StreamConfigRequest) GetNumberOfCycles() uint32 {
 		return x.NumberOfCycles
 	}
 	return 0
-}
-
-func (x *StreamConfigRequest) GetExcludeHistogramBuckets() bool {
-	if x != nil {
-		return x.ExcludeHistogramBuckets
-	}
-	return false
 }
 
 type Histogram struct {
@@ -1568,11 +1561,10 @@ var File_proto_agent_proto protoreflect.FileDescriptor
 
 const file_proto_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x11proto/agent.proto\x12\x05proto\x1a\x1bgoogle/protobuf/empty.proto\"\xa6\x01\n" +
+	"\x11proto/agent.proto\x12\x05proto\x1a\x1bgoogle/protobuf/empty.proto\"j\n" +
 	"\x13StreamConfigRequest\x12)\n" +
 	"\x10interval_seconds\x18\x01 \x01(\rR\x0fintervalSeconds\x12(\n" +
-	"\x10number_of_cycles\x18\x02 \x01(\rR\x0enumberOfCycles\x12:\n" +
-	"\x19exclude_histogram_buckets\x18\x03 \x01(\bR\x17excludeHistogramBuckets\"\xcb\x01\n" +
+	"\x10number_of_cycles\x18\x02 \x01(\rR\x0enumberOfCycles\"\xcb\x01\n" +
 	"\tHistogram\x12\x16\n" +
 	"\x06counts\x18\x01 \x03(\x04R\x06counts\x12\x18\n" +
 	"\abuckets\x18\x02 \x03(\x02R\abuckets\x12J\n" +
@@ -1923,7 +1915,7 @@ func file_proto_agent_proto_init() {
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
-			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
+			GoPackagePath: reflect.TypeFor[x]().PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_agent_proto_rawDesc), len(file_proto_agent_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   14,
