@@ -37,6 +37,8 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
+	// AgentServicePingProcedure is the fully-qualified name of the AgentService's Ping RPC.
+	AgentServicePingProcedure = "/proto.AgentService/Ping"
 	// AgentServiceSnapshotAllProcedure is the fully-qualified name of the AgentService's SnapshotAll
 	// RPC.
 	AgentServiceSnapshotAllProcedure = "/proto.AgentService/SnapshotAll"
@@ -49,6 +51,7 @@ const (
 
 // AgentServiceClient is a client for the proto.AgentService service.
 type AgentServiceClient interface {
+	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error)
 	StreamAll(context.Context, *proto.StreamConfigRequest) (*connect.ServerStreamForClient[proto.AllResponse], error)
 	GetMetadata(context.Context, *emptypb.Empty) (*proto.MetadataResponse, error)
@@ -65,6 +68,12 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 	baseURL = strings.TrimRight(baseURL, "/")
 	agentServiceMethods := proto.File_proto_agent_proto.Services().ByName("AgentService").Methods()
 	return &agentServiceClient{
+		ping: connect.NewClient[emptypb.Empty, emptypb.Empty](
+			httpClient,
+			baseURL+AgentServicePingProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("Ping")),
+			connect.WithClientOptions(opts...),
+		),
 		snapshotAll: connect.NewClient[emptypb.Empty, proto.AllResponse](
 			httpClient,
 			baseURL+AgentServiceSnapshotAllProcedure,
@@ -88,9 +97,19 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // agentServiceClient implements AgentServiceClient.
 type agentServiceClient struct {
+	ping        *connect.Client[emptypb.Empty, emptypb.Empty]
 	snapshotAll *connect.Client[emptypb.Empty, proto.AllResponse]
 	streamAll   *connect.Client[proto.StreamConfigRequest, proto.AllResponse]
 	getMetadata *connect.Client[emptypb.Empty, proto.MetadataResponse]
+}
+
+// Ping calls proto.AgentService.Ping.
+func (c *agentServiceClient) Ping(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
+	response, err := c.ping.CallUnary(ctx, connect.NewRequest(req))
+	if response != nil {
+		return response.Msg, err
+	}
+	return nil, err
 }
 
 // SnapshotAll calls proto.AgentService.SnapshotAll.
@@ -118,6 +137,7 @@ func (c *agentServiceClient) GetMetadata(ctx context.Context, req *emptypb.Empty
 
 // AgentServiceHandler is an implementation of the proto.AgentService service.
 type AgentServiceHandler interface {
+	Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error)
 	StreamAll(context.Context, *proto.StreamConfigRequest, *connect.ServerStream[proto.AllResponse]) error
 	GetMetadata(context.Context, *emptypb.Empty) (*proto.MetadataResponse, error)
@@ -130,6 +150,12 @@ type AgentServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	agentServiceMethods := proto.File_proto_agent_proto.Services().ByName("AgentService").Methods()
+	agentServicePingHandler := connect.NewUnaryHandlerSimple(
+		AgentServicePingProcedure,
+		svc.Ping,
+		connect.WithSchema(agentServiceMethods.ByName("Ping")),
+		connect.WithHandlerOptions(opts...),
+	)
 	agentServiceSnapshotAllHandler := connect.NewUnaryHandlerSimple(
 		AgentServiceSnapshotAllProcedure,
 		svc.SnapshotAll,
@@ -150,6 +176,8 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 	)
 	return "/proto.AgentService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case AgentServicePingProcedure:
+			agentServicePingHandler.ServeHTTP(w, r)
 		case AgentServiceSnapshotAllProcedure:
 			agentServiceSnapshotAllHandler.ServeHTTP(w, r)
 		case AgentServiceStreamAllProcedure:
@@ -164,6 +192,10 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 
 // UnimplementedAgentServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedAgentServiceHandler struct{}
+
+func (UnimplementedAgentServiceHandler) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.AgentService.Ping is not implemented"))
+}
 
 func (UnimplementedAgentServiceHandler) SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("proto.AgentService.SnapshotAll is not implemented"))

@@ -16,44 +16,41 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func TestAgentServiceHandler_SnapshotAll(t *testing.T) {
-	t.Parallel()
-	// Setup Connect server
+// newTestClient is a helper function to create a new AgentServiceClient for testing
+func newTestClient(t *testing.T) protoconnect.AgentServiceClient {
+	t.Helper()
 	mux := http.NewServeMux()
 	path, handler := protoconnect.NewAgentServiceHandler(AgentServiceHandler{})
 	mux.Handle(path, handler)
 	server := httptest.NewServer(mux)
-	defer server.Close()
+	t.Cleanup(server.Close)
+	return protoconnect.NewAgentServiceClient(server.Client(), server.URL)
+}
 
-	client := protoconnect.NewAgentServiceClient(server.Client(), server.URL)
-	resp, err := client.SnapshotAll(context.Background(), &emptypb.Empty{})
+func TestAgentServiceHandler_Ping(t *testing.T) {
+	t.Parallel()
+	_, err := newTestClient(t).Ping(context.Background(), &emptypb.Empty{})
+	assert.NoError(t, err)
+}
+
+func TestAgentServiceHandler_SnapshotAll(t *testing.T) {
+	t.Parallel()
+	resp, err := newTestClient(t).SnapshotAll(context.Background(), &emptypb.Empty{})
 	assert.NoError(t, err)
 
-	// Basic validation that we got some data populated
 	assert.NotNil(t, resp.Cpu)
 	assert.NotNil(t, resp.Memory)
 	assert.NotNil(t, resp.Gc)
-	// Snapshot should include buckets
 	assert.NotEmpty(t, resp.Gc.BytesAllocsBySize.Buckets)
 }
 
 func TestAgentServiceHandler_GetMetadata(t *testing.T) {
 	t.Parallel()
-	// Setup Connect server
-	mux := http.NewServeMux()
-	path, handler := protoconnect.NewAgentServiceHandler(AgentServiceHandler{})
-	mux.Handle(path, handler)
-	server := httptest.NewServer(mux)
-	defer server.Close()
-
-	client := protoconnect.NewAgentServiceClient(server.Client(), server.URL)
-	resp, err := client.GetMetadata(context.Background(), &emptypb.Empty{})
+	resp, err := newTestClient(t).GetMetadata(context.Background(), &emptypb.Empty{})
 	assert.NoError(t, err)
 
-	assert.NotNil(t, resp)
 	assert.NotNil(t, resp.Gc)
 	assert.NotNil(t, resp.Scheduler)
-	// Metadata should include buckets
 	assert.NotEmpty(t, resp.Gc.BytesAllocsBySizeBuckets)
 	assert.NotEmpty(t, resp.Scheduler.LatenciesSecondsBuckets)
 }
@@ -63,13 +60,7 @@ func TestAgentServiceHandler_StreamAll(t *testing.T) {
 
 	t.Run("InvalidInterval", func(t *testing.T) {
 		t.Parallel()
-		mux := http.NewServeMux()
-		path, handler := protoconnect.NewAgentServiceHandler(AgentServiceHandler{})
-		mux.Handle(path, handler)
-		server := httptest.NewServer(mux)
-		defer server.Close()
-
-		client := protoconnect.NewAgentServiceClient(server.Client(), server.URL)
+		client := newTestClient(t)
 		stream, err := client.StreamAll(context.Background(), &proto.StreamConfigRequest{
 			IntervalSeconds: 0, // Invalid
 			NumberOfCycles:  1,
@@ -86,18 +77,10 @@ func TestAgentServiceHandler_StreamAll(t *testing.T) {
 
 	t.Run("StreamMultipleCycles", func(t *testing.T) {
 		t.Parallel()
-		mux := http.NewServeMux()
-		path, handler := protoconnect.NewAgentServiceHandler(AgentServiceHandler{})
-		mux.Handle(path, handler)
-		server := httptest.NewServer(mux)
-		defer server.Close()
-
-		client := protoconnect.NewAgentServiceClient(server.Client(), server.URL)
-
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
-		stream, err := client.StreamAll(ctx, &proto.StreamConfigRequest{
+		stream, err := newTestClient(t).StreamAll(ctx, &proto.StreamConfigRequest{
 			IntervalSeconds: 1,
 			NumberOfCycles:  1,
 		})
@@ -118,18 +101,10 @@ func TestAgentServiceHandler_StreamAll(t *testing.T) {
 
 	t.Run("StreamWithoutBuckets", func(t *testing.T) {
 		t.Parallel()
-		mux := http.NewServeMux()
-		path, handler := protoconnect.NewAgentServiceHandler(AgentServiceHandler{})
-		mux.Handle(path, handler)
-		server := httptest.NewServer(mux)
-		defer server.Close()
-
-		client := protoconnect.NewAgentServiceClient(server.Client(), server.URL)
-
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
-		stream, err := client.StreamAll(ctx, &proto.StreamConfigRequest{
+		stream, err := newTestClient(t).StreamAll(ctx, &proto.StreamConfigRequest{
 			IntervalSeconds:         1,
 			NumberOfCycles:          1,
 			ExcludeHistogramBuckets: true,
@@ -150,18 +125,9 @@ func TestAgentServiceHandler_StreamAll(t *testing.T) {
 
 	t.Run("ContextCancellation", func(t *testing.T) {
 		t.Parallel()
-		mux := http.NewServeMux()
-		path, handler := protoconnect.NewAgentServiceHandler(AgentServiceHandler{})
-		mux.Handle(path, handler)
-		server := httptest.NewServer(mux)
-		defer server.Close()
-
-		client := protoconnect.NewAgentServiceClient(server.Client(), server.URL)
-
-		// Test that it stops when context is cancelled
 		ctx, cancel := context.WithCancel(context.Background())
 
-		stream, err := client.StreamAll(ctx, &proto.StreamConfigRequest{
+		stream, err := newTestClient(t).StreamAll(ctx, &proto.StreamConfigRequest{
 			IntervalSeconds: 1,
 			NumberOfCycles:  10, // Many cycles
 		})

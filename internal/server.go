@@ -20,6 +20,11 @@ type AgentServiceHandler struct {
 	protoconnect.UnimplementedAgentServiceHandler
 }
 
+// Ping is a no-op health check that returns OK if the agent is reachable.
+func (h AgentServiceHandler) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
+}
+
 // SnapshotAll returns a single point-in-time capture of all supported Go runtime metrics.
 func (h AgentServiceHandler) SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error) {
 	collector := NewSampleCollector()

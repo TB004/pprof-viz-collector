@@ -1836,8 +1836,9 @@ const file_proto_agent_proto_rawDesc = "" +
 	"\x06memory\x18\x04 \x01(\v2\x15.proto.MemoryResponseR\x06memory\x12$\n" +
 	"\x03cpu\x18\x05 \x01(\v2\x12.proto.CPUResponseR\x03cpu\x12$\n" +
 	"\x03cgo\x18\x06 \x01(\v2\x12.proto.CgoResponseR\x03cgo\x12'\n" +
-	"\x04sync\x18\a \x01(\v2\x13.proto.SyncResponseR\x04sync2\xc8\x01\n" +
-	"\fAgentService\x129\n" +
+	"\x04sync\x18\a \x01(\v2\x13.proto.SyncResponseR\x04sync2\x80\x02\n" +
+	"\fAgentService\x126\n" +
+	"\x04Ping\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x129\n" +
 	"\vSnapshotAll\x12\x16.google.protobuf.Empty\x1a\x12.proto.AllResponse\x12=\n" +
 	"\tStreamAll\x12\x1a.proto.StreamConfigRequest\x1a\x12.proto.AllResponse0\x01\x12>\n" +
 	"\vGetMetadata\x12\x16.google.protobuf.Empty\x1a\x17.proto.MetadataResponseB|\n" +
@@ -1892,14 +1893,16 @@ var file_proto_agent_proto_depIdxs = []int32{
 	3,  // 14: proto.AllResponse.cpu:type_name -> proto.CPUResponse
 	2,  // 15: proto.AllResponse.cgo:type_name -> proto.CgoResponse
 	11, // 16: proto.AllResponse.sync:type_name -> proto.SyncResponse
-	14, // 17: proto.AgentService.SnapshotAll:input_type -> google.protobuf.Empty
-	0,  // 18: proto.AgentService.StreamAll:input_type -> proto.StreamConfigRequest
-	14, // 19: proto.AgentService.GetMetadata:input_type -> google.protobuf.Empty
-	12, // 20: proto.AgentService.SnapshotAll:output_type -> proto.AllResponse
-	12, // 21: proto.AgentService.StreamAll:output_type -> proto.AllResponse
-	6,  // 22: proto.AgentService.GetMetadata:output_type -> proto.MetadataResponse
-	20, // [20:23] is the sub-list for method output_type
-	17, // [17:20] is the sub-list for method input_type
+	14, // 17: proto.AgentService.Ping:input_type -> google.protobuf.Empty
+	14, // 18: proto.AgentService.SnapshotAll:input_type -> google.protobuf.Empty
+	0,  // 19: proto.AgentService.StreamAll:input_type -> proto.StreamConfigRequest
+	14, // 20: proto.AgentService.GetMetadata:input_type -> google.protobuf.Empty
+	14, // 21: proto.AgentService.Ping:output_type -> google.protobuf.Empty
+	12, // 22: proto.AgentService.SnapshotAll:output_type -> proto.AllResponse
+	12, // 23: proto.AgentService.StreamAll:output_type -> proto.AllResponse
+	6,  // 24: proto.AgentService.GetMetadata:output_type -> proto.MetadataResponse
+	21, // [21:25] is the sub-list for method output_type
+	17, // [17:21] is the sub-list for method input_type
 	17, // [17:17] is the sub-list for extension type_name
 	17, // [17:17] is the sub-list for extension extendee
 	0,  // [0:17] is the sub-list for field type_name
