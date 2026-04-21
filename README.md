@@ -13,10 +13,11 @@ While standard `pprof` is indispensable for deep-dive analysis and stack-trace i
 ## Key Features
 
 - **High Fidelity**: Exposes the full range of `runtime/metrics` (CPU, Memory, GC, Scheduler, etc.).
-- **Modern Protocol**: Built on ConnectRPC for type-safe, performant streaming over HTTP/2.
+- **Modern Protocol**: Built on ConnectRPC for type-safe, performant streaming over HTTP/2 and HTTP/3.
 - **Low Overhead**: Optimized for zero-alloc collection loops using a single-pass `runtime/metrics.Read` approach and O(1) metric indexing.
 - **Efficient**: Uses `zstd` compression and intelligent field alignment to minimize network and memory footprint.
-- **Easy Integration**: Zero-config setup for both existing web services and standalone CLI tools.
+- **Easy Integration**: Minimal-config setup for both existing web services and standalone CLI tools.
+- **Secure**: Optional bearer token authentication to restrict access to authorized clients.
 
 ## Installation
 
@@ -31,15 +32,35 @@ go get github.com/TB004/pprof-viz-agent
 1.  **Differential Updates**: The agent tracks the state of all metrics and only transmits values that have changed since the last sample. Unchanged fields are omitted from the wire entirely, drastically reducing payload size for stable applications.
 2.  **Zero-Value Omission**: The very first message of a stream is treated as a delta from the default state. Any metric that is zero (like many `goDebug` events) is omitted from the initial synchronization, ensuring the baseline is as small as possible.
 3.  **Sparse Histogram Updates**: Instead of sending full arrays of histogram counts, the agent uses a map-based "sparse update" approach. Only the specific buckets that have changed are transmitted. This is particularly effective for large histograms where only a few buckets (e.g., specific latency ranges) are active.
-4.  **Metadata Separation**: Histogram bucket boundaries are static and bandwidth-heavy. The agent supports a "Metadata + Data" pattern:
+4.  **Metadata Separation**: Histogram bucket boundaries are static and bandwidth-heavy. The agent enforces a strict "Metadata + Data" pattern:
     *   Call `GetMetadata` once to retrieve the static bucket definitions.
-    *   Call `StreamAll` which always streams only the sparse changed counts — bucket boundaries are never re-sent.
+    *   `StreamAll` always streams only the sparse changed counts — bucket boundaries are never re-sent on the wire.
 
 This combination ensures that the agent consumes negligible bandwidth when the runtime state is stable, while still providing high-fidelity data during activity spikes.
 
 ## Usage
 
-The library provides two primary entry points depending on your application's architecture.
+The library provides two primary entry points depending on your application's architecture. Both accept a `Config` struct.
+
+### Configuration
+
+```go
+type Config struct {
+    // Token, if non-empty, is required on every RPC call via Authorization: Bearer <token>.
+    // Applies to both Bind and New.
+    Token string
+
+    // CertFile is the path to the TLS certificate file. Enables TLS when set. Only used by New.
+    CertFile string
+
+    // KeyFile is the path to the TLS private key file. Must be set together with CertFile. Only used by New.
+    KeyFile string
+
+    // HTTP3 also serves HTTP/3 over QUIC in parallel with the TLS/TCP server.
+    // Requires CertFile and KeyFile. Only used by New.
+    HTTP3 bool
+}
+```
 
 ### 1. Using `Bind()` (Existing HTTP Server)
 
@@ -50,16 +71,18 @@ package main
 
 import (
     "net/http"
-    
+
     pprofvizagent "github.com/TB004/pprof-viz-agent"
 )
 
 func main() {
     mux := http.NewServeMux()
-    
-    // Bind the agent to your existing mux
-    pprofvizagent.Bind(mux)
-    
+
+    // Bind the agent to your existing mux, optionally with a token
+    pprofvizagent.Bind(mux, pprofvizagent.Config{
+        Token: "your-secret-token",
+    })
+
     // Register your other handlers
     mux.HandleFunc("/api/hello", func(w http.ResponseWriter, r *http.Request) {
         w.Write([]byte("Hello, World!"))
@@ -73,28 +96,60 @@ func main() {
 
 If your project is a long-running process without an existing HTTP server (e.g., a background worker or CLI tool), use `New` to start a dedicated telemetry server.
 
+**Cleartext (H2C):**
 ```go
-package main
-
-import (
-    "log"
-    
-    pprofvizagent "github.com/TB004/pprof-viz-agent"
-)
-
-func main() {
-    // Start a dedicated telemetry server on port 9999
-    // Pass nil for protocols and TLS to use standard HTTP/1.1 or H2C defaults
-    go func() {
-        if err := pprofvizagent.New(9999, nil, nil); err != nil {
-            log.Fatalf("failed to start agent: %v", err)
-        }
-    }()
-
-    // Your application logic here
-    select {} 
-}
+go func() {
+    if err := pprofvizagent.New(9999, pprofvizagent.Config{}); err != nil {
+        log.Fatalf("failed to start agent: %v", err)
+    }
+}()
 ```
+
+**TLS with token auth:**
+```go
+go func() {
+    if err := pprofvizagent.New(9999, pprofvizagent.Config{
+        Token:    "your-secret-token",
+        CertFile: "/path/to/cert.pem",
+        KeyFile:  "/path/to/key.pem",
+    }); err != nil {
+        log.Fatalf("failed to start agent: %v", err)
+    }
+}()
+```
+
+**TLS + HTTP/3:**
+```go
+go func() {
+    if err := pprofvizagent.New(9999, pprofvizagent.Config{
+        Token:    "your-secret-token",
+        CertFile: "/path/to/cert.pem",
+        KeyFile:  "/path/to/key.pem",
+        HTTP3:    true,
+    }); err != nil {
+        log.Fatalf("failed to start agent: %v", err)
+    }
+}()
+```
+
+### Authentication
+
+When `Config.Token` is set, every RPC call must include the token as a bearer credential:
+
+```
+Authorization: Bearer your-secret-token
+```
+
+Requests without the header or with a wrong token are rejected with HTTP 401 Unauthenticated. This applies to all RPCs including `Ping` and `GetMetadata`.
+
+## API
+
+| RPC | Type | Description |
+| :--- | :--- | :--- |
+| `Ping` | Unary | Health check — returns OK if the agent is reachable. |
+| `SnapshotAll` | Unary | One-shot capture of all non-zero runtime metrics. |
+| `StreamAll` | Server-streaming | Streams differential metric updates at a client-specified interval. |
+| `GetMetadata` | Unary | Returns static histogram bucket boundaries. Call once before streaming. |
 
 ## Pprof vs. Pprof-Viz
 
