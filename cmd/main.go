@@ -21,9 +21,7 @@ func main() {
 
 	// Start the agent in a separate goroutine
 	go func() {
-		// New starts a dedicated HTTP server for the agent.
-		// We pass nil for protocols and tls to use standard HTTP/1.1 or H2C defaults.
-		if err := pprofvizagent.New(port, nil, nil); err != nil {
+		if err := pprofvizagent.New(port, pprofvizagent.Config{}); err != nil {
 			log.Fatalf("failed to start agent: %v", err)
 		}
 	}()

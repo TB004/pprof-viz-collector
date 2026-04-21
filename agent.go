@@ -4,7 +4,7 @@
 package pprofvizagent
 
 import (
-	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -14,51 +14,81 @@ import (
 	"github.com/TB004/pprof-viz-agent/internal/proto"
 	"github.com/TB004/pprof-viz-agent/internal/proto/protoconnect"
 	"github.com/TB004/pprof-viz-agent/pkg/models"
+	"github.com/quic-go/quic-go/http3"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
 
-// Bind registers the AgentService handler to the provided http.ServeMux.
-//
-// Useful, if you already have a HTTP server.
-func Bind(mux *http.ServeMux) {
-	path, handler := protoconnect.NewAgentServiceHandler(
-		internal.AgentServiceHandler{},
+// Config holds configuration for the agent.
+type Config struct {
+	// Token, if non-empty, is required on every RPC call via Authorization: Bearer <token>.
+	// Applies to both Bind and New.
+	Token string
+	// CertFile is the path to the TLS certificate file. Enables TLS when set. Only used by New.
+	CertFile string
+	// KeyFile is the path to the TLS private key file. Must be set together with CertFile. Only used by New.
+	KeyFile string
+	// HTTP3 also serves HTTP/3 over QUIC in parallel with the TLS/TCP server.
+	// Requires CertFile and KeyFile. Only used by New.
+	HTTP3 bool
+}
+
+// handlerOpts builds the shared ConnectRPC handler options from a Config.
+func handlerOpts(cfg Config) []connect.HandlerOption {
+	opts := []connect.HandlerOption{
 		connect.WithCompression(internal.CompressionZstd, internal.NewZstdDecompressor, internal.NewZstdCompressor),
 		connect.WithCompressMinBytes(256),
-	)
+	}
+	if cfg.Token != "" {
+		opts = append(opts, connect.WithInterceptors(internal.NewTokenInterceptor(cfg.Token)))
+	}
+	return opts
+}
+
+// Bind registers the AgentService handler to the provided http.ServeMux.
+// cfg.TLS and cfg.HTTP3 are ignored; those are server-level concerns managed externally.
+func Bind(mux *http.ServeMux, cfg Config) {
+	path, handler := protoconnect.NewAgentServiceHandler(internal.AgentServiceHandler{}, handlerOpts(cfg)...)
 	mux.Handle(path, handler)
 }
 
-// New creates and starts a new HTTP server on the specified port, serving the AgentService.
-func New(port int, proto *http.Protocols, tls *tls.Config) error {
-	mux := http.NewServeMux()
+// New creates and starts an HTTP server on the specified port serving the AgentService.
+// Without TLS, it supports HTTP/1.1 and HTTP/2 over cleartext (h2c).
+// With CertFile and KeyFile set, it supports HTTP/1.1 and HTTP/2 over TLS.
+// With HTTP3 also set, it additionally serves HTTP/3 over QUIC in parallel, with Alt-Svc
+// headers on TLS responses so clients can upgrade automatically.
+func New(port int, cfg Config) error {
+	if cfg.HTTP3 && (cfg.CertFile == "" || cfg.KeyFile == "") {
+		return errors.New("HTTP3 requires CertFile and KeyFile to be configured")
+	}
 
-	path, handler := protoconnect.NewAgentServiceHandler(
-		internal.AgentServiceHandler{},
-		connect.WithCompression(internal.CompressionZstd, internal.NewZstdDecompressor, internal.NewZstdCompressor),
-		connect.WithCompressMinBytes(256),
-	)
+	mux := http.NewServeMux()
+	path, handler := protoconnect.NewAgentServiceHandler(internal.AgentServiceHandler{}, handlerOpts(cfg)...)
 	mux.Handle(path, handler)
 
-	// Wrap the mux with h2c to support HTTP/2 over cleartext.
-	h2cHandler := h2c.NewHandler(mux, &http2.Server{})
+	addr := fmt.Sprintf("localhost:%d", port)
 
-	s := http.Server{
-		Addr:        fmt.Sprintf("localhost:%d", port),
-		Handler:     h2cHandler,
-		Protocols:   proto,
-		TLSConfig:   tls,
+	if cfg.CertFile != "" {
+		if cfg.HTTP3 {
+			return http3.ListenAndServeTLS(addr, cfg.CertFile, cfg.KeyFile, mux)
+		}
+		s := &http.Server{
+			Addr:        addr,
+			Handler:     mux,
+			ReadTimeout: 10 * time.Second,
+		}
+		return s.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile)
+	}
+
+	s := &http.Server{
+		Addr:        addr,
+		Handler:     h2c.NewHandler(mux, &http2.Server{}),
 		ReadTimeout: 10 * time.Second,
 	}
-	if err := s.ListenAndServe(); err != nil {
-		return err
-	}
-
-	return nil
+	return s.ListenAndServe()
 }
 
-// Helper functions for safe dereferencing
+// Helper functions for safe dereferencing of optional proto fields.
 func vUint(v *uint64) uint64 {
 	if v == nil {
 		return 0
@@ -90,7 +120,6 @@ func vHist(h *proto.Histogram) *models.Histogram {
 	}
 }
 
-// toModelHistogram helper to convert proto.Histogram to models.Histogram
 func toModelHistogram(h *proto.Histogram) *models.Histogram {
 	if h == nil {
 		return nil
