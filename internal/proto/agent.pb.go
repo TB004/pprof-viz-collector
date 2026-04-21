@@ -10,12 +10,13 @@
 package proto
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -26,12 +27,11 @@ const (
 )
 
 type StreamConfigRequest struct {
-	state                   protoimpl.MessageState `protogen:"open.v1"`
-	IntervalSeconds         uint32                 `protobuf:"varint,1,opt,name=interval_seconds,json=intervalSeconds,proto3" json:"interval_seconds,omitempty"`
-	NumberOfCycles          uint32                 `protobuf:"varint,2,opt,name=number_of_cycles,json=numberOfCycles,proto3" json:"number_of_cycles,omitempty"`
-	ExcludeHistogramBuckets bool                   `protobuf:"varint,3,opt,name=exclude_histogram_buckets,json=excludeHistogramBuckets,proto3" json:"exclude_histogram_buckets,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	IntervalSeconds uint32                 `protobuf:"varint,1,opt,name=interval_seconds,json=intervalSeconds,proto3" json:"interval_seconds,omitempty"`
+	NumberOfCycles  uint32                 `protobuf:"varint,2,opt,name=number_of_cycles,json=numberOfCycles,proto3" json:"number_of_cycles,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *StreamConfigRequest) Reset() {
@@ -76,13 +76,6 @@ func (x *StreamConfigRequest) GetNumberOfCycles() uint32 {
 		return x.NumberOfCycles
 	}
 	return 0
-}
-
-func (x *StreamConfigRequest) GetExcludeHistogramBuckets() bool {
-	if x != nil {
-		return x.ExcludeHistogramBuckets
-	}
-	return false
 }
 
 type Histogram struct {
@@ -1568,11 +1561,10 @@ var File_proto_agent_proto protoreflect.FileDescriptor
 
 const file_proto_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x11proto/agent.proto\x12\x05proto\x1a\x1bgoogle/protobuf/empty.proto\"\xa6\x01\n" +
+	"\x11proto/agent.proto\x12\x05proto\x1a\x1bgoogle/protobuf/empty.proto\"j\n" +
 	"\x13StreamConfigRequest\x12)\n" +
 	"\x10interval_seconds\x18\x01 \x01(\rR\x0fintervalSeconds\x12(\n" +
-	"\x10number_of_cycles\x18\x02 \x01(\rR\x0enumberOfCycles\x12:\n" +
-	"\x19exclude_histogram_buckets\x18\x03 \x01(\bR\x17excludeHistogramBuckets\"\xcb\x01\n" +
+	"\x10number_of_cycles\x18\x02 \x01(\rR\x0enumberOfCycles\"\xcb\x01\n" +
 	"\tHistogram\x12\x16\n" +
 	"\x06counts\x18\x01 \x03(\x04R\x06counts\x12\x18\n" +
 	"\abuckets\x18\x02 \x03(\x02R\abuckets\x12J\n" +
@@ -1836,8 +1828,9 @@ const file_proto_agent_proto_rawDesc = "" +
 	"\x06memory\x18\x04 \x01(\v2\x15.proto.MemoryResponseR\x06memory\x12$\n" +
 	"\x03cpu\x18\x05 \x01(\v2\x12.proto.CPUResponseR\x03cpu\x12$\n" +
 	"\x03cgo\x18\x06 \x01(\v2\x12.proto.CgoResponseR\x03cgo\x12'\n" +
-	"\x04sync\x18\a \x01(\v2\x13.proto.SyncResponseR\x04sync2\xc8\x01\n" +
-	"\fAgentService\x129\n" +
+	"\x04sync\x18\a \x01(\v2\x13.proto.SyncResponseR\x04sync2\x80\x02\n" +
+	"\fAgentService\x126\n" +
+	"\x04Ping\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x129\n" +
 	"\vSnapshotAll\x12\x16.google.protobuf.Empty\x1a\x12.proto.AllResponse\x12=\n" +
 	"\tStreamAll\x12\x1a.proto.StreamConfigRequest\x1a\x12.proto.AllResponse0\x01\x12>\n" +
 	"\vGetMetadata\x12\x16.google.protobuf.Empty\x1a\x17.proto.MetadataResponseB|\n" +
@@ -1892,14 +1885,16 @@ var file_proto_agent_proto_depIdxs = []int32{
 	3,  // 14: proto.AllResponse.cpu:type_name -> proto.CPUResponse
 	2,  // 15: proto.AllResponse.cgo:type_name -> proto.CgoResponse
 	11, // 16: proto.AllResponse.sync:type_name -> proto.SyncResponse
-	14, // 17: proto.AgentService.SnapshotAll:input_type -> google.protobuf.Empty
-	0,  // 18: proto.AgentService.StreamAll:input_type -> proto.StreamConfigRequest
-	14, // 19: proto.AgentService.GetMetadata:input_type -> google.protobuf.Empty
-	12, // 20: proto.AgentService.SnapshotAll:output_type -> proto.AllResponse
-	12, // 21: proto.AgentService.StreamAll:output_type -> proto.AllResponse
-	6,  // 22: proto.AgentService.GetMetadata:output_type -> proto.MetadataResponse
-	20, // [20:23] is the sub-list for method output_type
-	17, // [17:20] is the sub-list for method input_type
+	14, // 17: proto.AgentService.Ping:input_type -> google.protobuf.Empty
+	14, // 18: proto.AgentService.SnapshotAll:input_type -> google.protobuf.Empty
+	0,  // 19: proto.AgentService.StreamAll:input_type -> proto.StreamConfigRequest
+	14, // 20: proto.AgentService.GetMetadata:input_type -> google.protobuf.Empty
+	14, // 21: proto.AgentService.Ping:output_type -> google.protobuf.Empty
+	12, // 22: proto.AgentService.SnapshotAll:output_type -> proto.AllResponse
+	12, // 23: proto.AgentService.StreamAll:output_type -> proto.AllResponse
+	6,  // 24: proto.AgentService.GetMetadata:output_type -> proto.MetadataResponse
+	21, // [21:25] is the sub-list for method output_type
+	17, // [17:21] is the sub-list for method input_type
 	17, // [17:17] is the sub-list for extension type_name
 	17, // [17:17] is the sub-list for extension extendee
 	0,  // [0:17] is the sub-list for field type_name
@@ -1920,7 +1915,7 @@ func file_proto_agent_proto_init() {
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
-			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
+			GoPackagePath: reflect.TypeFor[x]().PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_agent_proto_rawDesc), len(file_proto_agent_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   14,
