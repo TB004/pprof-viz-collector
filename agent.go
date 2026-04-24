@@ -10,11 +10,13 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	connectcors "connectrpc.com/cors"
 	"github.com/TB004/pprof-viz-agent/internal"
 	"github.com/TB004/pprof-viz-agent/internal/proto"
 	"github.com/TB004/pprof-viz-agent/internal/proto/protoconnect"
 	"github.com/TB004/pprof-viz-agent/pkg/models"
 	"github.com/quic-go/quic-go/http3"
+	"github.com/rs/cors"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
@@ -24,6 +26,10 @@ type Config struct {
 	// Token, if non-empty, is required on every RPC call via Authorization: Bearer <token>.
 	// Applies to both Bind and New.
 	Token string
+	// AllowedOrigins is the list of origins permitted by CORS (e.g. ["https://app.example.com"]).
+	// Use ["*"] to allow all origins. An empty slice disables CORS middleware entirely.
+	// Applies to both Bind and New.
+	AllowedOrigins []string
 	// CertFile is the path to the TLS certificate file. Enables TLS when set. Only used by New.
 	CertFile string
 	// KeyFile is the path to the TLS private key file. Must be set together with CertFile. Only used by New.
@@ -31,6 +37,17 @@ type Config struct {
 	// HTTP3 also serves HTTP/3 over QUIC in parallel with the TLS/TCP server.
 	// Requires CertFile and KeyFile. Only used by New.
 	HTTP3 bool
+}
+
+// newCORSHandler wraps a handler with CORS middleware configured for ConnectRPC.
+// It allows the standard ConnectRPC headers plus Authorization for token auth.
+func newCORSHandler(origins []string, h http.Handler) http.Handler {
+	return cors.New(cors.Options{
+		AllowedOrigins: origins,
+		AllowedMethods: connectcors.AllowedMethods(),
+		AllowedHeaders: append(connectcors.AllowedHeaders(), "Authorization"),
+		ExposedHeaders: connectcors.ExposedHeaders(),
+	}).Handler(h)
 }
 
 // handlerOpts builds the shared ConnectRPC handler options from a Config.
@@ -46,9 +63,12 @@ func handlerOpts(cfg Config) []connect.HandlerOption {
 }
 
 // Bind registers the AgentService handler to the provided http.ServeMux.
-// cfg.TLS and cfg.HTTP3 are ignored; those are server-level concerns managed externally.
+// cfg.CertFile, cfg.KeyFile, and cfg.HTTP3 are ignored; those are server-level concerns managed externally.
 func Bind(mux *http.ServeMux, cfg Config) {
 	path, handler := protoconnect.NewAgentServiceHandler(internal.AgentServiceHandler{}, handlerOpts(cfg)...)
+	if len(cfg.AllowedOrigins) > 0 {
+		handler = newCORSHandler(cfg.AllowedOrigins, handler)
+	}
 	mux.Handle(path, handler)
 }
 
@@ -68,13 +88,19 @@ func New(port int, cfg Config) error {
 
 	addr := fmt.Sprintf("localhost:%d", port)
 
+	// Wrap mux with CORS middleware if origins are configured.
+	var h http.Handler = mux
+	if len(cfg.AllowedOrigins) > 0 {
+		h = newCORSHandler(cfg.AllowedOrigins, mux)
+	}
+
 	if cfg.CertFile != "" {
 		if cfg.HTTP3 {
-			return http3.ListenAndServeTLS(addr, cfg.CertFile, cfg.KeyFile, mux)
+			return http3.ListenAndServeTLS(addr, cfg.CertFile, cfg.KeyFile, h)
 		}
 		s := &http.Server{
 			Addr:        addr,
-			Handler:     mux,
+			Handler:     h,
 			ReadTimeout: 10 * time.Second,
 		}
 		return s.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile)
@@ -82,7 +108,7 @@ func New(port int, cfg Config) error {
 
 	s := &http.Server{
 		Addr:        addr,
-		Handler:     h2c.NewHandler(mux, &http2.Server{}),
+		Handler:     h2c.NewHandler(h, &http2.Server{}),
 		ReadTimeout: 10 * time.Second,
 	}
 	return s.ListenAndServe()

@@ -21,7 +21,10 @@ func main() {
 
 	// Start the agent in a separate goroutine
 	go func() {
-		if err := pprofvizagent.New(port, pprofvizagent.Config{}); err != nil {
+		config := pprofvizagent.Config{
+			AllowedOrigins: []string{"*"},
+		}
+		if err := pprofvizagent.New(port, config); err != nil {
 			log.Fatalf("failed to start agent: %v", err)
 		}
 	}()
