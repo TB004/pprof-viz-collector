@@ -184,7 +184,7 @@ Requests without the header or with a wrong token are rejected with HTTP 401 Una
 
 ## Visualization
 
-This agent is designed to work seamlessly with the upcoming **Pprof-Viz Web App**, a free-to-use visualization platform that provides real-time dashboards for your Go applications. Stay tuned for the release!
+This agent is designed to work seamlessly with the **Pprof-Viz Web App**, a free-to-use visualization platform that provides real-time dashboards for your Go applications.
 
 ## License
 
