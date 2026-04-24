@@ -18,6 +18,7 @@ While standard `pprof` is indispensable for deep-dive analysis and stack-trace i
 - **Efficient**: Uses `zstd` compression and intelligent field alignment to minimize network and memory footprint.
 - **Easy Integration**: Minimal-config setup for both existing web services and standalone CLI tools.
 - **Secure**: Optional bearer token authentication to restrict access to authorized clients.
+- **Browser-Ready**: Built-in CORS support with ConnectRPC-aware header configuration for web frontends.
 
 ## Installation
 
@@ -50,6 +51,11 @@ type Config struct {
     // Applies to both Bind and New.
     Token string
 
+    // AllowedOrigins is the list of origins permitted by CORS (e.g. ["https://app.example.com"]).
+    // Use ["*"] to allow all origins. An empty slice disables CORS middleware entirely.
+    // Applies to both Bind and New.
+    AllowedOrigins []string
+
     // CertFile is the path to the TLS certificate file. Enables TLS when set. Only used by New.
     CertFile string
 
@@ -78,9 +84,10 @@ import (
 func main() {
     mux := http.NewServeMux()
 
-    // Bind the agent to your existing mux, optionally with a token
+    // Bind the agent to your existing mux, optionally with a token and CORS origins
     pprofvizagent.Bind(mux, pprofvizagent.Config{
-        Token: "your-secret-token",
+        Token:          "your-secret-token",
+        AllowedOrigins: []string{"https://app.example.com"},
     })
 
     // Register your other handlers
@@ -105,13 +112,14 @@ go func() {
 }()
 ```
 
-**TLS with token auth:**
+**TLS with token auth and CORS:**
 ```go
 go func() {
     if err := pprofvizagent.New(9999, pprofvizagent.Config{
-        Token:    "your-secret-token",
-        CertFile: "/path/to/cert.pem",
-        KeyFile:  "/path/to/key.pem",
+        Token:          "your-secret-token",
+        AllowedOrigins: []string{"https://app.example.com"},
+        CertFile:       "/path/to/cert.pem",
+        KeyFile:        "/path/to/key.pem",
     }); err != nil {
         log.Fatalf("failed to start agent: %v", err)
     }
@@ -122,15 +130,28 @@ go func() {
 ```go
 go func() {
     if err := pprofvizagent.New(9999, pprofvizagent.Config{
-        Token:    "your-secret-token",
-        CertFile: "/path/to/cert.pem",
-        KeyFile:  "/path/to/key.pem",
-        HTTP3:    true,
+        Token:          "your-secret-token",
+        AllowedOrigins: []string{"https://app.example.com"},
+        CertFile:       "/path/to/cert.pem",
+        KeyFile:        "/path/to/key.pem",
+        HTTP3:          true,
     }); err != nil {
         log.Fatalf("failed to start agent: %v", err)
     }
 }()
 ```
+
+### CORS
+
+When `Config.AllowedOrigins` is set, the agent applies CORS middleware configured specifically for ConnectRPC. It permits the required ConnectRPC protocol headers, exposes response trailers, and additionally allows the `Authorization` header for token auth. Use `["*"]` to allow all origins during development:
+
+```go
+pprofvizagent.Config{
+    AllowedOrigins: []string{"*"}, // restrict to your app's origin in production
+}
+```
+
+An empty `AllowedOrigins` slice disables CORS entirely — no headers are added and preflight requests are not handled.
 
 ### Authentication
 
@@ -163,7 +184,7 @@ Requests without the header or with a wrong token are rejected with HTTP 401 Una
 
 ## Visualization
 
-This agent is designed to work seamlessly with the upcoming **Pprof-Viz Web App**, a free-to-use visualization platform that provides real-time dashboards for your Go applications. Stay tuned for the release!
+This agent is designed to work seamlessly with the **Pprof-Viz Web App**, a free-to-use visualization platform that provides real-time dashboards for your Go applications.
 
 ## License
 
