@@ -8,7 +8,7 @@ tool (
 )
 
 require (
-	connectrpc.com/connect v1.19.1
+	connectrpc.com/connect v1.19.2
 	connectrpc.com/cors v0.1.0
 	github.com/klauspost/compress v1.18.5
 	github.com/quic-go/quic-go v0.59.0
