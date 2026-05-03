@@ -10,7 +10,7 @@ tool (
 require (
 	connectrpc.com/connect v1.19.2
 	connectrpc.com/cors v0.1.0
-	github.com/klauspost/compress v1.18.5
+	github.com/klauspost/compress v1.18.6
 	github.com/quic-go/quic-go v0.59.0
 	github.com/rs/cors v1.11.1
 	github.com/stretchr/testify v1.11.1
