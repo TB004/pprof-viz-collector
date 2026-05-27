@@ -103,7 +103,7 @@ func main() {
 
 If your project is a long-running process without an existing HTTP server (e.g., a background worker or CLI tool), use `New` to start a dedicated telemetry server.
 
-**Cleartext (H2C):**
+**Cleartext (HTTP/2):**
 ```go
 go func() {
     if err := pprofvizagent.New(9999, pprofvizagent.Config{}); err != nil {
@@ -112,7 +112,7 @@ go func() {
 }()
 ```
 
-**TLS with token auth and CORS:**
+**TLS + HTTP/2 with token auth and CORS:**
 ```go
 go func() {
     if err := pprofvizagent.New(9999, pprofvizagent.Config{
