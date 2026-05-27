@@ -17,8 +17,6 @@ import (
 	"github.com/TB004/pprof-viz-agent/pkg/models"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/rs/cors"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 )
 
 // Config holds configuration for the agent.
@@ -106,9 +104,14 @@ func New(port int, cfg Config) error {
 		return s.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile)
 	}
 
+	protos := new(http.Protocols)
+	protos.SetHTTP1(true)
+	protos.SetHTTP2(false)
+	protos.SetUnencryptedHTTP2(true)
 	s := &http.Server{
 		Addr:        addr,
-		Handler:     h2c.NewHandler(h, &http2.Server{}),
+		Handler:     h,
+		Protocols:   protos,
 		ReadTimeout: 10 * time.Second,
 	}
 	return s.ListenAndServe()
