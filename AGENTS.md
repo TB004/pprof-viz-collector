@@ -44,8 +44,8 @@ type Config struct {
 ### Entry points
 - **`Bind(mux *http.ServeMux, cfg Config)`**: Registers the agent onto an existing mux. `cfg.Token` and `cfg.AllowedOrigins` apply; TLS/HTTP3 are server-level concerns managed externally.
 - **`New(port int, cfg Config) error`**: Starts a dedicated server.
-  - No TLS → cleartext HTTP/1.1 + HTTP/2 via h2c.
-  - `CertFile`+`KeyFile` set → TLS (HTTP/1.1 + HTTP/2).
+  - No TLS → cleartext HTTP/2.
+  - `CertFile`+`KeyFile` set → TLS + HTTP/2.
   - `HTTP3: true` → `http3.ListenAndServeTLS` handles TCP and QUIC in parallel with automatic `Alt-Svc` header injection.
 
 ### RPC methods

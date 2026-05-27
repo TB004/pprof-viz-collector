@@ -106,14 +106,20 @@ func TestNew(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
+	protos := new(http.Protocols)
+	protos.SetUnencryptedHTTP2(true)
+	client := &http.Client{Transport: &http.Transport{Protocols: protos}}
+
 	body := strings.NewReader("{}")
 	req, err := http.NewRequest("POST", "http://localhost:50000/proto.AgentService/SnapshotAll", body)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	assert.NoError(t, err)
-	defer assert.NoError(t, resp.Body.Close())
+	if resp != nil {
+		defer assert.NoError(t, resp.Body.Close())
+	}
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 

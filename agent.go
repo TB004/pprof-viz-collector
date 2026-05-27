@@ -17,8 +17,6 @@ import (
 	"github.com/TB004/pprof-viz-agent/pkg/models"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/rs/cors"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 )
 
 // Config holds configuration for the agent.
@@ -73,8 +71,8 @@ func Bind(mux *http.ServeMux, cfg Config) {
 }
 
 // New creates and starts an HTTP server on the specified port serving the AgentService.
-// Without TLS, it supports HTTP/1.1 and HTTP/2 over cleartext (h2c).
-// With CertFile and KeyFile set, it supports HTTP/1.1 and HTTP/2 over TLS.
+// Without TLS, it supports HTTP/2 over cleartext.
+// With CertFile and KeyFile set, it supports HTTP/2 over TLS.
 // With HTTP3 also set, it additionally serves HTTP/3 over QUIC in parallel, with Alt-Svc
 // headers on TLS responses so clients can upgrade automatically.
 func New(port int, cfg Config) error {
@@ -106,9 +104,14 @@ func New(port int, cfg Config) error {
 		return s.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile)
 	}
 
+	protos := new(http.Protocols)
+	protos.SetHTTP1(false)
+	protos.SetHTTP2(false)
+	protos.SetUnencryptedHTTP2(true)
 	s := &http.Server{
 		Addr:        addr,
-		Handler:     h2c.NewHandler(h, &http2.Server{}),
+		Handler:     h,
+		Protocols:   protos,
 		ReadTimeout: 10 * time.Second,
 	}
 	return s.ListenAndServe()
