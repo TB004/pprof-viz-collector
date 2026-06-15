@@ -17,12 +17,19 @@ import (
 
 func main() {
 	const port = 9090
+	// #nosec G101 -- example app only
+	const token = "$argon2id$v=19$m=19456,t=2,p=1$q8phA9hRew+TKOoOeXxQYA$4gjeEyK3gUScgc+wt1It59DsIahCvav7sGcznebV9lo"
+
 	log.Printf("Starting pprof-viz-agent on port %d...", port)
 
 	// Start the agent in a separate goroutine
 	go func() {
 		config := pprofvizagent.Config{
 			AllowedOrigins: []string{"*"},
+			HTTP3:          true,
+			Token:          token,
+			CertFile:       "./cert.pem",
+			KeyFile:        "./key.pem",
 		}
 		if err := pprofvizagent.New(port, config); err != nil {
 			log.Fatalf("failed to start agent: %v", err)
