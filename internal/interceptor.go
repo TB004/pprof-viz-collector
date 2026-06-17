@@ -5,6 +5,7 @@ package internal
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
 	"net/http"
 
@@ -43,7 +44,10 @@ func (ti tokenInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFun
 }
 
 func (ti tokenInterceptor) check(h http.Header) error {
-	if h.Get("Authorization") != "Bearer "+ti.token {
+	// Constant-time comparison to avoid leaking the token via response timing.
+	got := h.Get("Authorization")
+	want := "Bearer " + ti.token
+	if subtle.ConstantTimeCompare([]byte(got), []byte(want)) != 1 {
 		return connect.NewError(connect.CodeUnauthenticated, errors.New("invalid or missing token"))
 	}
 	return nil
