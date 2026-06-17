@@ -13,7 +13,10 @@ import (
 const CompressionZstd = "zstd"
 
 func NewZstdCompressor() connect.Compressor {
-	// connect handles pooling internally when using WithCompression
+	// connect handles pooling internally when using WithCompression.
+	// NewWriter only returns an error for invalid options; we pass none, so this
+	// is unreachable. The connect.Compressor factory cannot return an error, so
+	// the impossible case panics rather than silently yielding a nil compressor.
 	w, err := zstd.NewWriter(nil)
 	if err != nil {
 		panic(err)
@@ -22,6 +25,8 @@ func NewZstdCompressor() connect.Compressor {
 }
 
 func NewZstdDecompressor() connect.Decompressor {
+	// As with NewZstdCompressor, NewReader only errors on invalid options (none
+	// passed here), and the factory signature cannot propagate an error.
 	r, err := zstd.NewReader(nil)
 	if err != nil {
 		panic(err)
