@@ -62,6 +62,7 @@ const (
 	MetricGoDebugGoCacheHash                 = "/godebug/non-default-behavior/gocachehash:events"
 	MetricGoDebugGoCacheTest                 = "/godebug/non-default-behavior/gocachetest:events"
 	MetricGoDebugGoCacheVerify               = "/godebug/non-default-behavior/gocacheverify:events"
+	MetricGoDebugGoTestJSONBuildText         = "/godebug/non-default-behavior/gotestjsonbuildtext:events"
 	MetricGoDebugGoTypesAlias                = "/godebug/non-default-behavior/gotypesalias:events"
 	MetricGoDebugHTMLMetaContentURLEscape    = "/godebug/non-default-behavior/htmlmetacontenturlescape:events"
 	MetricGoDebugHTTP2Client                 = "/godebug/non-default-behavior/http2client:events"

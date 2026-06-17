@@ -220,7 +220,7 @@ func (c *SampleCollector) Collect() *proto.AllResponse {
 			CacheHashEvents:                   vUint(MetricGoDebugGoCacheHash),
 			CacheTestEvents:                   vUint(MetricGoDebugGoCacheTest),
 			CacheVerifyEvents:                 vUint(MetricGoDebugGoCacheVerify),
-			TestJsonBuildTextEvents:           vUint(MetricGoDebugGoTypesAlias),
+			TestJsonBuildTextEvents:           vUint(MetricGoDebugGoTestJSONBuildText),
 			TypeAliasEvents:                   vUint(MetricGoDebugGoTypesAlias),
 			HtmlMetaContentUrlEscapedEvents:   vUint(MetricGoDebugHTMLMetaContentURLEscape),
 			Http2ClientEvents:                 vUint(MetricGoDebugHTTP2Client),

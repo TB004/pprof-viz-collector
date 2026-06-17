@@ -54,6 +54,7 @@ var AllMetricNames = []string{
 	MetricGoDebugGoCacheHash,
 	MetricGoDebugGoCacheTest,
 	MetricGoDebugGoCacheVerify,
+	MetricGoDebugGoTestJSONBuildText,
 	MetricGoDebugGoTypesAlias,
 	MetricGoDebugHTMLMetaContentURLEscape,
 	MetricGoDebugHTTP2Client,
