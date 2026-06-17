@@ -30,6 +30,7 @@ func main() {
 			Token:          token,
 			CertFile:       "./cert.pem",
 			KeyFile:        "./key.pem",
+			Host:           "localhost",
 		}
 		if err := pprofvizagent.New(port, config); err != nil {
 			log.Fatalf("failed to start agent: %v", err)

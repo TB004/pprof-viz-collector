@@ -6,8 +6,9 @@ package pprofvizagent
 import (
 	"crypto/tls"
 	"errors"
-	"fmt"
+	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	"connectrpc.com/connect"
@@ -36,6 +37,10 @@ type Config struct {
 	// HTTP3 also serves HTTP/3 over QUIC in parallel with the TLS/TCP server.
 	// Requires CertFile and KeyFile. Only used by New.
 	HTTP3 bool
+	// Host is the network interface to bind to (e.g. "127.0.0.1" or "0.0.0.0").
+	// Defaults to "localhost" when empty. Binding to a non-loopback address
+	// exposes the agent externally; pair it with TLS and a Token. Only used by New.
+	Host string
 }
 
 // newCORSHandler wraps a handler with CORS middleware configured for ConnectRPC.
@@ -107,7 +112,11 @@ func New(port int, cfg Config) error {
 	path, handler := protoconnect.NewAgentServiceHandler(internal.AgentServiceHandler{}, handlerOpts(cfg)...)
 	mux.Handle(path, handler)
 
-	addr := fmt.Sprintf("localhost:%d", port)
+	host := cfg.Host
+	if host == "" {
+		host = "localhost"
+	}
+	addr := net.JoinHostPort(host, strconv.Itoa(port))
 
 	// Wrap mux with CORS middleware if origins are configured.
 	var h http.Handler = mux
