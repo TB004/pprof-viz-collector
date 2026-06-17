@@ -80,14 +80,25 @@ func (h AgentServiceHandler) StreamAll(ctx context.Context, req *proto.StreamCon
 
 	collector := NewSampleCollector()
 
-	for i := 0; numCycles == 0 || i < numCycles; i++ {
+	send := func() error {
+		collector.Read()
+		return stream.Send(collector.Collect())
+	}
+
+	// Send a full initial frame immediately so clients aren't blind for the
+	// first interval. The first Read on a fresh collector diffs against an empty
+	// baseline, so this frame carries the full current state; subsequent frames
+	// are differential. This counts as the first cycle.
+	if err := send(); err != nil {
+		return err
+	}
+
+	for i := 1; numCycles == 0 || i < numCycles; i++ {
 		select {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			collector.Read()
-			all := collector.Collect()
-			if err := stream.Send(all); err != nil {
+			if err := send(); err != nil {
 				return err
 			}
 		}
