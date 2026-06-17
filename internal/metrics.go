@@ -39,7 +39,6 @@ var AllMetricNames = []string{
 	MetricGCHeapObjects,
 	MetricGCHeapTinyAllocs,
 	MetricGCLimiterLastEnabled,
-	MetricGCPausesSeconds,
 	MetricGCScanGlobals,
 	MetricGCScanHeap,
 	MetricGCScanStack,

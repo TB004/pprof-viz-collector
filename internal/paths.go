@@ -44,7 +44,6 @@ const (
 	MetricGCHeapTinyAllocs    = "/gc/heap/tiny/allocs:objects"
 
 	MetricGCLimiterLastEnabled = "/gc/limiter/last-enabled:gc-cycle"
-	MetricGCPausesSeconds      = "/gc/pauses:seconds"
 
 	MetricGCScanGlobals = "/gc/scan/globals:bytes"
 	MetricGCScanHeap    = "/gc/scan/heap:bytes"
