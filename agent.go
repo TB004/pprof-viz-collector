@@ -4,6 +4,7 @@
 package pprofvizagent
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
@@ -70,9 +71,31 @@ func Bind(mux *http.ServeMux, cfg Config) {
 	mux.Handle(path, handler)
 }
 
+// Server timeouts applied to every TCP server New creates. WriteTimeout is
+// deliberately omitted: StreamAll is a long-lived server stream and a write
+// deadline would terminate it. ReadHeaderTimeout and IdleTimeout guard against
+// slowloris-style connection exhaustion.
+const (
+	readHeaderTimeout = 5 * time.Second
+	readTimeout       = 10 * time.Second
+	idleTimeout       = 120 * time.Second
+)
+
+// newHTTPServer builds an http.Server with hardened timeouts shared by all
+// New entry points.
+func newHTTPServer(addr string, h http.Handler) *http.Server {
+	return &http.Server{
+		Addr:              addr,
+		Handler:           h,
+		ReadHeaderTimeout: readHeaderTimeout,
+		ReadTimeout:       readTimeout,
+		IdleTimeout:       idleTimeout,
+	}
+}
+
 // New creates and starts an HTTP server on the specified port serving the AgentService.
 // Without TLS, it supports HTTP/2 over cleartext.
-// With CertFile and KeyFile set, it supports HTTP/2 over TLS.
+// With CertFile and KeyFile set, it supports HTTP/2 over TLS (minimum TLS 1.2).
 // With HTTP3 also set, it additionally serves HTTP/3 over QUIC in parallel, with Alt-Svc
 // headers on TLS responses so clients can upgrade automatically.
 func New(port int, cfg Config) error {
@@ -92,29 +115,49 @@ func New(port int, cfg Config) error {
 		h = newCORSHandler(cfg.AllowedOrigins, mux)
 	}
 
-	if cfg.CertFile != "" {
-		if cfg.HTTP3 {
-			return http3.ListenAndServeTLS(addr, cfg.CertFile, cfg.KeyFile, h)
-		}
-		s := &http.Server{
-			Addr:        addr,
-			Handler:     h,
-			ReadTimeout: 10 * time.Second,
-		}
+	// Cleartext HTTP/2 (h2c) when no certificate is configured.
+	if cfg.CertFile == "" {
+		protos := new(http.Protocols)
+		protos.SetHTTP1(false)
+		protos.SetHTTP2(false)
+		protos.SetUnencryptedHTTP2(true)
+		s := newHTTPServer(addr, h)
+		s.Protocols = protos
+		return s.ListenAndServe()
+	}
+
+	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
+
+	// TLS without HTTP/3: a single HTTP/2-over-TLS server.
+	if !cfg.HTTP3 {
+		s := newHTTPServer(addr, h)
+		s.TLSConfig = tlsConfig
 		return s.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile)
 	}
 
-	protos := new(http.Protocols)
-	protos.SetHTTP1(false)
-	protos.SetHTTP2(false)
-	protos.SetUnencryptedHTTP2(true)
-	s := &http.Server{
-		Addr:        addr,
-		Handler:     h,
-		Protocols:   protos,
-		ReadTimeout: 10 * time.Second,
+	// TLS with HTTP/3: serve HTTP/2 over TLS/TCP and HTTP/3 over QUIC in parallel,
+	// advertising QUIC via Alt-Svc headers on the TLS/TCP responses. Whichever
+	// server fails first wins; the other is closed before returning.
+	h3 := &http3.Server{
+		Addr:      addr,
+		Handler:   h,
+		TLSConfig: tlsConfig.Clone(),
 	}
-	return s.ListenAndServe()
+	tcp := newHTTPServer(addr, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// #nosec G104 -- best-effort Alt-Svc advertisement
+		_ = h3.SetQUICHeaders(w.Header())
+		h.ServeHTTP(w, r)
+	}))
+	tcp.TLSConfig = tlsConfig.Clone()
+
+	errc := make(chan error, 2)
+	go func() { errc <- tcp.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile) }()
+	go func() { errc <- h3.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile) }()
+
+	// Whichever server fails first wins; close the other and surface any
+	// shutdown errors alongside the original. errors.Join drops nils.
+	err := <-errc
+	return errors.Join(err, tcp.Close(), h3.Close())
 }
 
 // Helper functions for safe dereferencing of optional proto fields.
