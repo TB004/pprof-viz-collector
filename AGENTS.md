@@ -38,22 +38,24 @@ type Config struct {
     CertFile       string   // TLS cert path; enables TLS when set (New only)
     KeyFile        string   // TLS key path; paired with CertFile (New only)
     HTTP3          bool     // serve HTTP/3 over QUIC in parallel; requires CertFile+KeyFile (New only)
+    Host           string   // bind interface; empty = "localhost" (New only)
 }
 ```
 
 ### Entry points
 - **`Bind(mux *http.ServeMux, cfg Config)`**: Registers the agent onto an existing mux. `cfg.Token` and `cfg.AllowedOrigins` apply; TLS/HTTP3 are server-level concerns managed externally.
-- **`New(port int, cfg Config) error`**: Starts a dedicated server.
-  - No TLS → cleartext HTTP/2.
-  - `CertFile`+`KeyFile` set → TLS + HTTP/2.
-  - `HTTP3: true` → `http3.ListenAndServeTLS` handles TCP and QUIC in parallel with automatic `Alt-Svc` header injection.
+- **`New(port int, cfg Config) error`**: Starts a dedicated server bound to `cfg.Host` (default `localhost`).
+  - No TLS → cleartext HTTP/2 (h2c).
+  - `CertFile`+`KeyFile` set → TLS + HTTP/2 (minimum TLS 1.2).
+  - `HTTP3: true` → HTTP/2 over TLS/TCP and HTTP/3 over QUIC are served in parallel on two separate servers; the TCP handler injects `Alt-Svc` headers via `http3.Server.SetQUICHeaders` so clients can upgrade. The package-level `http3.ListenAndServeTLS` helper is deliberately **not** used because it builds a default `http.Server` with no timeouts and no TLS `MinVersion`.
+  - Every TCP server is built by `newHTTPServer` with hardened timeouts (`ReadHeaderTimeout`, `ReadTimeout`, `IdleTimeout`). `WriteTimeout` is intentionally omitted so the long-lived `StreamAll` stream is not terminated. All TLS configs set `MinVersion: tls.VersionTLS12`.
 
 ### RPC methods
 | RPC | Type | Description |
 | :--- | :--- | :--- |
 | `Ping` | Unary | No-op health check. Returns OK if the agent is reachable. |
 | `SnapshotAll` | Unary | One-shot capture of all non-zero runtime metrics. |
-| `StreamAll(StreamConfigRequest)` | Server-streaming | Differential metric updates at a client-specified interval. |
+| `StreamAll(StreamConfigRequest)` | Server-streaming | Differential metric updates at a client-specified interval; emits an immediate full baseline frame first. |
 | `GetMetadata` | Unary | Static histogram bucket boundaries. Call once before streaming. |
 
 ## 🛠️ Development & Commands
@@ -86,14 +88,18 @@ All maintenance tasks should be performed using the `Justfile`.
 - **Subtest Pattern**: When using `t.Run`, always call `t.Parallel()` **inside** the subtest function to ensure concurrent execution.
 - **Test helpers**: Use `newTestClient(t *testing.T)` (defined in `internal/server_test.go`) to create isolated ConnectRPC test servers. It uses `t.Cleanup(server.Close)` — never `defer server.Close()` — so the server lifetime outlives parallel subtests.
 - **`defer` vs `t.Cleanup`**: When a parent test spawns parallel subtests, `defer` fires at parent function return (before subtests complete). Always use `t.Cleanup` for resources shared with parallel subtests.
+- **Metric coverage guard**: `TestMetricCoverage` (in `internal/metrics_test.go`) asserts every `runtime/metrics.All()` entry is either collected (in `AllMetricNames`) or listed in the documented `intentionallyOmitted` map. When adding or dropping a collected metric, update one of the two — a new Go version's added metrics will fail this test until they are wired up or explicitly omitted with a reason.
 
 ### Collector design
 - **`SampleCollector.Collect()`** (no parameters): Always returns differential updates. On a fresh collector (first call after `NewSampleCollector()`), the `KindBad` branch in `hasChanged` correctly treats all non-zero values as "changed from zero", making an explicit `forceFull` flag unnecessary.
 - **Histogram buckets are never included in `Collect()`**: Bucket boundaries are static and sent once via `GetMetadata`. `StreamAll` and `SnapshotAll` always omit `Buckets`; only `UpdatedCounts` (sparse delta map) is transmitted.
+- **One-shot snapshots use a pooled collector**: `internal.Snapshot()` recycles `SampleCollector`s through a `sync.Pool` and calls `resetBaseline()` (zeroing the buffer that the next `Read` swaps in as the diff baseline) before each read, so repeated `SnapshotAll`/`Snapshot*()` calls reproduce fresh-collector full-state semantics without re-allocating the sample slices. `StreamAll` keeps its own persistent collector across cycles for genuine differential diffing — never route it through the pool.
+- **`StreamAll` sends an immediate first frame**: The full baseline frame is sent at connect time (t=0), counting as the first cycle, rather than after one interval. Frame semantics are unchanged (the first frame was always full); only the timing moved earlier.
+- **`ReadAllSamples` panics on a wrong-sized buffer**: The sample slice must have exactly `len(AllMetricNames)` entries. A mismatch is a programming error within the package and panics rather than silently emitting zeroed metrics.
 
 ### Authentication
-- Token auth is implemented as a ConnectRPC interceptor in `internal/auth.go` via `NewTokenInterceptor(token string) connect.Interceptor`.
-- Checks `Authorization: Bearer <token>` on every RPC (unary and streaming).
+- Token auth is implemented as a ConnectRPC interceptor in `internal/interceptor.go` via `NewTokenInterceptor(token string) connect.Interceptor`.
+- Checks `Authorization: Bearer <token>` on every RPC (unary and streaming) using a constant-time comparison (`crypto/subtle.ConstantTimeCompare`) to avoid leaking the token through response timing.
 - Returns `CodeUnauthenticated` (HTTP 401) on mismatch.
 - **Auth belongs in HTTP headers, not proto messages.** Never add token fields to proto message definitions.
 

@@ -1,6 +1,6 @@
 module github.com/TB004/pprof-viz-agent
 
-go 1.26.3
+go 1.26.4
 
 tool (
 	connectrpc.com/connect/cmd/protoc-gen-connect-go

@@ -17,7 +17,7 @@ While standard `pprof` is indispensable for deep-dive analysis and stack-trace i
 - **Low Overhead**: Optimized for zero-alloc collection loops using a single-pass `runtime/metrics.Read` approach and O(1) metric indexing.
 - **Efficient**: Uses `zstd` compression and intelligent field alignment to minimize network and memory footprint.
 - **Easy Integration**: Minimal-config setup for both existing web services and standalone CLI tools.
-- **Secure**: Optional bearer token authentication to restrict access to authorized clients.
+- **Secure**: Optional bearer token authentication (constant-time comparison) to restrict access, plus TLS 1.2+ and hardened connection timeouts when running standalone.
 - **Browser-Ready**: Built-in CORS support with ConnectRPC-aware header configuration for web frontends.
 
 ## Installation
@@ -31,7 +31,7 @@ go get github.com/TB004/pprof-viz-agent
 `pprof-viz-agent` employs several sophisticated strategies to minimize network usage during long-running streams:
 
 1.  **Differential Updates**: The agent tracks the state of all metrics and only transmits values that have changed since the last sample. Unchanged fields are omitted from the wire entirely, drastically reducing payload size for stable applications.
-2.  **Zero-Value Omission**: The very first message of a stream is treated as a delta from the default state. Any metric that is zero (like many `goDebug` events) is omitted from the initial synchronization, ensuring the baseline is as small as possible.
+2.  **Zero-Value Omission**: The very first message of a stream is sent immediately on connect and treated as a delta from the default state. Any metric that is zero (like many `goDebug` events) is omitted from the initial synchronization, ensuring the baseline is as small as possible.
 3.  **Sparse Histogram Updates**: Instead of sending full arrays of histogram counts, the agent uses a map-based "sparse update" approach. Only the specific buckets that have changed are transmitted. This is particularly effective for large histograms where only a few buckets (e.g., specific latency ranges) are active.
 4.  **Metadata Separation**: Histogram bucket boundaries are static and bandwidth-heavy. The agent enforces a strict "Metadata + Data" pattern:
     *   Call `GetMetadata` once to retrieve the static bucket definitions.
@@ -65,8 +65,15 @@ type Config struct {
     // HTTP3 also serves HTTP/3 over QUIC in parallel with the TLS/TCP server.
     // Requires CertFile and KeyFile. Only used by New.
     HTTP3 bool
+
+    // Host is the network interface to bind to (e.g. "127.0.0.1" or "0.0.0.0").
+    // Defaults to "localhost" when empty. Binding to a non-loopback address
+    // exposes the agent externally; pair it with TLS and a Token. Only used by New.
+    Host string
 }
 ```
+
+When running standalone, `New` binds to `Host` (default `localhost`) and applies hardened HTTP timeouts (`ReadHeaderTimeout`, `ReadTimeout`, `IdleTimeout`) on every TCP server. `WriteTimeout` is intentionally omitted so long-lived `StreamAll` streams are not terminated mid-flight. TLS connections negotiate a minimum of TLS 1.2.
 
 ### 1. Using `Bind()` (Existing HTTP Server)
 
@@ -169,7 +176,7 @@ Requests without the header or with a wrong token are rejected with HTTP 401 Una
 | :--- | :--- | :--- |
 | `Ping` | Unary | Health check — returns OK if the agent is reachable. |
 | `SnapshotAll` | Unary | One-shot capture of all non-zero runtime metrics. |
-| `StreamAll` | Server-streaming | Streams differential metric updates at a client-specified interval. |
+| `StreamAll` | Server-streaming | Streams differential metric updates at a client-specified interval, beginning with an immediate full baseline frame. |
 | `GetMetadata` | Unary | Returns static histogram bucket boundaries. Call once before streaming. |
 
 ## Pprof vs. Pprof-Viz
