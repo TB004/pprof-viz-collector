@@ -5,6 +5,7 @@ package internal
 
 import (
 	"runtime/metrics"
+	"sync"
 
 	"github.com/TB004/pprof-viz-agent/internal/proto"
 )
@@ -35,6 +36,32 @@ func (c *SampleCollector) Read() {
 	// The one that was "current" becomes "last".
 	c.samples, c.lastSamples = c.lastSamples, c.samples
 	ReadAllSamples(c.samples)
+}
+
+// resetBaseline clears the current sample values so that the next Read+Collect
+// reports the full current state rather than a diff.
+func (c *SampleCollector) resetBaseline() {
+	for i := range c.samples {
+		c.samples[i].Value = metrics.Value{}
+	}
+}
+
+// collectorPool recycles SampleCollectors for one-shot snapshots so repeated
+// Snapshot calls don't each allocate two full sample slices.
+var collectorPool = sync.Pool{
+	New: func() any { return NewSampleCollector() },
+}
+
+// Snapshot performs a single full collection of all runtime metrics using a
+// pooled collector. The returned response is independent of the collector and
+// safe to use after the collector is recycled.
+func Snapshot() *proto.AllResponse {
+	c := collectorPool.Get().(*SampleCollector)
+	defer collectorPool.Put(c)
+
+	c.resetBaseline()
+	c.Read()
+	return c.Collect()
 }
 
 // Collect maps the current samples into a proto response, returning only fields that changed

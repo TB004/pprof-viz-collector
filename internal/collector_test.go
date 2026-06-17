@@ -50,3 +50,37 @@ func TestSampleCollector_ReadAndCollect(t *testing.T) {
 		assert.Nil(t, res.Gc.BytesAllocsBySize)
 	})
 }
+
+// TestResetBaseline verifies that resetBaseline restores full-state collection
+// semantics on a collector that has already accumulated real values, which is
+// what makes pooled reuse for one-shot snapshots correct.
+func TestResetBaseline(t *testing.T) {
+	c := NewSampleCollector()
+
+	c.Read()
+	_ = c.Collect() // first read returns full state
+	c.Read()
+	diff := c.Collect()
+	// Total memory rarely changes between two back-to-back reads, so the diff
+	// typically omits it; the point is we are no longer in the full-state regime.
+	_ = diff
+
+	// Simulate what the pool does before handing the collector back out.
+	c.resetBaseline()
+	c.Read()
+	res := c.Collect()
+
+	// A running program always has non-zero total memory, so a full snapshot
+	// must include it again.
+	assert.NotNil(t, res.Memory.TotalBytes, "resetBaseline should restore full-state collection")
+}
+
+// TestSnapshotFullStateAcrossCalls verifies the pooled Snapshot helper returns a
+// full snapshot on every call, even when a recycled collector is reused.
+func TestSnapshotFullStateAcrossCalls(t *testing.T) {
+	for i := range 5 {
+		res := Snapshot()
+		assert.NotNil(t, res)
+		assert.NotNilf(t, res.Memory.TotalBytes, "Snapshot must return full state on call %d", i)
+	}
+}

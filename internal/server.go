@@ -27,9 +27,7 @@ func (h AgentServiceHandler) Ping(context.Context, *emptypb.Empty) (*emptypb.Emp
 
 // SnapshotAll returns a single point-in-time capture of all supported Go runtime metrics.
 func (h AgentServiceHandler) SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error) {
-	collector := NewSampleCollector()
-	collector.Read()
-	return collector.Collect(), nil
+	return Snapshot(), nil
 }
 
 // GetMetadata returns the static bucket boundaries for all histogram metrics.

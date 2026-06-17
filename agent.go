@@ -344,9 +344,7 @@ func toSyncResponse(s *proto.SyncResponse) models.SyncResponse {
 
 // snapshot reads a single point-in-time capture of all runtime metrics.
 func snapshot() *proto.AllResponse {
-	c := internal.NewSampleCollector()
-	c.Read()
-	return c.Collect()
+	return internal.Snapshot()
 }
 
 // SnapshotCgo retrieves a snapshot of cgo-related metrics.
