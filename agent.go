@@ -139,16 +139,6 @@ func vUint32(v *uint32) uint32 {
 	return *v
 }
 
-func vHist(h *proto.Histogram) *models.Histogram {
-	if h == nil {
-		return nil
-	}
-	return &models.Histogram{
-		Counts:  h.Counts,
-		Buckets: h.Buckets,
-	}
-}
-
 func toModelHistogram(h *proto.Histogram) *models.Histogram {
 	if h == nil {
 		return nil
@@ -159,318 +149,208 @@ func toModelHistogram(h *proto.Histogram) *models.Histogram {
 	}
 }
 
-// SnapshotCgo retrieves a snapshot of cgo-related metrics.
-func SnapshotCgo() models.CgoResponse {
+// The following toXxx helpers map a single category of a proto.AllResponse into
+// its models counterpart. They are shared by the per-category Snapshot* funcs
+// and SnapshotAll so the mapping lives in exactly one place.
+
+func toCgoResponse(c *proto.CgoResponse) models.CgoResponse {
+	return models.CgoResponse{
+		CgoCalls: vUint(c.CgoCalls),
+	}
+}
+
+func toCPUResponse(c *proto.CPUResponse) *models.CPUResponse {
+	return &models.CPUResponse{
+		GcAssistSeconds:           vFloat(c.GcAssistSeconds),
+		GcDedicatedSeconds:        vFloat(c.GcDedicatedSeconds),
+		GcIdleSeconds:             vFloat(c.GcIdleSeconds),
+		GcPauseSeconds:            vFloat(c.GcPauseSeconds),
+		GcTotalSeconds:            vFloat(c.GcTotalSeconds),
+		IdleSeconds:               vFloat(c.IdleSeconds),
+		TotalSeconds:              vFloat(c.TotalSeconds),
+		UserSeconds:               vFloat(c.UserSeconds),
+		ScavengeAssistSeconds:     vFloat(c.ScavengeAssistSeconds),
+		ScavengeBackgroundSeconds: vFloat(c.ScavengeBackgroundSeconds),
+		ScavengeTotalSeconds:      vFloat(c.ScavengeTotalSeconds),
+	}
+}
+
+func toGCResponse(g *proto.GCResponse) *models.GCResponse {
+	return &models.GCResponse{
+		BytesAllocsBySize:        toModelHistogram(g.BytesAllocsBySize),
+		BytesFreesBySize:         toModelHistogram(g.BytesFreesBySize),
+		ExecutedCleanups:         vUint(g.ExecutedCleanups),
+		QueuedCleanups:           vUint(g.QueuedCleanups),
+		AutomaticCycles:          vUint(g.AutomaticCycles),
+		ForcedCycles:             vUint(g.ForcedCycles),
+		TotalCycles:              vUint(g.TotalCycles),
+		ExecutedFinalizers:       vUint(g.ExecutedFinalizers),
+		QueuedFinalizers:         vUint(g.QueuedFinalizers),
+		MemoryLimitBytes:         vUint(g.MemoryLimitBytes),
+		BytesAllocs:              vUint(g.BytesAllocs),
+		ObjectsAllocs:            vUint(g.ObjectsAllocs),
+		BytesFrees:               vUint(g.BytesFrees),
+		ObjectsFrees:             vUint(g.ObjectsFrees),
+		GoalHeapSizeBytes:        vUint(g.GoalHeapSizeBytes),
+		LiveOccupiedBytes:        vUint(g.LiveOccupiedBytes),
+		ObjectsOccupied:          vUint(g.ObjectsOccupied),
+		TinyObjectsAllocs:        vUint(g.TinyObjectsAllocs),
+		LimiterLastEnabledCycle:  vUint(g.LimiterLastEnabledCycle),
+		GlobalScannedBytes:       vUint(g.GlobalScannedBytes),
+		HeapScannedBytes:         vUint(g.HeapScannedBytes),
+		StackScannedBytes:        vUint(g.StackScannedBytes),
+		TotalScannedBytes:        vUint(g.TotalScannedBytes),
+		StackStartingSize:        vUint(g.StackStartingSize),
+		TargetHeapSizePercentage: vUint32(g.TargetHeapSizePercentage),
+	}
+}
+
+func toGoDebugResponse(d *proto.GoDebugResponse) *models.GoDebugResponse {
+	return &models.GoDebugResponse{
+		CacheHashEvents:                   vUint(d.CacheHashEvents),
+		CacheTestEvents:                   vUint(d.CacheTestEvents),
+		CacheVerifyEvents:                 vUint(d.CacheVerifyEvents),
+		Http2ClientEvents:                 vUint(d.Http2ClientEvents),
+		Http2ServerEvents:                 vUint(d.Http2ServerEvents),
+		Tls10ServerEvents:                 vUint(d.Tls10ServerEvents),
+		Tls3DesEvents:                     vUint(d.Tls3DesEvents),
+		TlsMaxRsaSizeEvents:               vUint(d.TlsMaxRsaSizeEvents),
+		TlsRsaKexEvents:                   vUint(d.TlsRsaKexEvents),
+		TlsSha1Events:                     vUint(d.TlsSha1Events),
+		TlsUnsafeEkmEvents:                vUint(d.TlsUnsafeEkmEvents),
+		HttpCookieMaxNumEvents:            vUint(d.HttpCookieMaxNumEvents),
+		HttpLaxContentLengthEvents:        vUint(d.HttpLaxContentLengthEvents),
+		HttpMuxGo121Events:                vUint(d.HttpMuxGo_121Events),
+		HttpServeContentKeepHeadersEvents: vUint(d.HttpServeContentKeepHeadersEvents),
+		AllowMultipleVcsEvents:            vUint(d.AllowMultipleVcsEvents),
+		AsyncTimerChanEvents:              vUint(d.AsyncTimerChanEvents),
+		ContainerMaxProcsEvents:           vUint(d.ContainerMaxProcsEvents),
+		CryptoCustomRandEvents:            vUint(d.CryptoCustomRandEvents),
+		EmbedFollowSymlinkEvents:          vUint(d.EmbedFollowSymlinkEvents),
+		ExecErrDotEvents:                  vUint(d.ExecErrDotEvents),
+		TestJsonBuildTextEvents:           vUint(d.TestJsonBuildTextEvents),
+		TypeAliasEvents:                   vUint(d.TypeAliasEvents),
+		HtmlMetaContentUrlEscapedEvents:   vUint(d.HtmlMetaContentUrlEscapedEvents),
+		InstallGoRootEvents:               vUint(d.InstallGoRootEvents),
+		MultipartMaxHeadersEvents:         vUint(d.MultipartMaxHeadersEvents),
+		MultipartMaxPartsEvents:           vUint(d.MultipartMaxPartsEvents),
+		MultipathTcpEvents:                vUint(d.MultipathTcpEvents),
+		NetEdns0Events:                    vUint(d.NetEdns0Events),
+		PanicNilEvents:                    vUint(d.PanicNilEvents),
+		RandAutoSeedEvents:                vUint(d.RandAutoSeedEvents),
+		RandSeedNopEvents:                 vUint(d.RandSeedNopEvents),
+		Rsa1024MinEvents:                  vUint(d.Rsa1024MinEvents),
+		TarInsecurePathEvents:             vUint(d.TarInsecurePathEvents),
+		UpdateMaxProcsEvents:              vUint(d.UpdateMaxProcsEvents),
+		UrlMaxQueryParamsEvents:           vUint(d.UrlMaxQueryParamsEvents),
+		UrlStrictColonsEvents:             vUint(d.UrlStrictColonsEvents),
+		WinReadLinkVolumeEvents:           vUint(d.WinReadLinkVolumeEvents),
+		WinSymlinkEvents:                  vUint(d.WinSymlinkEvents),
+		X509KeypairLeafEvents:             vUint(d.X509KeypairLeafEvents),
+		X509NegativeSerialEvents:          vUint(d.X509NegativeSerialEvents),
+		X509RsaCrtEvents:                  vUint(d.X509RsaCrtEvents),
+		X509Sha256SkidEvents:              vUint(d.X509Sha256SkidEvents),
+		X509UseFallbackRootsEvents:        vUint(d.X509UseFallbackRootsEvents),
+		X509UsePoliciesEvents:             vUint(d.X509UsePoliciesEvents),
+		ZipInsecurePathEvents:             vUint(d.ZipInsecurePathEvents),
+	}
+}
+
+func toMemoryResponse(m *proto.MemoryResponse) *models.MemoryResponse {
+	return &models.MemoryResponse{
+		HeapFreeBytes:        vUint(m.HeapFreeBytes),
+		HeapObjectBytes:      vUint(m.HeapObjectBytes),
+		HeapReleasedBytes:    vUint(m.HeapReleasedBytes),
+		HeapStackBytes:       vUint(m.HeapStackBytes),
+		HeapUnusedBytes:      vUint(m.HeapUnusedBytes),
+		McacheFreeBytes:      vUint(m.McacheFreeBytes),
+		McacheInuseBytes:     vUint(m.McacheInuseBytes),
+		MspanFreeBytes:       vUint(m.MspanFreeBytes),
+		MspanInuseBytes:      vUint(m.MspanInuseBytes),
+		OtherMetadataBytes:   vUint(m.OtherMetadataBytes),
+		OsStackBytes:         vUint(m.OsStackBytes),
+		OtherBytes:           vUint(m.OtherBytes),
+		ProfilingBucketBytes: vUint(m.ProfilingBucketBytes),
+		TotalBytes:           vUint(m.TotalBytes),
+	}
+}
+
+func toSchedulerResponse(s *proto.SchedulerResponse) *models.SchedulerResponse {
+	return &models.SchedulerResponse{
+		LatenciesSeconds:       toModelHistogram(s.LatenciesSeconds),
+		StoppingGcSeconds:      toModelHistogram(s.StoppingGcSeconds),
+		StoppingOtherSeconds:   toModelHistogram(s.StoppingOtherSeconds),
+		TotalGcPauseSeconds:    toModelHistogram(s.TotalGcPauseSeconds),
+		TotalOtherPauseSeconds: toModelHistogram(s.TotalOtherPauseSeconds),
+		GoroutinesCreated:      vUint(s.GoroutinesCreated),
+		GomaxprocsThreads:      vUint32(s.GomaxprocsThreads),
+		NotInGoGoroutines:      vUint32(s.NotInGoGoroutines),
+		RunnableGoroutines:     vUint32(s.RunnableGoroutines),
+		RunningGoroutines:      vUint32(s.RunningGoroutines),
+		WaitingGoroutines:      vUint32(s.WaitingGoroutines),
+		LiveGoroutines:         vUint32(s.LiveGoroutines),
+		TotalLiveThreads:       vUint32(s.TotalLiveThreads),
+	}
+}
+
+func toSyncResponse(s *proto.SyncResponse) models.SyncResponse {
+	return models.SyncResponse{
+		TotalMutexWaitDurationSeconds: vFloat(s.TotalMutexWaitDurationSeconds),
+	}
+}
+
+// snapshot reads a single point-in-time capture of all runtime metrics.
+func snapshot() *proto.AllResponse {
 	c := internal.NewSampleCollector()
 	c.Read()
-	s := c.Collect()
+	return c.Collect()
+}
 
-	return models.CgoResponse{
-		CgoCalls: vUint(s.Cgo.CgoCalls),
-	}
+// SnapshotCgo retrieves a snapshot of cgo-related metrics.
+func SnapshotCgo() models.CgoResponse {
+	return toCgoResponse(snapshot().Cgo)
 }
 
 // SnapshotGC retrieves a snapshot of GC-related metrics.
 func SnapshotGC() *models.GCResponse {
-	c := internal.NewSampleCollector()
-	c.Read()
-	s := c.Collect()
-
-	return &models.GCResponse{
-		BytesAllocsBySize:        vHist(s.Gc.BytesAllocsBySize),
-		BytesFreesBySize:         vHist(s.Gc.BytesFreesBySize),
-		ExecutedCleanups:         vUint(s.Gc.ExecutedCleanups),
-		QueuedCleanups:           vUint(s.Gc.QueuedCleanups),
-		AutomaticCycles:          vUint(s.Gc.AutomaticCycles),
-		ForcedCycles:             vUint(s.Gc.ForcedCycles),
-		TotalCycles:              vUint(s.Gc.TotalCycles),
-		ExecutedFinalizers:       vUint(s.Gc.ExecutedFinalizers),
-		QueuedFinalizers:         vUint(s.Gc.QueuedFinalizers),
-		MemoryLimitBytes:         vUint(s.Gc.MemoryLimitBytes),
-		BytesAllocs:              vUint(s.Gc.BytesAllocs),
-		ObjectsAllocs:            vUint(s.Gc.ObjectsAllocs),
-		BytesFrees:               vUint(s.Gc.BytesFrees),
-		ObjectsFrees:             vUint(s.Gc.ObjectsFrees),
-		GoalHeapSizeBytes:        vUint(s.Gc.GoalHeapSizeBytes),
-		LiveOccupiedBytes:        vUint(s.Gc.LiveOccupiedBytes),
-		ObjectsOccupied:          vUint(s.Gc.ObjectsOccupied),
-		TinyObjectsAllocs:        vUint(s.Gc.TinyObjectsAllocs),
-		LimiterLastEnabledCycle:  vUint(s.Gc.LimiterLastEnabledCycle),
-		GlobalScannedBytes:       vUint(s.Gc.GlobalScannedBytes),
-		HeapScannedBytes:         vUint(s.Gc.HeapScannedBytes),
-		StackScannedBytes:        vUint(s.Gc.StackScannedBytes),
-		TotalScannedBytes:        vUint(s.Gc.TotalScannedBytes),
-		StackStartingSize:        vUint(s.Gc.StackStartingSize),
-		TargetHeapSizePercentage: vUint32(s.Gc.TargetHeapSizePercentage),
-	}
+	return toGCResponse(snapshot().Gc)
 }
 
 // SnapshotCPU retrieves a snapshot of CPU-related metrics.
 func SnapshotCPU() *models.CPUResponse {
-	c := internal.NewSampleCollector()
-	c.Read()
-	s := c.Collect()
-
-	return &models.CPUResponse{
-		GcAssistSeconds:           vFloat(s.Cpu.GcAssistSeconds),
-		GcDedicatedSeconds:        vFloat(s.Cpu.GcDedicatedSeconds),
-		GcIdleSeconds:             vFloat(s.Cpu.GcIdleSeconds),
-		GcPauseSeconds:            vFloat(s.Cpu.GcPauseSeconds),
-		GcTotalSeconds:            vFloat(s.Cpu.GcTotalSeconds),
-		IdleSeconds:               vFloat(s.Cpu.IdleSeconds),
-		TotalSeconds:              vFloat(s.Cpu.TotalSeconds),
-		UserSeconds:               vFloat(s.Cpu.UserSeconds),
-		ScavengeAssistSeconds:     vFloat(s.Cpu.ScavengeAssistSeconds),
-		ScavengeBackgroundSeconds: vFloat(s.Cpu.ScavengeBackgroundSeconds),
-		ScavengeTotalSeconds:      vFloat(s.Cpu.ScavengeTotalSeconds),
-	}
+	return toCPUResponse(snapshot().Cpu)
 }
 
 // SnapshotGoDebug retrieves a snapshot of godebug-related metrics.
 func SnapshotGoDebug() *models.GoDebugResponse {
-	c := internal.NewSampleCollector()
-	c.Read()
-	s := c.Collect()
-
-	return &models.GoDebugResponse{
-		CacheHashEvents:                   vUint(s.GoDebug.CacheHashEvents),
-		CacheTestEvents:                   vUint(s.GoDebug.CacheTestEvents),
-		CacheVerifyEvents:                 vUint(s.GoDebug.CacheVerifyEvents),
-		Http2ClientEvents:                 vUint(s.GoDebug.Http2ClientEvents),
-		Http2ServerEvents:                 vUint(s.GoDebug.Http2ServerEvents),
-		Tls10ServerEvents:                 vUint(s.GoDebug.Tls10ServerEvents),
-		Tls3DesEvents:                     vUint(s.GoDebug.Tls3DesEvents),
-		TlsMaxRsaSizeEvents:               vUint(s.GoDebug.TlsMaxRsaSizeEvents),
-		TlsRsaKexEvents:                   vUint(s.GoDebug.TlsRsaKexEvents),
-		TlsSha1Events:                     vUint(s.GoDebug.TlsSha1Events),
-		TlsUnsafeEkmEvents:                vUint(s.GoDebug.TlsUnsafeEkmEvents),
-		HttpCookieMaxNumEvents:            vUint(s.GoDebug.HttpCookieMaxNumEvents),
-		HttpLaxContentLengthEvents:        vUint(s.GoDebug.HttpLaxContentLengthEvents),
-		HttpMuxGo121Events:                vUint(s.GoDebug.HttpMuxGo_121Events),
-		HttpServeContentKeepHeadersEvents: vUint(s.GoDebug.HttpServeContentKeepHeadersEvents),
-		AllowMultipleVcsEvents:            vUint(s.GoDebug.AllowMultipleVcsEvents),
-		AsyncTimerChanEvents:              vUint(s.GoDebug.AsyncTimerChanEvents),
-		ContainerMaxProcsEvents:           vUint(s.GoDebug.ContainerMaxProcsEvents),
-		CryptoCustomRandEvents:            vUint(s.GoDebug.CryptoCustomRandEvents),
-		EmbedFollowSymlinkEvents:          vUint(s.GoDebug.EmbedFollowSymlinkEvents),
-		ExecErrDotEvents:                  vUint(s.GoDebug.ExecErrDotEvents),
-		TestJsonBuildTextEvents:           vUint(s.GoDebug.TestJsonBuildTextEvents),
-		TypeAliasEvents:                   vUint(s.GoDebug.TypeAliasEvents),
-		HtmlMetaContentUrlEscapedEvents:   vUint(s.GoDebug.HtmlMetaContentUrlEscapedEvents),
-		InstallGoRootEvents:               vUint(s.GoDebug.InstallGoRootEvents),
-		MultipartMaxHeadersEvents:         vUint(s.GoDebug.MultipartMaxHeadersEvents),
-		MultipartMaxPartsEvents:           vUint(s.GoDebug.MultipartMaxPartsEvents),
-		MultipathTcpEvents:                vUint(s.GoDebug.MultipathTcpEvents),
-		NetEdns0Events:                    vUint(s.GoDebug.NetEdns0Events),
-		PanicNilEvents:                    vUint(s.GoDebug.PanicNilEvents),
-		RandAutoSeedEvents:                vUint(s.GoDebug.RandAutoSeedEvents),
-		RandSeedNopEvents:                 vUint(s.GoDebug.RandSeedNopEvents),
-		Rsa1024MinEvents:                  vUint(s.GoDebug.Rsa1024MinEvents),
-		TarInsecurePathEvents:             vUint(s.GoDebug.TarInsecurePathEvents),
-		UpdateMaxProcsEvents:              vUint(s.GoDebug.UpdateMaxProcsEvents),
-		UrlMaxQueryParamsEvents:           vUint(s.GoDebug.UrlMaxQueryParamsEvents),
-		UrlStrictColonsEvents:             vUint(s.GoDebug.UrlStrictColonsEvents),
-		WinReadLinkVolumeEvents:           vUint(s.GoDebug.WinReadLinkVolumeEvents),
-		WinSymlinkEvents:                  vUint(s.GoDebug.WinSymlinkEvents),
-		X509KeypairLeafEvents:             vUint(s.GoDebug.X509KeypairLeafEvents),
-		X509NegativeSerialEvents:          vUint(s.GoDebug.X509NegativeSerialEvents),
-		X509RsaCrtEvents:                  vUint(s.GoDebug.X509RsaCrtEvents),
-		X509Sha256SkidEvents:              vUint(s.GoDebug.X509Sha256SkidEvents),
-		X509UseFallbackRootsEvents:        vUint(s.GoDebug.X509UseFallbackRootsEvents),
-		X509UsePoliciesEvents:             vUint(s.GoDebug.X509UsePoliciesEvents),
-		ZipInsecurePathEvents:             vUint(s.GoDebug.ZipInsecurePathEvents),
-	}
+	return toGoDebugResponse(snapshot().GoDebug)
 }
 
 // SnapshotMemory retrieves a snapshot of memory-related metrics.
 func SnapshotMemory() *models.MemoryResponse {
-	c := internal.NewSampleCollector()
-	c.Read()
-	s := c.Collect()
-
-	return &models.MemoryResponse{
-		HeapFreeBytes:        vUint(s.Memory.HeapFreeBytes),
-		HeapObjectBytes:      vUint(s.Memory.HeapObjectBytes),
-		HeapReleasedBytes:    vUint(s.Memory.HeapReleasedBytes),
-		HeapStackBytes:       vUint(s.Memory.HeapStackBytes),
-		HeapUnusedBytes:      vUint(s.Memory.HeapUnusedBytes),
-		McacheFreeBytes:      vUint(s.Memory.McacheFreeBytes),
-		McacheInuseBytes:     vUint(s.Memory.McacheInuseBytes),
-		MspanFreeBytes:       vUint(s.Memory.MspanFreeBytes),
-		MspanInuseBytes:      vUint(s.Memory.MspanInuseBytes),
-		OtherMetadataBytes:   vUint(s.Memory.OtherMetadataBytes),
-		OsStackBytes:         vUint(s.Memory.OsStackBytes),
-		OtherBytes:           vUint(s.Memory.OtherBytes),
-		ProfilingBucketBytes: vUint(s.Memory.ProfilingBucketBytes),
-		TotalBytes:           vUint(s.Memory.TotalBytes),
-	}
+	return toMemoryResponse(snapshot().Memory)
 }
 
 // SnapshotScheduler retrieves a snapshot of scheduler-related metrics.
 func SnapshotScheduler() *models.SchedulerResponse {
-	c := internal.NewSampleCollector()
-	c.Read()
-	s := c.Collect()
-
-	return &models.SchedulerResponse{
-		LatenciesSeconds:       toModelHistogram(s.Scheduler.LatenciesSeconds),
-		StoppingGcSeconds:      toModelHistogram(s.Scheduler.StoppingGcSeconds),
-		StoppingOtherSeconds:   toModelHistogram(s.Scheduler.StoppingOtherSeconds),
-		TotalGcPauseSeconds:    toModelHistogram(s.Scheduler.TotalGcPauseSeconds),
-		TotalOtherPauseSeconds: toModelHistogram(s.Scheduler.TotalOtherPauseSeconds),
-		GoroutinesCreated:      vUint(s.Scheduler.GoroutinesCreated),
-		GomaxprocsThreads:      vUint32(s.Scheduler.GomaxprocsThreads),
-		NotInGoGoroutines:      vUint32(s.Scheduler.NotInGoGoroutines),
-		RunnableGoroutines:     vUint32(s.Scheduler.RunnableGoroutines),
-		RunningGoroutines:      vUint32(s.Scheduler.RunningGoroutines),
-		WaitingGoroutines:      vUint32(s.Scheduler.WaitingGoroutines),
-		LiveGoroutines:         vUint32(s.Scheduler.LiveGoroutines),
-		TotalLiveThreads:       vUint32(s.Scheduler.TotalLiveThreads),
-	}
+	return toSchedulerResponse(snapshot().Scheduler)
 }
 
 // SnapshotSync retrieves a snapshot of sync-related metrics.
 func SnapshotSync() models.SyncResponse {
-	c := internal.NewSampleCollector()
-	c.Read()
-	s := c.Collect()
-
-	return models.SyncResponse{
-		TotalMutexWaitDurationSeconds: vFloat(s.Sync.TotalMutexWaitDurationSeconds),
-	}
+	return toSyncResponse(snapshot().Sync)
 }
 
 // SnapshotAll retrieves a single point-in-time capture of all supported Go runtime metrics.
 func SnapshotAll() models.AllResponse {
-	c := internal.NewSampleCollector()
-	c.Read()
-	s := c.Collect()
-
+	s := snapshot()
 	return models.AllResponse{
-		Cgo: models.CgoResponse{
-			CgoCalls: vUint(s.Cgo.CgoCalls),
-		},
-		Cpu: &models.CPUResponse{
-			GcAssistSeconds:           vFloat(s.Cpu.GcAssistSeconds),
-			GcDedicatedSeconds:        vFloat(s.Cpu.GcDedicatedSeconds),
-			GcIdleSeconds:             vFloat(s.Cpu.GcIdleSeconds),
-			GcPauseSeconds:            vFloat(s.Cpu.GcPauseSeconds),
-			GcTotalSeconds:            vFloat(s.Cpu.GcTotalSeconds),
-			IdleSeconds:               vFloat(s.Cpu.IdleSeconds),
-			TotalSeconds:              vFloat(s.Cpu.TotalSeconds),
-			UserSeconds:               vFloat(s.Cpu.UserSeconds),
-			ScavengeAssistSeconds:     vFloat(s.Cpu.ScavengeAssistSeconds),
-			ScavengeBackgroundSeconds: vFloat(s.Cpu.ScavengeBackgroundSeconds),
-			ScavengeTotalSeconds:      vFloat(s.Cpu.ScavengeTotalSeconds),
-		},
-		Gc: &models.GCResponse{
-			BytesAllocsBySize:        toModelHistogram(s.Gc.BytesAllocsBySize),
-			BytesFreesBySize:         toModelHistogram(s.Gc.BytesFreesBySize),
-			ExecutedCleanups:         vUint(s.Gc.ExecutedCleanups),
-			QueuedCleanups:           vUint(s.Gc.QueuedCleanups),
-			AutomaticCycles:          vUint(s.Gc.AutomaticCycles),
-			ForcedCycles:             vUint(s.Gc.ForcedCycles),
-			TotalCycles:              vUint(s.Gc.TotalCycles),
-			ExecutedFinalizers:       vUint(s.Gc.ExecutedFinalizers),
-			QueuedFinalizers:         vUint(s.Gc.QueuedFinalizers),
-			MemoryLimitBytes:         vUint(s.Gc.MemoryLimitBytes),
-			BytesAllocs:              vUint(s.Gc.BytesAllocs),
-			ObjectsAllocs:            vUint(s.Gc.ObjectsAllocs),
-			BytesFrees:               vUint(s.Gc.BytesFrees),
-			ObjectsFrees:             vUint(s.Gc.ObjectsFrees),
-			GoalHeapSizeBytes:        vUint(s.Gc.GoalHeapSizeBytes),
-			LiveOccupiedBytes:        vUint(s.Gc.LiveOccupiedBytes),
-			ObjectsOccupied:          vUint(s.Gc.ObjectsOccupied),
-			TinyObjectsAllocs:        vUint(s.Gc.TinyObjectsAllocs),
-			LimiterLastEnabledCycle:  vUint(s.Gc.LimiterLastEnabledCycle),
-			GlobalScannedBytes:       vUint(s.Gc.GlobalScannedBytes),
-			HeapScannedBytes:         vUint(s.Gc.HeapScannedBytes),
-			StackScannedBytes:        vUint(s.Gc.StackScannedBytes),
-			TotalScannedBytes:        vUint(s.Gc.TotalScannedBytes),
-			StackStartingSize:        vUint(s.Gc.StackStartingSize),
-			TargetHeapSizePercentage: vUint32(s.Gc.TargetHeapSizePercentage),
-		},
-		GoDebug: &models.GoDebugResponse{
-			CacheHashEvents:                   vUint(s.GoDebug.CacheHashEvents),
-			CacheTestEvents:                   vUint(s.GoDebug.CacheTestEvents),
-			CacheVerifyEvents:                 vUint(s.GoDebug.CacheVerifyEvents),
-			Http2ClientEvents:                 vUint(s.GoDebug.Http2ClientEvents),
-			Http2ServerEvents:                 vUint(s.GoDebug.Http2ServerEvents),
-			Tls10ServerEvents:                 vUint(s.GoDebug.Tls10ServerEvents),
-			Tls3DesEvents:                     vUint(s.GoDebug.Tls3DesEvents),
-			TlsMaxRsaSizeEvents:               vUint(s.GoDebug.TlsMaxRsaSizeEvents),
-			TlsRsaKexEvents:                   vUint(s.GoDebug.TlsRsaKexEvents),
-			TlsSha1Events:                     vUint(s.GoDebug.TlsSha1Events),
-			TlsUnsafeEkmEvents:                vUint(s.GoDebug.TlsUnsafeEkmEvents),
-			HttpCookieMaxNumEvents:            vUint(s.GoDebug.HttpCookieMaxNumEvents),
-			HttpLaxContentLengthEvents:        vUint(s.GoDebug.HttpLaxContentLengthEvents),
-			HttpMuxGo121Events:                vUint(s.GoDebug.HttpMuxGo_121Events),
-			HttpServeContentKeepHeadersEvents: vUint(s.GoDebug.HttpServeContentKeepHeadersEvents),
-			AllowMultipleVcsEvents:            vUint(s.GoDebug.AllowMultipleVcsEvents),
-			AsyncTimerChanEvents:              vUint(s.GoDebug.AsyncTimerChanEvents),
-			ContainerMaxProcsEvents:           vUint(s.GoDebug.ContainerMaxProcsEvents),
-			CryptoCustomRandEvents:            vUint(s.GoDebug.CryptoCustomRandEvents),
-			EmbedFollowSymlinkEvents:          vUint(s.GoDebug.EmbedFollowSymlinkEvents),
-			ExecErrDotEvents:                  vUint(s.GoDebug.ExecErrDotEvents),
-			TestJsonBuildTextEvents:           vUint(s.GoDebug.TestJsonBuildTextEvents),
-			TypeAliasEvents:                   vUint(s.GoDebug.TypeAliasEvents),
-			HtmlMetaContentUrlEscapedEvents:   vUint(s.GoDebug.HtmlMetaContentUrlEscapedEvents),
-			InstallGoRootEvents:               vUint(s.GoDebug.InstallGoRootEvents),
-			MultipartMaxHeadersEvents:         vUint(s.GoDebug.MultipartMaxHeadersEvents),
-			MultipartMaxPartsEvents:           vUint(s.GoDebug.MultipartMaxPartsEvents),
-			MultipathTcpEvents:                vUint(s.GoDebug.MultipathTcpEvents),
-			NetEdns0Events:                    vUint(s.GoDebug.NetEdns0Events),
-			PanicNilEvents:                    vUint(s.GoDebug.PanicNilEvents),
-			RandAutoSeedEvents:                vUint(s.GoDebug.RandAutoSeedEvents),
-			RandSeedNopEvents:                 vUint(s.GoDebug.RandSeedNopEvents),
-			Rsa1024MinEvents:                  vUint(s.GoDebug.Rsa1024MinEvents),
-			TarInsecurePathEvents:             vUint(s.GoDebug.TarInsecurePathEvents),
-			UpdateMaxProcsEvents:              vUint(s.GoDebug.UpdateMaxProcsEvents),
-			UrlMaxQueryParamsEvents:           vUint(s.GoDebug.UrlMaxQueryParamsEvents),
-			UrlStrictColonsEvents:             vUint(s.GoDebug.UrlStrictColonsEvents),
-			WinReadLinkVolumeEvents:           vUint(s.GoDebug.WinReadLinkVolumeEvents),
-			WinSymlinkEvents:                  vUint(s.GoDebug.WinSymlinkEvents),
-			X509KeypairLeafEvents:             vUint(s.GoDebug.X509KeypairLeafEvents),
-			X509NegativeSerialEvents:          vUint(s.GoDebug.X509NegativeSerialEvents),
-			X509RsaCrtEvents:                  vUint(s.GoDebug.X509RsaCrtEvents),
-			X509Sha256SkidEvents:              vUint(s.GoDebug.X509Sha256SkidEvents),
-			X509UseFallbackRootsEvents:        vUint(s.GoDebug.X509UseFallbackRootsEvents),
-			X509UsePoliciesEvents:             vUint(s.GoDebug.X509UsePoliciesEvents),
-			ZipInsecurePathEvents:             vUint(s.GoDebug.ZipInsecurePathEvents),
-		},
-		Memory: &models.MemoryResponse{
-			HeapFreeBytes:        vUint(s.Memory.HeapFreeBytes),
-			HeapObjectBytes:      vUint(s.Memory.HeapObjectBytes),
-			HeapReleasedBytes:    vUint(s.Memory.HeapReleasedBytes),
-			HeapStackBytes:       vUint(s.Memory.HeapStackBytes),
-			HeapUnusedBytes:      vUint(s.Memory.HeapUnusedBytes),
-			McacheFreeBytes:      vUint(s.Memory.McacheFreeBytes),
-			McacheInuseBytes:     vUint(s.Memory.McacheInuseBytes),
-			MspanFreeBytes:       vUint(s.Memory.MspanFreeBytes),
-			MspanInuseBytes:      vUint(s.Memory.MspanInuseBytes),
-			OtherMetadataBytes:   vUint(s.Memory.OtherMetadataBytes),
-			OsStackBytes:         vUint(s.Memory.OsStackBytes),
-			OtherBytes:           vUint(s.Memory.OtherBytes),
-			ProfilingBucketBytes: vUint(s.Memory.ProfilingBucketBytes),
-			TotalBytes:           vUint(s.Memory.TotalBytes),
-		},
-		Scheduler: &models.SchedulerResponse{
-			LatenciesSeconds:       toModelHistogram(s.Scheduler.LatenciesSeconds),
-			StoppingGcSeconds:      toModelHistogram(s.Scheduler.StoppingGcSeconds),
-			StoppingOtherSeconds:   toModelHistogram(s.Scheduler.StoppingOtherSeconds),
-			TotalGcPauseSeconds:    toModelHistogram(s.Scheduler.TotalGcPauseSeconds),
-			TotalOtherPauseSeconds: toModelHistogram(s.Scheduler.TotalOtherPauseSeconds),
-			GoroutinesCreated:      vUint(s.Scheduler.GoroutinesCreated),
-			GomaxprocsThreads:      vUint32(s.Scheduler.GomaxprocsThreads),
-			NotInGoGoroutines:      vUint32(s.Scheduler.NotInGoGoroutines),
-			RunnableGoroutines:     vUint32(s.Scheduler.RunnableGoroutines),
-			RunningGoroutines:      vUint32(s.Scheduler.RunningGoroutines),
-			WaitingGoroutines:      vUint32(s.Scheduler.WaitingGoroutines),
-			LiveGoroutines:         vUint32(s.Scheduler.LiveGoroutines),
-			TotalLiveThreads:       vUint32(s.Scheduler.TotalLiveThreads),
-		},
-		Sync: models.SyncResponse{
-			TotalMutexWaitDurationSeconds: vFloat(s.Sync.TotalMutexWaitDurationSeconds),
-		},
+		Cgo:       toCgoResponse(s.Cgo),
+		Cpu:       toCPUResponse(s.Cpu),
+		Gc:        toGCResponse(s.Gc),
+		GoDebug:   toGoDebugResponse(s.GoDebug),
+		Memory:    toMemoryResponse(s.Memory),
+		Scheduler: toSchedulerResponse(s.Scheduler),
+		Sync:      toSyncResponse(s.Sync),
 	}
 }
