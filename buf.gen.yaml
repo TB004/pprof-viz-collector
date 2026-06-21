@@ -12,7 +12,7 @@ managed:
   enabled: true
   override:
     - file_option: go_package_prefix
-      value: github.com/TB004/pprof-viz-agent/internal
+      value: github.com/TB004/pprof-viz-collector/internal
   disable:
     - file_option: go_package
       module: buf.build/bufbuild/protovalidate

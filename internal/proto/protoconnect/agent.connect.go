@@ -11,7 +11,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	proto "github.com/TB004/pprof-viz-agent/internal/proto"
+	proto "github.com/TB004/pprof-viz-collector/internal/proto"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	http "net/http"
 	strings "strings"

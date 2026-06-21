@@ -10,13 +10,12 @@
 package proto
 
 import (
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
-
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -1833,9 +1832,9 @@ const file_proto_agent_proto_rawDesc = "" +
 	"\x04Ping\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x129\n" +
 	"\vSnapshotAll\x12\x16.google.protobuf.Empty\x1a\x12.proto.AllResponse\x12=\n" +
 	"\tStreamAll\x12\x1a.proto.StreamConfigRequest\x1a\x12.proto.AllResponse0\x01\x12>\n" +
-	"\vGetMetadata\x12\x16.google.protobuf.Empty\x1a\x17.proto.MetadataResponseB|\n" +
+	"\vGetMetadata\x12\x16.google.protobuf.Empty\x1a\x17.proto.MetadataResponseB\x80\x01\n" +
 	"\tcom.protoB\n" +
-	"AgentProtoP\x01Z/github.com/TB004/pprof-viz-agent/internal/proto\xa2\x02\x03PXX\xaa\x02\x05Proto\xca\x02\x05Proto\xe2\x02\x11Proto\\GPBMetadata\xea\x02\x05Protob\x06proto3"
+	"AgentProtoP\x01Z3github.com/TB004/pprof-viz-collector/internal/proto\xa2\x02\x03PXX\xaa\x02\x05Proto\xca\x02\x05Proto\xe2\x02\x11Proto\\GPBMetadata\xea\x02\x05Protob\x06proto3"
 
 var (
 	file_proto_agent_proto_rawDescOnce sync.Once

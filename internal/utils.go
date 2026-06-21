@@ -7,7 +7,7 @@ import (
 	"math"
 	"runtime/metrics"
 
-	"github.com/TB004/pprof-viz-agent/pkg/models"
+	"github.com/TB004/pprof-viz-collector/pkg/models"
 )
 
 // AsHistogram returns the value as a models.Histogram when possible.
