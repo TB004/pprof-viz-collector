@@ -1,9 +1,9 @@
-# AI Project Context: pprof-viz-agent
+# AI Project Context: pprof-viz-collector
 
-This document serves as the foundational mandate for all AI interactions within the `pprof-viz-agent` repository. It outlines the project's purpose, architecture, and engineering standards to ensure consistency and technical integrity.
+This document serves as the foundational mandate for all AI interactions within the `pprof-viz-collector` repository. It outlines the project's purpose, architecture, and engineering standards to ensure consistency and technical integrity.
 
 ## 🚀 Project Overview
-`pprof-viz-agent` is a lightweight, high-fidelity observability agent for Go applications. It exposes comprehensive Go runtime metrics (CPU, Memory, GC, Scheduler) via a performant ConnectRPC API, optimized for real-time streaming and visualization.
+`pprof-viz-collector` is a lightweight, high-fidelity observability agent for Go applications. It exposes comprehensive Go runtime metrics (CPU, Memory, GC, Scheduler) via a performant ConnectRPC API, optimized for real-time streaming and visualization.
 
 ### Tech Stack
 - **Language**: Go 1.26+

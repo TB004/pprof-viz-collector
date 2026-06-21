@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TB004/pprof-viz-agent/internal/proto"
-	"github.com/TB004/pprof-viz-agent/internal/proto/protoconnect"
+	"github.com/TB004/pprof-viz-collector/internal/proto"
+	"github.com/TB004/pprof-viz-collector/internal/proto/protoconnect"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/emptypb"
 )

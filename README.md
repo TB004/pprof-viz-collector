@@ -1,4 +1,4 @@
-# pprof-viz-agent
+# pprof-viz-collector
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -6,9 +6,9 @@ Real-time, high-fidelity Go runtime telemetry delivered via ConnectRPC.
 
 ## Overview
 
-`pprof-viz-agent` is a lightweight observability agent designed to be embedded in Go applications. It exposes the comprehensive `runtime/metrics` suite—providing much deeper insight into GC behavior, scheduler latencies, and memory classes than traditional pprof—via a high-performance ConnectRPC API.
+`pprof-viz-collector` is a lightweight observability agent designed to be embedded in Go applications. It exposes the comprehensive `runtime/metrics` suite—providing much deeper insight into GC behavior, scheduler latencies, and memory classes than traditional pprof—via a high-performance ConnectRPC API.
 
-While standard `pprof` is indispensable for deep-dive analysis and stack-trace inspection, `pprof-viz-agent` is built for **continuous, high-resolution monitoring**. It enables external visualization tools to stream the internal state of the Go runtime with minimal overhead and maximum detail.
+While standard `pprof` is indispensable for deep-dive analysis and stack-trace inspection, `pprof-viz-collector` is built for **continuous, high-resolution monitoring**. It enables external visualization tools to stream the internal state of the Go runtime with minimal overhead and maximum detail.
 
 ## Key Features
 
@@ -23,12 +23,12 @@ While standard `pprof` is indispensable for deep-dive analysis and stack-trace i
 ## Installation
 
 ```bash
-go get github.com/TB004/pprof-viz-agent
+go get github.com/TB004/pprof-viz-collector
 ```
 
 ## Bandwidth Optimization
 
-`pprof-viz-agent` employs several sophisticated strategies to minimize network usage during long-running streams:
+`pprof-viz-collector` employs several sophisticated strategies to minimize network usage during long-running streams:
 
 1.  **Differential Updates**: The agent tracks the state of all metrics and only transmits values that have changed since the last sample. Unchanged fields are omitted from the wire entirely, drastically reducing payload size for stable applications.
 2.  **Zero-Value Omission**: The very first message of a stream is sent immediately on connect and treated as a delta from the default state. Any metric that is zero (like many `goDebug` events) is omitted from the initial synchronization, ensuring the baseline is as small as possible.
@@ -85,14 +85,14 @@ package main
 import (
     "net/http"
 
-    pprofvizagent "github.com/TB004/pprof-viz-agent"
+    pprofvizcollector "github.com/TB004/pprof-viz-collector"
 )
 
 func main() {
     mux := http.NewServeMux()
 
     // Bind the agent to your existing mux, optionally with a token and CORS origins
-    pprofvizagent.Bind(mux, pprofvizagent.Config{
+    pprofvizcollector.Bind(mux, pprofvizcollector.Config{
         Token:          "your-secret-token",
         AllowedOrigins: []string{"https://app.example.com"},
     })
@@ -113,7 +113,7 @@ If your project is a long-running process without an existing HTTP server (e.g.,
 **Cleartext (HTTP/2):**
 ```go
 go func() {
-    if err := pprofvizagent.New(9999, pprofvizagent.Config{}); err != nil {
+    if err := pprofvizcollector.New(9999, pprofvizcollector.Config{}); err != nil {
         log.Fatalf("failed to start agent: %v", err)
     }
 }()
@@ -122,7 +122,7 @@ go func() {
 **TLS + HTTP/2 with token auth and CORS:**
 ```go
 go func() {
-    if err := pprofvizagent.New(9999, pprofvizagent.Config{
+    if err := pprofvizcollector.New(9999, pprofvizcollector.Config{
         Token:          "your-secret-token",
         AllowedOrigins: []string{"https://app.example.com"},
         CertFile:       "/path/to/cert.pem",
@@ -136,7 +136,7 @@ go func() {
 **TLS + HTTP/3:**
 ```go
 go func() {
-    if err := pprofvizagent.New(9999, pprofvizagent.Config{
+    if err := pprofvizcollector.New(9999, pprofvizcollector.Config{
         Token:          "your-secret-token",
         AllowedOrigins: []string{"https://app.example.com"},
         CertFile:       "/path/to/cert.pem",
@@ -153,7 +153,7 @@ go func() {
 When `Config.AllowedOrigins` is set, the agent applies CORS middleware configured specifically for ConnectRPC. It permits the required ConnectRPC protocol headers, exposes response trailers, and additionally allows the `Authorization` header for token auth. Use `["*"]` to allow all origins during development:
 
 ```go
-pprofvizagent.Config{
+pprofvizcollector.Config{
     AllowedOrigins: []string{"*"}, // restrict to your app's origin in production
 }
 ```
@@ -181,7 +181,7 @@ Requests without the header or with a wrong token are rejected with HTTP 401 Una
 
 ## Pprof vs. Pprof-Viz
 
-| Feature | pprof | pprof-viz-agent |
+| Feature | pprof | pprof-viz-collector |
 | :--- | :---: | :---: |
 | **Primary Goal** | Deep profiling / Bottleneck analysis | Continuous Runtime Monitoring |
 | **Data Source** | Sampling & Stack Traces | Native `runtime/metrics` |

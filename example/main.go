@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Tizian Bahr
 
-// This is a simple CLI example application that starts the pprof-viz-agent on a specified port
+// This is a simple CLI example application that starts the pprof-viz-collector on a specified port
 // to allow testing/developing the library without needing to integrate it into an existing application.
 
 package main
@@ -12,7 +12,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	pprofvizagent "github.com/TB004/pprof-viz-agent"
+	pprofvizcollector "github.com/TB004/pprof-viz-collector"
 )
 
 func main() {
@@ -20,11 +20,11 @@ func main() {
 	// #nosec G101 -- example app only
 	const token = "$argon2id$v=19$m=19456,t=2,p=1$q8phA9hRew+TKOoOeXxQYA$4gjeEyK3gUScgc+wt1It59DsIahCvav7sGcznebV9lo"
 
-	log.Printf("Starting pprof-viz-agent on port %d...", port)
+	log.Printf("Starting pprof-viz-collector on port %d...", port)
 
 	// Start the agent in a separate goroutine
 	go func() {
-		config := pprofvizagent.Config{
+		config := pprofvizcollector.Config{
 			AllowedOrigins: []string{"*"},
 			HTTP3:          true,
 			Token:          token,
@@ -32,7 +32,7 @@ func main() {
 			KeyFile:        "./key.pem",
 			Host:           "localhost",
 		}
-		if err := pprofvizagent.New(port, config); err != nil {
+		if err := pprofvizcollector.New(port, config); err != nil {
 			log.Fatalf("failed to start agent: %v", err)
 		}
 	}()
@@ -42,5 +42,5 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Println("Shutting down pprof-viz-agent...")
+	log.Println("Shutting down pprof-viz-collector...")
 }

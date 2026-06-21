@@ -7,7 +7,7 @@ import (
 	"runtime/metrics"
 	"sync"
 
-	"github.com/TB004/pprof-viz-agent/internal/proto"
+	"github.com/TB004/pprof-viz-collector/internal/proto"
 )
 
 // SampleCollector manages a pre-allocated slice of metrics.Sample for efficient collection.

@@ -1,6 +1,6 @@
 ---
 name: "🐛 Bug Report"
-about: "Report a bug to help us improve pprof-viz-agent"
+about: "Report a bug to help us improve pprof-viz-collector"
 title: "[BUG] "
 labels: ["bug"]
 assignees: ""
@@ -42,7 +42,7 @@ assignees: ""
 
 - **Go Version:** `go version`
 - **OS/Arch:** `OS Name / x86_64, arm64, etc.`
-- **pprof-viz-agent Version:** `v1.0.0`
+- **pprof-viz-collector Version:** `v1.0.0`
 
 ### 🔍 Additional Context
 

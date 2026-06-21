@@ -1,4 +1,4 @@
-module github.com/TB004/pprof-viz-agent
+module github.com/TB004/pprof-viz-collector
 
 go 1.26.4
 

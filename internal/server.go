@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	"github.com/TB004/pprof-viz-agent/internal/proto"
-	"github.com/TB004/pprof-viz-agent/internal/proto/protoconnect"
+	"github.com/TB004/pprof-viz-collector/internal/proto"
+	"github.com/TB004/pprof-viz-collector/internal/proto/protoconnect"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

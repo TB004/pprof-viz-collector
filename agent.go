@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Tizian Bahr
 
-package pprofvizagent
+package pprofvizcollector
 
 import (
 	"crypto/tls"
@@ -13,10 +13,10 @@ import (
 
 	"connectrpc.com/connect"
 	connectcors "connectrpc.com/cors"
-	"github.com/TB004/pprof-viz-agent/internal"
-	"github.com/TB004/pprof-viz-agent/internal/proto"
-	"github.com/TB004/pprof-viz-agent/internal/proto/protoconnect"
-	"github.com/TB004/pprof-viz-agent/pkg/models"
+	"github.com/TB004/pprof-viz-collector/internal"
+	"github.com/TB004/pprof-viz-collector/internal/proto"
+	"github.com/TB004/pprof-viz-collector/internal/proto/protoconnect"
+	"github.com/TB004/pprof-viz-collector/pkg/models"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/rs/cors"
 )

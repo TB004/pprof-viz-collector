@@ -1,6 +1,6 @@
 ---
 name: "🚀 Feature Request"
-about: "Propose a new feature for pprof-viz-agent"
+about: "Propose a new feature for pprof-viz-collector"
 title: "[FEATURE] "
 labels: ["enhancement"]
 assignees: ""

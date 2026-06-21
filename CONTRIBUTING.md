@@ -1,6 +1,6 @@
-# Contributing to pprof-viz-agent
+# Contributing to pprof-viz-collector
 
-First off, thank you for considering contributing to `pprof-viz-agent`! It's people like you who make the open-source community such an amazing place to learn, inspire, and create.
+First off, thank you for considering contributing to `pprof-viz-collector`! It's people like you who make the open-source community such an amazing place to learn, inspire, and create.
 
 ## 🌟 Our Expectations
 
@@ -20,8 +20,8 @@ We use [just](https://github.com/casey/just) as our command runner. Please ensur
 
 1. **Fork and Clone**:
    ```bash
-   git clone https://github.com/your-username/pprof-viz-agent.git
-   cd pprof-viz-agent
+   git clone https://github.com/your-username/pprof-viz-collector.git
+   cd pprof-viz-collector
    ```
 
 2. **Create a Branch**:
