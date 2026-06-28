@@ -24,7 +24,7 @@ jobs:
 
       - name: Cache Go tools
         id: cache-tools
-        uses: actions/cache@v5.0.5
+        uses: actions/cache@v6.1.0
         with:
           path: ~/go/bin
           # The cache key includes the workflow file hash, so if you change
