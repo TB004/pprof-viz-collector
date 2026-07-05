@@ -19,7 +19,7 @@ func TestReadAllSamples(t *testing.T) {
 	}
 
 	ReadAllSamples(samples)
-	// Verify that we didn't panic and that the samples were updated
+
 	assert.NotEmpty(t, samples)
 }
 
@@ -42,7 +42,7 @@ var intentionallyOmitted = map[string]string{
 }
 
 // TestAllMetricNamesUnique guards against an accidental duplicate entry in
-// AllMetricNames, which would waste a sample slot and desync the index map.
+// AllMetricNames.
 func TestAllMetricNamesUnique(t *testing.T) {
 	t.Parallel()
 

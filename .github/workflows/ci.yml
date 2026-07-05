@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -17,19 +19,16 @@ jobs:
         uses: actions/setup-go@v6.5.0
         with:
           go-version: "1.26.4"
-          cache: true
 
       - name: Install just
         run: curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | sudo bash -s -- --to /usr/bin
 
-      - name: Cache Go tools
+      - name: Cache Go
         id: cache-tools
         uses: actions/cache@v6.1.0
         with:
-          path: ~/go/bin
-          # The cache key includes the workflow file hash, so if you change
-          # the tool list, the cache will invalidate and reinstall.
-          key: ${{ runner.os }}-go-tools-${{ hashFiles('.github/workflows/ci.yml') }}
+          path: ~/go
+          key: ${{ runner.os }}-go-tools-${{ hashFiles('go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-tools-
 

@@ -16,7 +16,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-// newTestClient is a helper function to create a new AgentServiceClient for testing
 func newTestClient(t *testing.T) protoconnect.AgentServiceClient {
 	t.Helper()
 	mux := http.NewServeMux()

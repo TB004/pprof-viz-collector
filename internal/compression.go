@@ -43,7 +43,7 @@ func (d *zstdDecompressor) Reset(r io.Reader) error {
 	return d.Decoder.Reset(r)
 }
 
-// Close does nothing here but needed to fullfil connect.Decompressor interface
+// Close does nothing here but needed to fulfil connect.Decompressor interface
 func (d *zstdDecompressor) Close() error {
 	return nil
 }
