@@ -18,7 +18,7 @@ func TestBind(t *testing.T) {
 	mux := http.NewServeMux()
 	Bind(mux, Config{})
 
-	req := httptest.NewRequest("POST", "/proto.AgentService/SnapshotAll", nil)
+	req := httptest.NewRequest("POST", "/proto.CollectorService/SnapshotAll", nil)
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 
@@ -33,7 +33,7 @@ func TestBind_TokenAuth(t *testing.T) {
 
 	t.Run("MissingToken", func(t *testing.T) {
 		t.Parallel()
-		req := httptest.NewRequest("POST", "/proto.AgentService/Ping", strings.NewReader("{}"))
+		req := httptest.NewRequest("POST", "/proto.CollectorService/Ping", strings.NewReader("{}"))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		mux.ServeHTTP(rec, req)
@@ -42,7 +42,7 @@ func TestBind_TokenAuth(t *testing.T) {
 
 	t.Run("WrongToken", func(t *testing.T) {
 		t.Parallel()
-		req := httptest.NewRequest("POST", "/proto.AgentService/Ping", strings.NewReader("{}"))
+		req := httptest.NewRequest("POST", "/proto.CollectorService/Ping", strings.NewReader("{}"))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer wrong")
 		rec := httptest.NewRecorder()
@@ -52,7 +52,7 @@ func TestBind_TokenAuth(t *testing.T) {
 
 	t.Run("CorrectToken", func(t *testing.T) {
 		t.Parallel()
-		req := httptest.NewRequest("POST", "/proto.AgentService/Ping", strings.NewReader("{}"))
+		req := httptest.NewRequest("POST", "/proto.CollectorService/Ping", strings.NewReader("{}"))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer secret")
 		rec := httptest.NewRecorder()
@@ -68,7 +68,7 @@ func TestBind_CORS(t *testing.T) {
 
 	t.Run("PreflightAllowedOrigin", func(t *testing.T) {
 		t.Parallel()
-		req := httptest.NewRequest("OPTIONS", "/proto.AgentService/Ping", nil)
+		req := httptest.NewRequest("OPTIONS", "/proto.CollectorService/Ping", nil)
 		req.Header.Set("Origin", "https://app.example.com")
 		req.Header.Set("Access-Control-Request-Method", "POST")
 		rec := httptest.NewRecorder()
@@ -78,7 +78,7 @@ func TestBind_CORS(t *testing.T) {
 
 	t.Run("PreflightDisallowedOrigin", func(t *testing.T) {
 		t.Parallel()
-		req := httptest.NewRequest("OPTIONS", "/proto.AgentService/Ping", nil)
+		req := httptest.NewRequest("OPTIONS", "/proto.CollectorService/Ping", nil)
 		req.Header.Set("Origin", "https://evil.example.com")
 		req.Header.Set("Access-Control-Request-Method", "POST")
 		rec := httptest.NewRecorder()
@@ -90,7 +90,7 @@ func TestBind_CORS(t *testing.T) {
 		t.Parallel()
 		mux2 := http.NewServeMux()
 		Bind(mux2, Config{})
-		req := httptest.NewRequest("OPTIONS", "/proto.AgentService/Ping", nil)
+		req := httptest.NewRequest("OPTIONS", "/proto.CollectorService/Ping", nil)
 		req.Header.Set("Origin", "https://app.example.com")
 		req.Header.Set("Access-Control-Request-Method", "POST")
 		rec := httptest.NewRecorder()
@@ -111,7 +111,7 @@ func TestNew(t *testing.T) {
 	client := &http.Client{Transport: &http.Transport{Protocols: protos}}
 
 	body := strings.NewReader("{}")
-	req, err := http.NewRequest("POST", "http://localhost:50000/proto.AgentService/SnapshotAll", body)
+	req, err := http.NewRequest("POST", "http://localhost:50000/proto.CollectorService/SnapshotAll", body)
 	assert.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
 

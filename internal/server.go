@@ -15,23 +15,23 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type AgentServiceHandler struct {
-	protoconnect.UnimplementedAgentServiceHandler
+type CollectorServiceHandler struct {
+	protoconnect.UnimplementedCollectorServiceHandler
 }
 
-// Ping is a no-op health check that returns OK if the agent is reachable.
-func (h AgentServiceHandler) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+// Ping is a no-op health check that returns OK if the collector is reachable.
+func (h CollectorServiceHandler) Ping(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
 }
 
 // SnapshotAll returns a single point-in-time capture of all supported Go runtime metrics.
-func (h AgentServiceHandler) SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error) {
+func (h CollectorServiceHandler) SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error) {
 	return Snapshot(), nil
 }
 
 // GetMetadata returns the static bucket boundaries for all histogram metrics.
 // Clients should call this once before streaming; StreamAll never sends bucket boundaries.
-func (h AgentServiceHandler) GetMetadata(context.Context, *emptypb.Empty) (*proto.MetadataResponse, error) {
+func (h CollectorServiceHandler) GetMetadata(context.Context, *emptypb.Empty) (*proto.MetadataResponse, error) {
 	collector := NewSampleCollector()
 	collector.Read()
 
@@ -66,7 +66,7 @@ func (h AgentServiceHandler) GetMetadata(context.Context, *emptypb.Empty) (*prot
 }
 
 // StreamAll streams runtime metrics at a client-provided interval in a client-provided number of cycles or indefinitely.
-func (h AgentServiceHandler) StreamAll(ctx context.Context, req *proto.StreamConfigRequest, stream *connect.ServerStream[proto.AllResponse]) error {
+func (h CollectorServiceHandler) StreamAll(ctx context.Context, req *proto.StreamConfigRequest, stream *connect.ServerStream[proto.AllResponse]) error {
 	interval := req.GetIntervalSeconds()
 	if interval == 0 {
 		return connect.NewError(connect.CodeInvalidArgument, errors.New("interval must be at least 1 second"))

@@ -5,17 +5,18 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        (unknown)
-// source: proto/agent.proto
+// source: proto/collector.proto
 
 package proto
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -35,7 +36,7 @@ type StreamConfigRequest struct {
 
 func (x *StreamConfigRequest) Reset() {
 	*x = StreamConfigRequest{}
-	mi := &file_proto_agent_proto_msgTypes[0]
+	mi := &file_proto_collector_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -47,7 +48,7 @@ func (x *StreamConfigRequest) String() string {
 func (*StreamConfigRequest) ProtoMessage() {}
 
 func (x *StreamConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[0]
+	mi := &file_proto_collector_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +61,7 @@ func (x *StreamConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamConfigRequest.ProtoReflect.Descriptor instead.
 func (*StreamConfigRequest) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{0}
+	return file_proto_collector_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *StreamConfigRequest) GetIntervalSeconds() uint32 {
@@ -88,7 +89,7 @@ type Histogram struct {
 
 func (x *Histogram) Reset() {
 	*x = Histogram{}
-	mi := &file_proto_agent_proto_msgTypes[1]
+	mi := &file_proto_collector_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -100,7 +101,7 @@ func (x *Histogram) String() string {
 func (*Histogram) ProtoMessage() {}
 
 func (x *Histogram) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[1]
+	mi := &file_proto_collector_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -113,7 +114,7 @@ func (x *Histogram) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Histogram.ProtoReflect.Descriptor instead.
 func (*Histogram) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{1}
+	return file_proto_collector_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Histogram) GetCounts() []uint64 {
@@ -146,7 +147,7 @@ type CgoResponse struct {
 
 func (x *CgoResponse) Reset() {
 	*x = CgoResponse{}
-	mi := &file_proto_agent_proto_msgTypes[2]
+	mi := &file_proto_collector_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -158,7 +159,7 @@ func (x *CgoResponse) String() string {
 func (*CgoResponse) ProtoMessage() {}
 
 func (x *CgoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[2]
+	mi := &file_proto_collector_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -171,7 +172,7 @@ func (x *CgoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CgoResponse.ProtoReflect.Descriptor instead.
 func (*CgoResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{2}
+	return file_proto_collector_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CgoResponse) GetCgoCalls() uint64 {
@@ -200,7 +201,7 @@ type CPUResponse struct {
 
 func (x *CPUResponse) Reset() {
 	*x = CPUResponse{}
-	mi := &file_proto_agent_proto_msgTypes[3]
+	mi := &file_proto_collector_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -212,7 +213,7 @@ func (x *CPUResponse) String() string {
 func (*CPUResponse) ProtoMessage() {}
 
 func (x *CPUResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[3]
+	mi := &file_proto_collector_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -225,7 +226,7 @@ func (x *CPUResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CPUResponse.ProtoReflect.Descriptor instead.
 func (*CPUResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{3}
+	return file_proto_collector_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CPUResponse) GetGcAssistSeconds() float64 {
@@ -315,7 +316,7 @@ type GCMetadata struct {
 
 func (x *GCMetadata) Reset() {
 	*x = GCMetadata{}
-	mi := &file_proto_agent_proto_msgTypes[4]
+	mi := &file_proto_collector_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -327,7 +328,7 @@ func (x *GCMetadata) String() string {
 func (*GCMetadata) ProtoMessage() {}
 
 func (x *GCMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[4]
+	mi := &file_proto_collector_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -340,7 +341,7 @@ func (x *GCMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GCMetadata.ProtoReflect.Descriptor instead.
 func (*GCMetadata) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{4}
+	return file_proto_collector_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GCMetadata) GetBytesAllocsBySizeBuckets() []float32 {
@@ -370,7 +371,7 @@ type SchedulerMetadata struct {
 
 func (x *SchedulerMetadata) Reset() {
 	*x = SchedulerMetadata{}
-	mi := &file_proto_agent_proto_msgTypes[5]
+	mi := &file_proto_collector_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -382,7 +383,7 @@ func (x *SchedulerMetadata) String() string {
 func (*SchedulerMetadata) ProtoMessage() {}
 
 func (x *SchedulerMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[5]
+	mi := &file_proto_collector_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -395,7 +396,7 @@ func (x *SchedulerMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SchedulerMetadata.ProtoReflect.Descriptor instead.
 func (*SchedulerMetadata) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{5}
+	return file_proto_collector_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *SchedulerMetadata) GetLatenciesSecondsBuckets() []float32 {
@@ -443,7 +444,7 @@ type MetadataResponse struct {
 
 func (x *MetadataResponse) Reset() {
 	*x = MetadataResponse{}
-	mi := &file_proto_agent_proto_msgTypes[6]
+	mi := &file_proto_collector_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -455,7 +456,7 @@ func (x *MetadataResponse) String() string {
 func (*MetadataResponse) ProtoMessage() {}
 
 func (x *MetadataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[6]
+	mi := &file_proto_collector_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -468,7 +469,7 @@ func (x *MetadataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MetadataResponse.ProtoReflect.Descriptor instead.
 func (*MetadataResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{6}
+	return file_proto_collector_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *MetadataResponse) GetGc() *GCMetadata {
@@ -520,7 +521,7 @@ type GCResponse struct {
 
 func (x *GCResponse) Reset() {
 	*x = GCResponse{}
-	mi := &file_proto_agent_proto_msgTypes[7]
+	mi := &file_proto_collector_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -532,7 +533,7 @@ func (x *GCResponse) String() string {
 func (*GCResponse) ProtoMessage() {}
 
 func (x *GCResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[7]
+	mi := &file_proto_collector_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -545,7 +546,7 @@ func (x *GCResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GCResponse.ProtoReflect.Descriptor instead.
 func (*GCResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{7}
+	return file_proto_collector_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GCResponse) GetBytesAllocsBySize() *Histogram {
@@ -780,7 +781,7 @@ type GoDebugResponse struct {
 
 func (x *GoDebugResponse) Reset() {
 	*x = GoDebugResponse{}
-	mi := &file_proto_agent_proto_msgTypes[8]
+	mi := &file_proto_collector_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -792,7 +793,7 @@ func (x *GoDebugResponse) String() string {
 func (*GoDebugResponse) ProtoMessage() {}
 
 func (x *GoDebugResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[8]
+	mi := &file_proto_collector_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -805,7 +806,7 @@ func (x *GoDebugResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GoDebugResponse.ProtoReflect.Descriptor instead.
 func (*GoDebugResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{8}
+	return file_proto_collector_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GoDebugResponse) GetCacheHashEvents() uint64 {
@@ -1152,7 +1153,7 @@ type MemoryResponse struct {
 
 func (x *MemoryResponse) Reset() {
 	*x = MemoryResponse{}
-	mi := &file_proto_agent_proto_msgTypes[9]
+	mi := &file_proto_collector_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1164,7 +1165,7 @@ func (x *MemoryResponse) String() string {
 func (*MemoryResponse) ProtoMessage() {}
 
 func (x *MemoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[9]
+	mi := &file_proto_collector_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1177,7 +1178,7 @@ func (x *MemoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MemoryResponse.ProtoReflect.Descriptor instead.
 func (*MemoryResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{9}
+	return file_proto_collector_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *MemoryResponse) GetHeapFreeBytes() uint64 {
@@ -1301,7 +1302,7 @@ type SchedulerResponse struct {
 
 func (x *SchedulerResponse) Reset() {
 	*x = SchedulerResponse{}
-	mi := &file_proto_agent_proto_msgTypes[10]
+	mi := &file_proto_collector_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1313,7 +1314,7 @@ func (x *SchedulerResponse) String() string {
 func (*SchedulerResponse) ProtoMessage() {}
 
 func (x *SchedulerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[10]
+	mi := &file_proto_collector_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1326,7 +1327,7 @@ func (x *SchedulerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SchedulerResponse.ProtoReflect.Descriptor instead.
 func (*SchedulerResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{10}
+	return file_proto_collector_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SchedulerResponse) GetLatenciesSeconds() *Histogram {
@@ -1429,7 +1430,7 @@ type SyncResponse struct {
 
 func (x *SyncResponse) Reset() {
 	*x = SyncResponse{}
-	mi := &file_proto_agent_proto_msgTypes[11]
+	mi := &file_proto_collector_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1441,7 +1442,7 @@ func (x *SyncResponse) String() string {
 func (*SyncResponse) ProtoMessage() {}
 
 func (x *SyncResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[11]
+	mi := &file_proto_collector_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1454,7 +1455,7 @@ func (x *SyncResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncResponse.ProtoReflect.Descriptor instead.
 func (*SyncResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{11}
+	return file_proto_collector_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SyncResponse) GetTotalMutexWaitDurationSeconds() float64 {
@@ -1479,7 +1480,7 @@ type AllResponse struct {
 
 func (x *AllResponse) Reset() {
 	*x = AllResponse{}
-	mi := &file_proto_agent_proto_msgTypes[12]
+	mi := &file_proto_collector_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1491,7 +1492,7 @@ func (x *AllResponse) String() string {
 func (*AllResponse) ProtoMessage() {}
 
 func (x *AllResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_agent_proto_msgTypes[12]
+	mi := &file_proto_collector_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1504,7 +1505,7 @@ func (x *AllResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AllResponse.ProtoReflect.Descriptor instead.
 func (*AllResponse) Descriptor() ([]byte, []int) {
-	return file_proto_agent_proto_rawDescGZIP(), []int{12}
+	return file_proto_collector_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *AllResponse) GetScheduler() *SchedulerResponse {
@@ -1556,11 +1557,11 @@ func (x *AllResponse) GetSync() *SyncResponse {
 	return nil
 }
 
-var File_proto_agent_proto protoreflect.FileDescriptor
+var File_proto_collector_proto protoreflect.FileDescriptor
 
-const file_proto_agent_proto_rawDesc = "" +
+const file_proto_collector_proto_rawDesc = "" +
 	"\n" +
-	"\x11proto/agent.proto\x12\x05proto\x1a\x1bgoogle/protobuf/empty.proto\"j\n" +
+	"\x15proto/collector.proto\x12\x05proto\x1a\x1bgoogle/protobuf/empty.proto\"j\n" +
 	"\x13StreamConfigRequest\x12)\n" +
 	"\x10interval_seconds\x18\x01 \x01(\rR\x0fintervalSeconds\x12(\n" +
 	"\x10number_of_cycles\x18\x02 \x01(\rR\x0enumberOfCycles\"\xcb\x01\n" +
@@ -1827,29 +1828,28 @@ const file_proto_agent_proto_rawDesc = "" +
 	"\x06memory\x18\x04 \x01(\v2\x15.proto.MemoryResponseR\x06memory\x12$\n" +
 	"\x03cpu\x18\x05 \x01(\v2\x12.proto.CPUResponseR\x03cpu\x12$\n" +
 	"\x03cgo\x18\x06 \x01(\v2\x12.proto.CgoResponseR\x03cgo\x12'\n" +
-	"\x04sync\x18\a \x01(\v2\x13.proto.SyncResponseR\x04sync2\x80\x02\n" +
-	"\fAgentService\x126\n" +
+	"\x04sync\x18\a \x01(\v2\x13.proto.SyncResponseR\x04sync2\x84\x02\n" +
+	"\x10CollectorService\x126\n" +
 	"\x04Ping\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\x129\n" +
 	"\vSnapshotAll\x12\x16.google.protobuf.Empty\x1a\x12.proto.AllResponse\x12=\n" +
 	"\tStreamAll\x12\x1a.proto.StreamConfigRequest\x1a\x12.proto.AllResponse0\x01\x12>\n" +
-	"\vGetMetadata\x12\x16.google.protobuf.Empty\x1a\x17.proto.MetadataResponseB\x80\x01\n" +
-	"\tcom.protoB\n" +
-	"AgentProtoP\x01Z3github.com/TB004/pprof-viz-collector/internal/proto\xa2\x02\x03PXX\xaa\x02\x05Proto\xca\x02\x05Proto\xe2\x02\x11Proto\\GPBMetadata\xea\x02\x05Protob\x06proto3"
+	"\vGetMetadata\x12\x16.google.protobuf.Empty\x1a\x17.proto.MetadataResponseB\x84\x01\n" +
+	"\tcom.protoB\x0eCollectorProtoP\x01Z3github.com/TB004/pprof-viz-collector/internal/proto\xa2\x02\x03PXX\xaa\x02\x05Proto\xca\x02\x05Proto\xe2\x02\x11Proto\\GPBMetadata\xea\x02\x05Protob\x06proto3"
 
 var (
-	file_proto_agent_proto_rawDescOnce sync.Once
-	file_proto_agent_proto_rawDescData []byte
+	file_proto_collector_proto_rawDescOnce sync.Once
+	file_proto_collector_proto_rawDescData []byte
 )
 
-func file_proto_agent_proto_rawDescGZIP() []byte {
-	file_proto_agent_proto_rawDescOnce.Do(func() {
-		file_proto_agent_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_agent_proto_rawDesc), len(file_proto_agent_proto_rawDesc)))
+func file_proto_collector_proto_rawDescGZIP() []byte {
+	file_proto_collector_proto_rawDescOnce.Do(func() {
+		file_proto_collector_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_collector_proto_rawDesc), len(file_proto_collector_proto_rawDesc)))
 	})
-	return file_proto_agent_proto_rawDescData
+	return file_proto_collector_proto_rawDescData
 }
 
-var file_proto_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
-var file_proto_agent_proto_goTypes = []any{
+var file_proto_collector_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_proto_collector_proto_goTypes = []any{
 	(*StreamConfigRequest)(nil), // 0: proto.StreamConfigRequest
 	(*Histogram)(nil),           // 1: proto.Histogram
 	(*CgoResponse)(nil),         // 2: proto.CgoResponse
@@ -1866,7 +1866,7 @@ var file_proto_agent_proto_goTypes = []any{
 	nil,                         // 13: proto.Histogram.UpdatedCountsEntry
 	(*emptypb.Empty)(nil),       // 14: google.protobuf.Empty
 }
-var file_proto_agent_proto_depIdxs = []int32{
+var file_proto_collector_proto_depIdxs = []int32{
 	13, // 0: proto.Histogram.updated_counts:type_name -> proto.Histogram.UpdatedCountsEntry
 	4,  // 1: proto.MetadataResponse.gc:type_name -> proto.GCMetadata
 	5,  // 2: proto.MetadataResponse.scheduler:type_name -> proto.SchedulerMetadata
@@ -1884,14 +1884,14 @@ var file_proto_agent_proto_depIdxs = []int32{
 	3,  // 14: proto.AllResponse.cpu:type_name -> proto.CPUResponse
 	2,  // 15: proto.AllResponse.cgo:type_name -> proto.CgoResponse
 	11, // 16: proto.AllResponse.sync:type_name -> proto.SyncResponse
-	14, // 17: proto.AgentService.Ping:input_type -> google.protobuf.Empty
-	14, // 18: proto.AgentService.SnapshotAll:input_type -> google.protobuf.Empty
-	0,  // 19: proto.AgentService.StreamAll:input_type -> proto.StreamConfigRequest
-	14, // 20: proto.AgentService.GetMetadata:input_type -> google.protobuf.Empty
-	14, // 21: proto.AgentService.Ping:output_type -> google.protobuf.Empty
-	12, // 22: proto.AgentService.SnapshotAll:output_type -> proto.AllResponse
-	12, // 23: proto.AgentService.StreamAll:output_type -> proto.AllResponse
-	6,  // 24: proto.AgentService.GetMetadata:output_type -> proto.MetadataResponse
+	14, // 17: proto.CollectorService.Ping:input_type -> google.protobuf.Empty
+	14, // 18: proto.CollectorService.SnapshotAll:input_type -> google.protobuf.Empty
+	0,  // 19: proto.CollectorService.StreamAll:input_type -> proto.StreamConfigRequest
+	14, // 20: proto.CollectorService.GetMetadata:input_type -> google.protobuf.Empty
+	14, // 21: proto.CollectorService.Ping:output_type -> google.protobuf.Empty
+	12, // 22: proto.CollectorService.SnapshotAll:output_type -> proto.AllResponse
+	12, // 23: proto.CollectorService.StreamAll:output_type -> proto.AllResponse
+	6,  // 24: proto.CollectorService.GetMetadata:output_type -> proto.MetadataResponse
 	21, // [21:25] is the sub-list for method output_type
 	17, // [17:21] is the sub-list for method input_type
 	17, // [17:17] is the sub-list for extension type_name
@@ -1899,33 +1899,33 @@ var file_proto_agent_proto_depIdxs = []int32{
 	0,  // [0:17] is the sub-list for field type_name
 }
 
-func init() { file_proto_agent_proto_init() }
-func file_proto_agent_proto_init() {
-	if File_proto_agent_proto != nil {
+func init() { file_proto_collector_proto_init() }
+func file_proto_collector_proto_init() {
+	if File_proto_collector_proto != nil {
 		return
 	}
-	file_proto_agent_proto_msgTypes[2].OneofWrappers = []any{}
-	file_proto_agent_proto_msgTypes[3].OneofWrappers = []any{}
-	file_proto_agent_proto_msgTypes[7].OneofWrappers = []any{}
-	file_proto_agent_proto_msgTypes[8].OneofWrappers = []any{}
-	file_proto_agent_proto_msgTypes[9].OneofWrappers = []any{}
-	file_proto_agent_proto_msgTypes[10].OneofWrappers = []any{}
-	file_proto_agent_proto_msgTypes[11].OneofWrappers = []any{}
+	file_proto_collector_proto_msgTypes[2].OneofWrappers = []any{}
+	file_proto_collector_proto_msgTypes[3].OneofWrappers = []any{}
+	file_proto_collector_proto_msgTypes[7].OneofWrappers = []any{}
+	file_proto_collector_proto_msgTypes[8].OneofWrappers = []any{}
+	file_proto_collector_proto_msgTypes[9].OneofWrappers = []any{}
+	file_proto_collector_proto_msgTypes[10].OneofWrappers = []any{}
+	file_proto_collector_proto_msgTypes[11].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeFor[x]().PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_agent_proto_rawDesc), len(file_proto_agent_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_collector_proto_rawDesc), len(file_proto_collector_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_agent_proto_goTypes,
-		DependencyIndexes: file_proto_agent_proto_depIdxs,
-		MessageInfos:      file_proto_agent_proto_msgTypes,
+		GoTypes:           file_proto_collector_proto_goTypes,
+		DependencyIndexes: file_proto_collector_proto_depIdxs,
+		MessageInfos:      file_proto_collector_proto_msgTypes,
 	}.Build()
-	File_proto_agent_proto = out.File
-	file_proto_agent_proto_goTypes = nil
-	file_proto_agent_proto_depIdxs = nil
+	File_proto_collector_proto = out.File
+	file_proto_collector_proto_goTypes = nil
+	file_proto_collector_proto_depIdxs = nil
 }
