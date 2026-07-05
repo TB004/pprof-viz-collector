@@ -73,7 +73,7 @@ All maintenance tasks should be performed using the `Justfile`.
 
 ### Coding Style
 - **Idiomatic Go**: Adhere strictly to standard Go formatting and naming conventions.
-- **Unused parameters**: Omit parameter names entirely when unused — do not use `_`. Match the style of existing handler signatures (e.g., `func (h AgentServiceHandler) Ping(context.Context, *emptypb.Empty)`).
+- **Unused parameters**: Omit parameter names entirely when unused — do not use `_`. Match the style of existing handler signatures (e.g., `func (h CollectorServiceHandler) Ping(context.Context, *emptypb.Empty)`).
 - **Memory Optimization**:
     - Order struct fields by size (descending) to minimize padding.
     - Use pre-allocated slices and `SampleCollector` to minimize heap allocations during collection.

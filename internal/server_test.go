@@ -16,14 +16,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func newTestClient(t *testing.T) protoconnect.AgentServiceClient {
+func newTestClient(t *testing.T) protoconnect.CollectorServiceClient {
 	t.Helper()
 	mux := http.NewServeMux()
-	path, handler := protoconnect.NewAgentServiceHandler(AgentServiceHandler{})
+	path, handler := protoconnect.NewCollectorServiceHandler(CollectorServiceHandler{})
 	mux.Handle(path, handler)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return protoconnect.NewAgentServiceClient(server.Client(), server.URL)
+	return protoconnect.NewCollectorServiceClient(server.Client(), server.URL)
 }
 
 func TestAgentServiceHandler_Ping(t *testing.T) {

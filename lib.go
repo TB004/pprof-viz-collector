@@ -63,7 +63,7 @@ func handlerOpts(cfg Config) []connect.HandlerOption {
 // Bind registers the AgentService handler to the provided http.ServeMux.
 // cfg.CertFile, cfg.KeyFile, and cfg.HTTP3 are ignored; those are server-level concerns managed externally.
 func Bind(mux *http.ServeMux, cfg Config) {
-	path, handler := protoconnect.NewAgentServiceHandler(internal.AgentServiceHandler{}, handlerOpts(cfg)...)
+	path, handler := protoconnect.NewCollectorServiceHandler(internal.CollectorServiceHandler{}, handlerOpts(cfg)...)
 	if len(cfg.AllowedOrigins) > 0 {
 		handler = newCORSHandler(cfg.AllowedOrigins, handler)
 	}
@@ -97,7 +97,7 @@ func New(port int, cfg Config) error {
 	}
 
 	mux := http.NewServeMux()
-	path, handler := protoconnect.NewAgentServiceHandler(internal.AgentServiceHandler{}, handlerOpts(cfg)...)
+	path, handler := protoconnect.NewCollectorServiceHandler(internal.CollectorServiceHandler{}, handlerOpts(cfg)...)
 	mux.Handle(path, handler)
 
 	host := cfg.Host
