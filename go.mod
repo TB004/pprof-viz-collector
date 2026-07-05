@@ -1,6 +1,6 @@
 module github.com/TB004/pprof-viz-collector
 
-go 1.26.4
+go 1.26
 
 tool (
 	connectrpc.com/connect/cmd/protoc-gen-connect-go
@@ -10,7 +10,7 @@ tool (
 require (
 	connectrpc.com/connect v1.20.0
 	connectrpc.com/cors v0.1.0
-	github.com/klauspost/compress v1.18.6
+	github.com/klauspost/compress v1.19.0
 	github.com/quic-go/quic-go v0.60.0
 	github.com/rs/cors v1.11.1
 	github.com/stretchr/testify v1.11.1
