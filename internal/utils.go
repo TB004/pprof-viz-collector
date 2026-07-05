@@ -6,12 +6,9 @@ package internal
 import (
 	"math"
 	"runtime/metrics"
-
-	"github.com/TB004/pprof-viz-collector/pkg/models"
 )
 
-// AsHistogram returns the value as a models.Histogram when possible.
-func AsHistogram(v metrics.Value) *models.Histogram {
+func AsHistogram(v metrics.Value) *Histogram {
 	if v.Kind() != metrics.KindFloat64Histogram {
 		return nil
 	}
@@ -22,14 +19,12 @@ func AsHistogram(v metrics.Value) *models.Histogram {
 		buckets[i] = float32(b)
 	}
 
-	return &models.Histogram{
+	return &Histogram{
 		Counts:  h.Counts,
 		Buckets: buckets,
 	}
 }
 
-// AsFloat returns the value as float64 when possible.
-// For KindFloat64 returns the float64 value. For KindUint64 returns float64(uint64).
 func AsFloat(v metrics.Value) float64 {
 	switch v.Kind() {
 	case metrics.KindFloat64:
@@ -41,8 +36,6 @@ func AsFloat(v metrics.Value) float64 {
 	}
 }
 
-// AsUint returns the value as uint64 when possible.
-// For KindUint64 returns uint64. For KindFloat64 returns uint64(value) after truncation.
 func AsUint(v metrics.Value) uint64 {
 	switch v.Kind() {
 	case metrics.KindUint64:
@@ -54,8 +47,6 @@ func AsUint(v metrics.Value) uint64 {
 	}
 }
 
-// SafeUint32 clamps the uint64 value to math.MaxUint32 to prevent overflow
-// when converting to uint32.
 func SafeUint32(v uint64) uint32 {
 	if v > math.MaxUint32 {
 		return math.MaxUint32

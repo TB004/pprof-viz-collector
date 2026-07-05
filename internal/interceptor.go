@@ -15,8 +15,7 @@ import (
 type tokenInterceptor struct{ token string }
 
 // NewTokenInterceptor returns a ConnectRPC interceptor that enforces bearer token
-// authentication on every RPC. Requests must carry Authorization: Bearer <token>;
-// missing or mismatched tokens are rejected with CodeUnauthenticated.
+// authentication on every RPC.
 func NewTokenInterceptor(token string) connect.Interceptor {
 	return tokenInterceptor{token: token}
 }

@@ -16,7 +16,7 @@ This document serves as the foundational mandate for all AI interactions within 
 ## 🏗️ Architecture & Directory Structure
 The project follows a refined Go library structure focused on a minimal public API surface and optimized internal logic.
 
-- **`/agent.go`**: The primary entry point. Contains the `Config` struct, `Bind()` (for existing servers), and `New()` (for standalone execution) functions, plus public `Snapshot*()` helpers.
+- **`/lib.go`**: The primary entry point. Contains the `Config` struct, `Bind()` (for existing servers), and `New()` (for standalone execution) functions, plus public `Snapshot*()` helpers.
 - **`/internal/`**: Private implementation details.
     - **`server.go`**: Implements the ConnectRPC service handlers (`Ping`, `SnapshotAll`, `StreamAll`, `GetMetadata`).
     - **`collector.go`**: Manages the `SampleCollector` for efficient, single-pass metric collection with double-buffering and differential updates.

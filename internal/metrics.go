@@ -8,7 +8,6 @@ import (
 	"runtime/metrics"
 )
 
-// AllMetricNames is a comprehensive list of all supported Go runtime metrics.
 var AllMetricNames = []string{
 	MetricCgoGoToCCalls,
 	MetricCPUClassesGCMarkAssist,
@@ -138,9 +137,6 @@ func GetIndex(name string) int {
 }
 
 // ReadAllSamples reads all supported Go runtime metrics in a single pass.
-// samples must have exactly len(AllMetricNames) entries with their Name fields
-// set; a mismatch is a programming error within this package and panics rather
-// than silently producing zeroed metrics.
 func ReadAllSamples(samples []metrics.Sample) {
 	if len(samples) != len(AllMetricNames) {
 		panic(fmt.Sprintf("ReadAllSamples: got %d samples, want %d", len(samples), len(AllMetricNames)))

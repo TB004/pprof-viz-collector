@@ -3,7 +3,7 @@
 
 package internal
 
-// Metric path constants for runtime/pprof-style metrics.
+// Metric path constants.
 const (
 	MetricCgoGoToCCalls = "/cgo/go-to-c-calls:calls"
 

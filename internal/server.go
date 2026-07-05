@@ -15,7 +15,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-// AgentServiceHandler implements the AgentService ConnectRPC service.
 type AgentServiceHandler struct {
 	protoconnect.UnimplementedAgentServiceHandler
 }

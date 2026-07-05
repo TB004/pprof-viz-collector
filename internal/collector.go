@@ -32,8 +32,6 @@ func NewSampleCollector() *SampleCollector {
 
 // Read updates the internal samples with current runtime metrics.
 func (c *SampleCollector) Read() {
-	// Swap buffers so we write to the "old" buffer, making it the "new" one.
-	// The one that was "current" becomes "last".
 	c.samples, c.lastSamples = c.lastSamples, c.samples
 	ReadAllSamples(c.samples)
 }
@@ -53,8 +51,7 @@ var collectorPool = sync.Pool{
 }
 
 // Snapshot performs a single full collection of all runtime metrics using a
-// pooled collector. The returned response is independent of the collector and
-// safe to use after the collector is recycled.
+// pooled collector.
 func Snapshot() *proto.AllResponse {
 	c := collectorPool.Get().(*SampleCollector)
 	defer collectorPool.Put(c)
@@ -129,7 +126,6 @@ func (c *SampleCollector) Collect() *proto.AllResponse {
 		}
 	}
 
-	// Value getters that return pointer if changed, or nil if not
 	vUint := func(name string) *uint64 {
 		idx := GetIndex(name)
 		if !hasChanged(idx) {
@@ -192,7 +188,6 @@ func (c *SampleCollector) Collect() *proto.AllResponse {
 		}
 	}
 
-	// Direct mapping into the proto response
 	return &proto.AllResponse{
 		Cgo: &proto.CgoResponse{
 			CgoCalls: vUint(MetricCgoGoToCCalls),
