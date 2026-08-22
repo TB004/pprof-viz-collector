@@ -1,6 +1,6 @@
 module github.com/TB004/pprof-viz-collector
 
-go 1.26
+go 1.27
 
 tool (
 	connectrpc.com/connect/cmd/protoc-gen-connect-go
