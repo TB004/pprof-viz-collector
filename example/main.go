@@ -26,10 +26,10 @@ func main() {
 	go func() {
 		config := pprofvizcollector.Config{
 			AllowedOrigins: []string{"*"},
-			HTTP3:          true,
+			HTTP3:          false,
 			Token:          token,
-			CertFile:       "./cert.pem",
-			KeyFile:        "./key.pem",
+			CertFile:       "",
+			KeyFile:        "",
 			Host:           "localhost",
 		}
 		if err := pprofvizcollector.New(port, config); err != nil {
