@@ -6,7 +6,7 @@ This document serves as the foundational mandate for all AI interactions within 
 `pprof-viz-collector` is a lightweight, high-fidelity observability agent for Go applications. It exposes comprehensive Go runtime metrics (CPU, Memory, GC, Scheduler) via a performant ConnectRPC API, optimized for real-time streaming and visualization.
 
 ### Tech Stack
-- **Language**: Go 1.26+
+- **Language**: Go 1.27+
 - **Protocol**: ConnectRPC (Protobuf over HTTP/2 and HTTP/3)
 - **Compression**: `zstd` (with a 256-byte threshold)
 - **HTTP/3**: `github.com/quic-go/quic-go/http3`
@@ -45,7 +45,7 @@ type Config struct {
 ### Entry points
 - **`Bind(mux *http.ServeMux, cfg Config)`**: Registers the agent onto an existing mux. `cfg.Token` and `cfg.AllowedOrigins` apply; TLS/HTTP3 are server-level concerns managed externally.
 - **`New(port int, cfg Config) error`**: Starts a dedicated server bound to `cfg.Host` (default `localhost`).
-  - No TLS → cleartext HTTP/2 (h2c).
+  - No TLS → cleartext HTTP/2 (h2c) / HTTP/1.1 (browsers cannot talk h2c).
   - `CertFile`+`KeyFile` set → TLS + HTTP/2 (minimum TLS 1.2).
   - `HTTP3: true` → HTTP/2 over TLS/TCP and HTTP/3 over QUIC are served in parallel on two separate servers; the TCP handler injects `Alt-Svc` headers via `http3.Server.SetQUICHeaders` so clients can upgrade. The package-level `http3.ListenAndServeTLS` helper is deliberately **not** used because it builds a default `http.Server` with no timeouts and no TLS `MinVersion`.
   - Every TCP server is built by `newHTTPServer` with hardened timeouts (`ReadHeaderTimeout`, `ReadTimeout`, `IdleTimeout`). `WriteTimeout` is intentionally omitted so the long-lived `StreamAll` stream is not terminated. All TLS configs set `MinVersion: tls.VersionTLS12`.
