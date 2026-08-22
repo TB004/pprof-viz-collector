@@ -112,10 +112,11 @@ func New(port int, cfg Config) error {
 		h = newCORSHandler(cfg.AllowedOrigins, mux)
 	}
 
-	// Cleartext HTTP/2 (h2c) when no certificate is configured.
+	// Cleartext HTTP/1.1 and HTTP/2 (h2c) when no certificate is configured.
+	// HTTP/1.1 must stay enabled: no browser speaks h2c.
 	if cfg.CertFile == "" {
 		protos := new(http.Protocols)
-		protos.SetHTTP1(false)
+		protos.SetHTTP1(true)
 		protos.SetHTTP2(false)
 		protos.SetUnencryptedHTTP2(true)
 
