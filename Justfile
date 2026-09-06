@@ -1,4 +1,4 @@
-export GOEXPERIMENT := "dwarf5,greenteagc,newinliner,jsonv2,loopvar,fieldtrack,randomizedheapbase64,runtimefreegc,sizespecializedmalloc,goroutineleakprofile"
+export GOEXPERIMENT := "cgocheck2,newinliner,jsonv2,loopvar,fieldtrack,runtimefreegc,mapsplitgroup"
 
 # Prints all available receipes
 help:
