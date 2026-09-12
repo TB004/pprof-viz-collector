@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Tizian Bahr
 
-// This is a simple CLI example application that starts the pprof-viz-collector on a specified port
-// to allow testing/developing the library without needing to integrate it into an existing application.
-
 package main
 
 import (
@@ -22,7 +19,6 @@ func main() {
 
 	log.Printf("Starting pprof-viz-collector on port %d...", port)
 
-	// Start the agent in a separate goroutine
 	go func() {
 		config := pprofvizcollector.Config{
 			AllowedOrigins: []string{"*"},
@@ -37,7 +33,6 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal to gracefully shutdown the application
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

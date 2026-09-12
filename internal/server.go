@@ -87,7 +87,7 @@ func (h CollectorServiceHandler) StreamAll(ctx context.Context, req *proto.Strea
 	// Send a full initial frame immediately so clients aren't blind for the
 	// first interval. The first Read on a fresh collector diffs against an empty
 	// baseline, so this frame carries the full current state; subsequent frames
-	// are differential. This counts as the first cycle.
+	// are differential.
 	if err := send(); err != nil {
 		return err
 	}

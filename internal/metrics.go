@@ -126,12 +126,10 @@ func init() {
 	}
 }
 
-// GetIndex returns the index of the given metric name in the pre-allocated slice.
 func GetIndex(name string) int {
 	return metricIndices[name]
 }
 
-// ReadAllSamples reads all supported Go runtime metrics in a single pass.
 func ReadAllSamples(samples []metrics.Sample) {
 	if len(samples) != len(AllMetricNames) {
 		panic(fmt.Sprintf("ReadAllSamples: got %d samples, want %d", len(samples), len(AllMetricNames)))

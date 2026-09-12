@@ -174,7 +174,7 @@ Requests without the header or with a wrong token are rejected with HTTP 401 Una
 
 | RPC | Type | Description |
 | :--- | :--- | :--- |
-| `Ping` | Unary | Health check — returns OK if the agent is reachable. |
+| `Ping` | Unary | Health check — returns OK if the collector is reachable. |
 | `SnapshotAll` | Unary | One-shot capture of all non-zero runtime metrics. |
 | `StreamAll` | Server-streaming | Streams differential metric updates at a client-specified interval, beginning with an immediate full baseline frame. |
 | `GetMetadata` | Unary | Returns static histogram bucket boundaries. Call once before streaming. |
@@ -191,7 +191,7 @@ Requests without the header or with a wrong token are rejected with HTTP 401 Una
 
 ## Visualization
 
-This collector is designed to work seamlessly with the **Pprof-Viz Desktop App**, a free-to-use visualization platform that provides real-time dashboards for your Go applications.
+This collector is designed to work seamlessly with the **Pprof-Viz Web App**, a free-to-use visualization platform that provides real-time dashboards for your Go applications.
 
 ## License
 
