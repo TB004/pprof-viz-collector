@@ -13,7 +13,7 @@ While standard `pprof` is indispensable for deep-dive analysis and stack-trace i
 ## Key Features
 
 - **High Fidelity**: Exposes the full range of `runtime/metrics` (CPU, Memory, GC, Scheduler, etc.).
-- **Modern Protocol**: Built on ConnectRPC for type-safe, performant streaming over HTTP/2 and HTTP/3.
+- **Modern Protocol**: Built on ConnectRPC for type-safe, performant streaming over HTTP/1.1 (browsers cannot talk h2c), HTTP/2 and HTTP/3.
 - **Low Overhead**: Optimized for zero-alloc collection loops using a single-pass `runtime/metrics.Read` approach and O(1) metric indexing.
 - **Efficient**: Uses `zstd` compression and intelligent field alignment to minimize network and memory footprint.
 - **Easy Integration**: Minimal-config setup for both existing web services and standalone CLI tools.
@@ -110,7 +110,7 @@ func main() {
 
 If your project is a long-running process without an existing HTTP server (e.g., a background worker or CLI tool), use `New` to start a dedicated telemetry server.
 
-**Cleartext (HTTP/2):**
+**Cleartext (HTTP/2) / HTTP/1.1 (browsers cannot talk h2c):**
 ```go
 go func() {
     if err := pprofvizcollector.New(9999, pprofvizcollector.Config{}); err != nil {
@@ -174,7 +174,7 @@ Requests without the header or with a wrong token are rejected with HTTP 401 Una
 
 | RPC | Type | Description |
 | :--- | :--- | :--- |
-| `Ping` | Unary | Health check — returns OK if the agent is reachable. |
+| `Ping` | Unary | Health check — returns OK if the collector is reachable. |
 | `SnapshotAll` | Unary | One-shot capture of all non-zero runtime metrics. |
 | `StreamAll` | Server-streaming | Streams differential metric updates at a client-specified interval, beginning with an immediate full baseline frame. |
 | `GetMetadata` | Unary | Returns static histogram bucket boundaries. Call once before streaming. |
@@ -191,7 +191,7 @@ Requests without the header or with a wrong token are rejected with HTTP 401 Una
 
 ## Visualization
 
-This collector is designed to work seamlessly with the **Pprof-Viz Desktop App**, a free-to-use visualization platform that provides real-time dashboards for your Go applications.
+This collector is designed to work seamlessly with the **Pprof-Viz Web App**, a free-to-use visualization platform that provides real-time dashboards for your Go applications.
 
 ## License
 

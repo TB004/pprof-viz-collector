@@ -60,7 +60,7 @@ func handlerOpts(cfg Config) []connect.HandlerOption {
 	return opts
 }
 
-// Bind registers the AgentService handler to the provided http.ServeMux.
+// Bind registers the CollectorService handler to the provided http.ServeMux.
 // cfg.CertFile, cfg.KeyFile, and cfg.HTTP3 are ignored; those are server-level concerns managed externally.
 func Bind(mux *http.ServeMux, cfg Config) {
 	path, handler := protoconnect.NewCollectorServiceHandler(internal.CollectorServiceHandler{}, handlerOpts(cfg)...)
@@ -86,8 +86,8 @@ func newHTTPServer(addr string, h http.Handler) *http.Server {
 	}
 }
 
-// New creates and starts an HTTP server on the specified port serving the AgentService.
-// Without TLS, it supports HTTP/2 over cleartext.
+// New creates and starts an HTTP server on the specified port serving the CollectorService.
+// Without TLS, it supports HTTP/2 over cleartext and HTTP/1.1 (necessary for browsers).
 // With CertFile and KeyFile set, it supports HTTP/2 over TLS (minimum TLS 1.2).
 // With HTTP3 also set, it additionally serves HTTP/3 over QUIC in parallel, with Alt-Svc
 // headers on TLS responses so clients can upgrade automatically.
@@ -112,10 +112,11 @@ func New(port int, cfg Config) error {
 		h = newCORSHandler(cfg.AllowedOrigins, mux)
 	}
 
-	// Cleartext HTTP/2 (h2c) when no certificate is configured.
+	// Cleartext HTTP/1.1 and HTTP/2 (h2c) when no certificate is configured.
+	// HTTP/1.1 must stay enabled: no browser speaks h2c.
 	if cfg.CertFile == "" {
 		protos := new(http.Protocols)
-		protos.SetHTTP1(false)
+		protos.SetHTTP1(true)
 		protos.SetHTTP2(false)
 		protos.SetUnencryptedHTTP2(true)
 

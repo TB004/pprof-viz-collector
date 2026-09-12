@@ -60,24 +60,19 @@ type GoDebugResponse struct {
 	CacheVerifyEvents                 uint64 `json:"cache_verify_events"`
 	Http2ClientEvents                 uint64 `json:"http2_client_events"`
 	Http2ServerEvents                 uint64 `json:"http2_server_events"`
-	Tls10ServerEvents                 uint64 `json:"tls10_server_events"`
-	Tls3DesEvents                     uint64 `json:"tls3_des_events"`
 	TlsMaxRsaSizeEvents               uint64 `json:"tls_max_rsa_size_events"`
-	TlsRsaKexEvents                   uint64 `json:"tls_rsa_kex_events"`
 	TlsSha1Events                     uint64 `json:"tls_sha1_events"`
-	TlsUnsafeEkmEvents                uint64 `json:"tls_unsafe_ekm_events"`
 	HttpCookieMaxNumEvents            uint64 `json:"http_cookie_max_num_events"`
 	HttpLaxContentLengthEvents        uint64 `json:"http_lax_content_length_events"`
 	HttpMuxGo121Events                uint64 `json:"http_mux_go_121_events"`
 	HttpServeContentKeepHeadersEvents uint64 `json:"http_serve_content_keep_headers_events"`
 	AllowMultipleVcsEvents            uint64 `json:"allow_multiple_vcs_events"`
-	AsyncTimerChanEvents              uint64 `json:"async_timer_chan_events"`
 	ContainerMaxProcsEvents           uint64 `json:"container_max_procs_events"`
 	CryptoCustomRandEvents            uint64 `json:"crypto_custom_rand_events"`
 	EmbedFollowSymlinkEvents          uint64 `json:"embed_follow_symlink_events"`
 	ExecErrDotEvents                  uint64 `json:"exec_err_dot_events"`
+	Fips140EmsEvents                  uint64 `json:"fips140_ems_events"`
 	TestJsonBuildTextEvents           uint64 `json:"test_json_build_text_events"`
-	TypeAliasEvents                   uint64 `json:"type_alias_events"`
 	HtmlMetaContentUrlEscapedEvents   uint64 `json:"html_meta_content_url_escaped_events"`
 	InstallGoRootEvents               uint64 `json:"install_go_root_events"`
 	MultipartMaxHeadersEvents         uint64 `json:"multipart_max_headers_events"`
@@ -94,10 +89,10 @@ type GoDebugResponse struct {
 	UrlStrictColonsEvents             uint64 `json:"url_strict_colons_events"`
 	WinReadLinkVolumeEvents           uint64 `json:"win_read_link_volume_events"`
 	WinSymlinkEvents                  uint64 `json:"win_symlink_events"`
-	X509KeypairLeafEvents             uint64 `json:"x509_keypair_leaf_events"`
 	X509NegativeSerialEvents          uint64 `json:"x509_negative_serial_events"`
 	X509RsaCrtEvents                  uint64 `json:"x509_rsa_crt_events"`
 	X509Sha256SkidEvents              uint64 `json:"x509_sha256_skid_events"`
+	X509SslCertOverridePlatformEvents uint64 `json:"x509_ssl_cert_override_platform_events"`
 	X509UseFallbackRootsEvents        uint64 `json:"x509_use_fallback_roots_events"`
 	X509UsePoliciesEvents             uint64 `json:"x509_use_policies_events"`
 	ZipInsecurePathEvents             uint64 `json:"zip_insecure_path_events"`

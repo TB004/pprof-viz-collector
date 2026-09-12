@@ -43,7 +43,6 @@ func (ti tokenInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFun
 }
 
 func (ti tokenInterceptor) check(h http.Header) error {
-	// Constant-time comparison to avoid leaking the token via response timing.
 	got := h.Get("Authorization")
 	want := "Bearer " + ti.token
 	if subtle.ConstantTimeCompare([]byte(got), []byte(want)) != 1 {

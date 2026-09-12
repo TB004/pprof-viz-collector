@@ -1,128 +1,106 @@
 # AI Project Context: pprof-viz-collector
 
-This document serves as the foundational mandate for all AI interactions within the `pprof-viz-collector` repository. It outlines the project's purpose, architecture, and engineering standards to ensure consistency and technical integrity.
+Engineering conventions for working in this repository. See `README.md` for what the
+library does, its public API, and usage examples — that is not repeated here.
 
-## 🚀 Project Overview
-`pprof-viz-collector` is a lightweight, high-fidelity observability agent for Go applications. It exposes comprehensive Go runtime metrics (CPU, Memory, GC, Scheduler) via a performant ConnectRPC API, optimized for real-time streaming and visualization.
+## Directory Structure
 
-### Tech Stack
-- **Language**: Go 1.26+
-- **Protocol**: ConnectRPC (Protobuf over HTTP/2 and HTTP/3)
-- **Compression**: `zstd` (with a 256-byte threshold)
-- **HTTP/3**: `github.com/quic-go/quic-go/http3`
-- **CORS**: `connectrpc.com/cors` (header constants) + `github.com/rs/cors` (middleware)
-- **Task Runner**: `just`
-
-## 🏗️ Architecture & Directory Structure
-The project follows a refined Go library structure focused on a minimal public API surface and optimized internal logic.
-
-- **`/lib.go`**: The primary entry point. Contains the `Config` struct, `Bind()` (for existing servers), and `New()` (for standalone execution) functions, plus public `Snapshot*()` helpers.
-- **`/internal/`**: Private implementation details.
-    - **`server.go`**: Implements the ConnectRPC service handlers (`Ping`, `SnapshotAll`, `StreamAll`, `GetMetadata`).
-    - **`collector.go`**: Manages the `SampleCollector` for efficient, single-pass metric collection with double-buffering and differential updates.
-    - **`interceptor.go`**: `NewTokenInterceptor(token)` — a ConnectRPC interceptor enforcing `Authorization: Bearer <token>` on all RPCs.
-    - **`metrics.go` / `paths.go`**: Logic for interfacing with `runtime/metrics` and pre-calculating metric indices.
-    - **`utils.go`**: Low-level conversion helpers for `metrics.Value`.
-    - **`compression.go`**: Custom `zstd` compressor/decompressor for ConnectRPC.
-    - **`proto/`**: Generated Go code from Protobuf definitions. Never edit by hand — use `just gen`.
-- **`/pkg/models/`**: Shared, public data structures (e.g., `Histogram`).
+- **`/lib.go`**: The public API surface — `Config`, `Bind()`, `New()` and `newCORSHandler(origins []string, h http.Handler) http.Handler`.
+- **`/internal/`**: Private implementation.
+    - **`server.go`**: ConnectRPC service handlers (`Ping`, `SnapshotAll`, `StreamAll`, `GetMetadata`).
+    - **`collector.go`**: `SampleCollector` — single-pass collection with double-buffering
+      and differential updates.
+    - **`interceptor.go`**: `NewTokenInterceptor(token)`, the bearer-token interceptor.
+    - **`metrics.go` / `paths.go`**: `runtime/metrics` interfacing and pre-calculated metric indices.
+    - **`models.go`**: Shared data structures (e.g. `Histogram`).
+    - **`utils.go`**: Conversion helpers for `metrics.Value`.
+    - **`compression.go`**: Custom `zstd` compressor/decompressor for ConnectRPC (256-byte threshold).
+    - **`proto/`**: Generated Go code. Never edit by hand — use `just gen`.
 - **`/proto/`**: Source `.proto` files defining the service contract.
 
-## 🔌 Public API
+## Commands
 
-### `Config` struct
-```go
-type Config struct {
-    Token          string   // bearer token for auth; empty = no auth
-    AllowedOrigins []string // CORS origins; nil/empty disables CORS
-    CertFile       string   // TLS cert path; enables TLS when set (New only)
-    KeyFile        string   // TLS key path; paired with CertFile (New only)
-    HTTP3          bool     // serve HTTP/3 over QUIC in parallel; requires CertFile+KeyFile (New only)
-    Host           string   // bind interface; empty = "localhost" (New only)
-}
-```
-
-### Entry points
-- **`Bind(mux *http.ServeMux, cfg Config)`**: Registers the agent onto an existing mux. `cfg.Token` and `cfg.AllowedOrigins` apply; TLS/HTTP3 are server-level concerns managed externally.
-- **`New(port int, cfg Config) error`**: Starts a dedicated server bound to `cfg.Host` (default `localhost`).
-  - No TLS → cleartext HTTP/2 (h2c).
-  - `CertFile`+`KeyFile` set → TLS + HTTP/2 (minimum TLS 1.2).
-  - `HTTP3: true` → HTTP/2 over TLS/TCP and HTTP/3 over QUIC are served in parallel on two separate servers; the TCP handler injects `Alt-Svc` headers via `http3.Server.SetQUICHeaders` so clients can upgrade. The package-level `http3.ListenAndServeTLS` helper is deliberately **not** used because it builds a default `http.Server` with no timeouts and no TLS `MinVersion`.
-  - Every TCP server is built by `newHTTPServer` with hardened timeouts (`ReadHeaderTimeout`, `ReadTimeout`, `IdleTimeout`). `WriteTimeout` is intentionally omitted so the long-lived `StreamAll` stream is not terminated. All TLS configs set `MinVersion: tls.VersionTLS12`.
-
-### RPC methods
-| RPC | Type | Description |
-| :--- | :--- | :--- |
-| `Ping` | Unary | No-op health check. Returns OK if the agent is reachable. |
-| `SnapshotAll` | Unary | One-shot capture of all non-zero runtime metrics. |
-| `StreamAll(StreamConfigRequest)` | Server-streaming | Differential metric updates at a client-specified interval; emits an immediate full baseline frame first. |
-| `GetMetadata` | Unary | Static histogram bucket boundaries. Call once before streaming. |
-
-## 🛠️ Development & Commands
-All maintenance tasks should be performed using the `Justfile`.
+All maintenance tasks run through the `Justfile`.
 
 | Task | Command | Description |
 | :--- | :--- | :--- |
-| **Test** | `just test` | Runs unit tests with the race detector. |
-| **Coverage** | `just cover` | Generates and opens an HTML coverage report. |
-| **Lint** | `just lint` | Runs `golangci-lint`, `go vet`, and `modernize`. |
-| **Security** | `just vuln` | Runs `staticcheck`, `govulncheck`, and `gosec`. |
+| **Test** | `just test` | Unit tests with the race detector. |
+| **Coverage** | `just cover` | HTML coverage report. |
+| **Lint** | `just lint` | `golangci-lint`, `go vet`, `modernize`. |
+| **Security** | `just vuln` | `staticcheck`, `govulncheck`, `gosec`. |
 | **Generate** | `just gen` | Regenerates Protobuf/ConnectRPC code via `buf generate`. |
 
-## 📏 Engineering Standards
+## Coding Style
 
-### Coding Style
-- **Idiomatic Go**: Adhere strictly to standard Go formatting and naming conventions.
-- **Unused parameters**: Omit parameter names entirely when unused — do not use `_`. Match the style of existing handler signatures (e.g., `func (h CollectorServiceHandler) Ping(context.Context, *emptypb.Empty)`).
-- **Memory Optimization**:
-    - Order struct fields by size (descending) to minimize padding.
-    - Use pre-allocated slices and `SampleCollector` to minimize heap allocations during collection.
-- **Performance**:
-    - Replaced map-based metric lookups with a pre-allocated `[]metrics.Sample` slice.
-    - Use `GetIndex(name)` for O(1) index retrieval, initialized via `init()`.
-    - Use Go 1.26's `new(value)` for efficient, single-line pointer creation for `optional` fields.
-- **Documentation**: All exported functions and types must have descriptive comments.
+- **Idiomatic Go**: standard formatting and naming conventions.
+- **Unused parameters**: omit parameter names entirely — do not use `_`. Match existing handler
+  signatures (e.g. `func (h CollectorServiceHandler) Ping(context.Context, *emptypb.Empty)`).
+- **Memory**: order struct fields by size (descending) to minimize padding; use pre-allocated
+  slices and `SampleCollector` to avoid heap allocations during collection.
+- **Metric lookup**: use `GetIndex(name)` for O(1) index retrieval into the pre-allocated
+  `[]metrics.Sample` slice (initialized via `init()`) — never a map.
+- **Pointers**: use `new(value)` for single-line pointer creation for `optional` fields.
+- **Documentation**: all exported functions and types need descriptive comments.
 
-### Testing Practices
-- **Parallelism**: Use `t.Parallel()` for all safe tests.
-- **Subtest Pattern**: When using `t.Run`, always call `t.Parallel()` **inside** the subtest function to ensure concurrent execution.
-- **Test helpers**: Use `newTestClient(t *testing.T)` (defined in `internal/server_test.go`) to create isolated ConnectRPC test servers. It uses `t.Cleanup(server.Close)` — never `defer server.Close()` — so the server lifetime outlives parallel subtests.
-- **`defer` vs `t.Cleanup`**: When a parent test spawns parallel subtests, `defer` fires at parent function return (before subtests complete). Always use `t.Cleanup` for resources shared with parallel subtests.
-- **Metric coverage guard**: `TestMetricCoverage` (in `internal/metrics_test.go`) asserts every `runtime/metrics.All()` entry is either collected (in `AllMetricNames`) or listed in the documented `intentionallyOmitted` map. When adding or dropping a collected metric, update one of the two — a new Go version's added metrics will fail this test until they are wired up or explicitly omitted with a reason.
+## Testing Practices
 
-### Collector design
-- **`SampleCollector.Collect()`** (no parameters): Always returns differential updates. On a fresh collector (first call after `NewSampleCollector()`), the `KindBad` branch in `hasChanged` correctly treats all non-zero values as "changed from zero", making an explicit `forceFull` flag unnecessary.
-- **Histogram buckets are never included in `Collect()`**: Bucket boundaries are static and sent once via `GetMetadata`. `StreamAll` and `SnapshotAll` always omit `Buckets`; only `UpdatedCounts` (sparse delta map) is transmitted.
-- **One-shot snapshots use a pooled collector**: `internal.Snapshot()` recycles `SampleCollector`s through a `sync.Pool` and calls `resetBaseline()` (zeroing the buffer that the next `Read` swaps in as the diff baseline) before each read, so repeated `SnapshotAll`/`Snapshot*()` calls reproduce fresh-collector full-state semantics without re-allocating the sample slices. `StreamAll` keeps its own persistent collector across cycles for genuine differential diffing — never route it through the pool.
-- **`StreamAll` sends an immediate first frame**: The full baseline frame is sent at connect time (t=0), counting as the first cycle, rather than after one interval. Frame semantics are unchanged (the first frame was always full); only the timing moved earlier.
-- **`ReadAllSamples` panics on a wrong-sized buffer**: The sample slice must have exactly `len(AllMetricNames)` entries. A mismatch is a programming error within the package and panics rather than silently emitting zeroed metrics.
+- **Parallelism**: use `t.Parallel()` for all safe tests. With `t.Run`, call `t.Parallel()`
+  *inside* the subtest function.
+- **Test helpers**: use `newTestClient(t *testing.T)` (in `internal/server_test.go`) for isolated
+  ConnectRPC test servers.
+- **`defer` vs `t.Cleanup`**: when a parent test spawns parallel subtests, `defer` fires at parent
+  return, before the subtests finish. Always use `t.Cleanup` for resources shared with parallel
+  subtests — this is why `newTestClient` uses `t.Cleanup(server.Close)`.
+- **Metric coverage guard**: `TestMetricCoverage` (`internal/metrics_test.go`) asserts every
+  `runtime/metrics.All()` entry is either collected (in `AllMetricNames`) or listed in the
+  documented `intentionallyOmitted` map. A new Go version's added metrics will fail this test
+  until they are wired up or explicitly omitted with a reason.
 
-### Authentication
-- Token auth is implemented as a ConnectRPC interceptor in `internal/interceptor.go` via `NewTokenInterceptor(token string) connect.Interceptor`.
-- Checks `Authorization: Bearer <token>` on every RPC (unary and streaming) using a constant-time comparison (`crypto/subtle.ConstantTimeCompare`) to avoid leaking the token through response timing.
-- Returns `CodeUnauthenticated` (HTTP 401) on mismatch.
-- **Auth belongs in HTTP headers, not proto messages.** Never add token fields to proto message definitions.
+## Collector Design
 
-### CORS
-- CORS is applied via `newCORSHandler(origins []string, h http.Handler) http.Handler` in `agent.go`.
-- Uses `connectrpc.com/cors` for the ConnectRPC-specific header sets and `github.com/rs/cors` for the middleware.
-- `AllowedHeaders` = `connectcors.AllowedHeaders()` + `"Authorization"` (required for token auth).
-- In `Bind`, CORS wraps the ConnectRPC handler before it is registered on the external mux — scoped to the agent's path only.
-- In `New`, CORS wraps the entire mux before it is passed to any server branch (h2c, TLS, or HTTP3).
-- An empty `AllowedOrigins` slice skips the middleware entirely — no CORS headers are ever set.
+- **`SampleCollector.Collect()`** always returns differential updates. On a fresh collector the
+  `KindBad` branch in `hasChanged` treats all non-zero values as "changed from zero", which is why
+  no explicit `forceFull` flag exists.
+- **Histogram buckets are never included in `Collect()`**. Bucket boundaries are static and sent
+  once via `GetMetadata`; only `UpdatedCounts` (sparse delta map) goes on the wire.
+- **One-shot snapshots use a pooled collector**: `internal.Snapshot()` recycles `SampleCollector`s
+  through a `sync.Pool` and calls `resetBaseline()` before each read, reproducing fresh-collector
+  full-state semantics without re-allocating sample slices. `StreamAll` keeps its own persistent
+  collector for genuine differential diffing — never route it through the pool.
+- **`ReadAllSamples` panics on a wrong-sized buffer**: the slice must have exactly
+  `len(AllMetricNames)` entries. A mismatch is a programming error inside the package, and panicking
+  beats silently emitting zeroed metrics.
 
-### Protobuf & Network
-- **Wire Efficiency**: Prioritize tags 1-15 for frequently updated fields.
-- **Type Selection**: Use `uint32` for gauges (counts) and `double` for cumulative time counters to maintain precision.
-- **Differential Updates**:
-    - Use `optional` scalar fields to support differential updates (only sending changed values) in streaming RPCs.
-    - Treat initial stream messages as a delta from the default (zero) state to omit 0-value fields.
-- **Sparse Histograms**: Use `map<uint32, uint64> updated_counts` to transmit only buckets that have changed since the last sample.
-- **No `Buckets` in streaming**: `StreamConfigRequest` has no `exclude_histogram_buckets` field — exclusion is unconditional. Clients call `GetMetadata` once for bucket boundaries.
-- **Compression**: The agent uses a 256-byte threshold for `zstd` compression to balance CPU usage and bandwidth.
-- **Code generation**: All `.pb.go` and `.connect.go` files are generated by `just gen` (`buf generate`). Never edit them by hand.
+## Server Construction
 
-## 🤖 AI Interaction Guidelines
-- **Verify Logic**: Contributions can be AI-assisted, but all code must be verified for correctness. Never trust AI output blindly.
-- **No "Vibe-Coding"**: Every change must have a clear technical rationale grounded in the Go runtime's behavior or ConnectRPC's requirements.
-- **Surgical Edits**: When modifying logic, prioritize minimal, high-impact changes that maintain the existing architectural patterns.
+- Every TCP server is built by `newHTTPServer` with hardened timeouts. `WriteTimeout` is
+  deliberately omitted so long-lived `StreamAll` streams are not terminated. All TLS configs set
+  `MinVersion: tls.VersionTLS12`.
+- With `HTTP3: true`, TCP and QUIC run as two separate servers; the TCP handler injects `Alt-Svc`
+  via `http3.Server.SetQUICHeaders`. The package-level `http3.ListenAndServeTLS` helper is
+  deliberately **not** used — it builds a default `http.Server` with no timeouts and no TLS
+  `MinVersion`.
+- CORS placement differs by entry point: `Bind` wraps the ConnectRPC handler before registering it
+  on the external mux (scoped to the agent's path only); `New` wraps the entire mux before it
+  reaches any server branch (h2c, TLS, or HTTP3). `AllowedHeaders` is
+  `connectcors.AllowedHeaders()` plus `"Authorization"`.
+
+## Protobuf & Wire Format
+
+- **Auth belongs in HTTP headers, not proto messages.** Never add token fields to proto definitions.
+- **Wire efficiency**: reserve tags 1-15 for frequently updated fields.
+- **Type selection**: `uint32` for gauges (counts), `double` for cumulative time counters.
+- **Differential updates**: use `optional` scalar fields so unchanged values can be omitted; treat
+  initial stream messages as a delta from the zero state.
+- **Sparse histograms**: `map<uint32, uint64> updated_counts` carries only changed buckets.
+- **No bucket exclusion knob**: `StreamConfigRequest` has no `exclude_histogram_buckets` field —
+  exclusion is unconditional.
+- **Code generation**: all `.pb.go` and `.connect.go` files come from `just gen`. Never hand-edit.
+
+## AI Interaction Guidelines
+
+- **Verify logic**: AI-assisted contributions are fine, but all code must be verified for
+  correctness. Never trust AI output blindly.
+- **No "vibe-coding"**: every change needs a technical rationale grounded in Go runtime behavior or
+  ConnectRPC requirements.
+- **Surgical edits**: prefer minimal, high-impact changes that preserve existing architectural patterns.
