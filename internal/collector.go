@@ -156,8 +156,8 @@ func (c *SampleCollector) Collect() *proto.AllResponse {
 			return nil
 		}
 
-		h := AsHistogram(c.samples[idx].Value)
-		if h == nil {
+		counts := histCounts(c.samples[idx].Value)
+		if counts == nil {
 			return nil
 		}
 
@@ -169,7 +169,7 @@ func (c *SampleCollector) Collect() *proto.AllResponse {
 		}
 
 		updated := make(map[uint32]uint64)
-		for i, v := range h.Counts {
+		for i, v := range counts {
 			var lv uint64
 			if i < len(lastCounts) {
 				lv = lastCounts[i]

@@ -25,6 +25,14 @@ func AsHistogram(v metrics.Value) *Histogram {
 	}
 }
 
+// histCounts returns just the counts of a histogram metric value.
+func histCounts(v metrics.Value) []uint64 {
+	if v.Kind() != metrics.KindFloat64Histogram {
+		return nil
+	}
+	return v.Float64Histogram().Counts
+}
+
 func AsFloat(v metrics.Value) float64 {
 	switch v.Kind() {
 	case metrics.KindFloat64:
