@@ -4,12 +4,15 @@
 package pprofvizcollector
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -121,6 +124,30 @@ func TestNew(t *testing.T) {
 		defer assert.NoError(t, resp.Body.Close())
 	}
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestRecoverPanic(t *testing.T) {
+	t.Parallel()
+
+	err := recoverPanic(context.Background(), connect.Spec{}, nil, "boom")
+	var connectErr *connect.Error
+	assert.True(t, errors.As(err, &connectErr))
+	assert.Equal(t, connect.CodeInternal, connectErr.Code())
+	assert.Contains(t, connectErr.Error(), "boom")
+}
+
+func TestBind_ReadMaxBytes(t *testing.T) {
+	t.Parallel()
+	mux := http.NewServeMux()
+	Bind(mux, Config{})
+
+	oversized := strings.Repeat("a", maxRequestBytes*2)
+	req := httptest.NewRequest("POST", "/proto.CollectorService/StreamAll", strings.NewReader(`{"intervalSeconds":`+oversized+`}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	assert.NotEqual(t, http.StatusOK, rec.Code)
 }
 
 func TestNew_HTTP3RequiresCertFiles(t *testing.T) {

@@ -4,8 +4,10 @@
 package pprofvizcollector
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
@@ -49,10 +51,20 @@ func newCORSHandler(origins []string, h http.Handler) http.Handler {
 	}).Handler(h)
 }
 
+// Every RPC this service exposes takes either Empty or a two-field message, so
+// this is generous headroom, not a real limit.
+const maxRequestBytes = 4096
+
+func recoverPanic(_ context.Context, _ connect.Spec, _ http.Header, r any) error {
+	return connect.NewError(connect.CodeInternal, fmt.Errorf("panic: %v", r))
+}
+
 func handlerOpts(cfg Config) []connect.HandlerOption {
 	opts := []connect.HandlerOption{
 		connect.WithCompression(internal.CompressionZstd, internal.NewZstdDecompressor, internal.NewZstdCompressor),
 		connect.WithCompressMinBytes(256),
+		connect.WithReadMaxBytes(maxRequestBytes),
+		connect.WithRecover(recoverPanic),
 	}
 	if cfg.Token != "" {
 		opts = append(opts, connect.WithInterceptors(internal.NewTokenInterceptor(cfg.Token)))
