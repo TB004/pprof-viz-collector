@@ -108,45 +108,57 @@ func main() {
 
 ### 2. Using `New()` (Standalone/CLI Tools)
 
-If your project is a long-running process without an existing HTTP server (e.g., a background worker or CLI tool), use `New` to start a dedicated telemetry server.
+If your project is a long-running process without an existing HTTP server (e.g., a background worker or CLI tool), use `New` to start a dedicated telemetry server. `New` starts the server in the background and returns immediately with a `*Server`; call `Shutdown` on it to stop the server gracefully, and `Addr()` to learn the address it's listening on (useful when passing port `0` to let the OS pick a free one).
 
 **Cleartext (HTTP/2) / HTTP/1.1 (browsers cannot talk h2c):**
 ```go
-go func() {
-    if err := pprofvizcollector.New(9999, pprofvizcollector.Config{}); err != nil {
-        log.Fatalf("failed to start agent: %v", err)
-    }
-}()
+server, err := pprofvizcollector.New(9999, pprofvizcollector.Config{})
+if err != nil {
+    log.Fatalf("failed to start agent: %v", err)
+}
+defer server.Shutdown(context.Background())
+
+log.Printf("agent listening on %s", server.Addr())
 ```
 
 **TLS + HTTP/2 with token auth and CORS:**
 ```go
-go func() {
-    if err := pprofvizcollector.New(9999, pprofvizcollector.Config{
-        Token:          "your-secret-token",
-        AllowedOrigins: []string{"https://app.example.com"},
-        CertFile:       "/path/to/cert.pem",
-        KeyFile:        "/path/to/key.pem",
-    }); err != nil {
-        log.Fatalf("failed to start agent: %v", err)
-    }
-}()
+server, err := pprofvizcollector.New(9999, pprofvizcollector.Config{
+    Token:          "your-secret-token",
+    AllowedOrigins: []string{"https://app.example.com"},
+    CertFile:       "/path/to/cert.pem",
+    KeyFile:        "/path/to/key.pem",
+})
+if err != nil {
+    log.Fatalf("failed to start agent: %v", err)
+}
+defer server.Shutdown(context.Background())
 ```
 
 **TLS + HTTP/3:**
 ```go
-go func() {
-    if err := pprofvizcollector.New(9999, pprofvizcollector.Config{
-        Token:          "your-secret-token",
-        AllowedOrigins: []string{"https://app.example.com"},
-        CertFile:       "/path/to/cert.pem",
-        KeyFile:        "/path/to/key.pem",
-        HTTP3:          true,
-    }); err != nil {
-        log.Fatalf("failed to start agent: %v", err)
-    }
-}()
+server, err := pprofvizcollector.New(9999, pprofvizcollector.Config{
+    Token:          "your-secret-token",
+    AllowedOrigins: []string{"https://app.example.com"},
+    CertFile:       "/path/to/cert.pem",
+    KeyFile:        "/path/to/key.pem",
+    HTTP3:          true,
+})
+if err != nil {
+    log.Fatalf("failed to start agent: %v", err)
+}
+defer server.Shutdown(context.Background())
 ```
+
+**Stopping the server:**
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+if err := server.Shutdown(ctx); err != nil {
+    log.Printf("error during shutdown: %v", err)
+}
+```
+`Shutdown` waits for in-flight requests to finish (or for `ctx` to be canceled) and is safe to call more than once. See [`example/main.go`](example/main.go) for a complete example with signal handling.
 
 ### CORS
 

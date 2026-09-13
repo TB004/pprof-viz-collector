@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -98,14 +99,56 @@ func newHTTPServer(addr string, h http.Handler) *http.Server {
 	}
 }
 
-// New creates and starts an HTTP server on the specified port serving the CollectorService.
+// Server is a running instance started by New. The zero value is not usable;
+// obtain one from New.
+type Server struct {
+	httpServer *http.Server
+	h3Server   *http3.Server  // nil unless HTTP3 was enabled
+	udpConn    net.PacketConn // nil unless HTTP3 was enabled
+
+	addr string
+
+	shutdownOnce sync.Once
+	shutdownErr  error
+}
+
+// Addr returns the address the server is listening on, e.g. "127.0.0.1:57621".
+// Useful when New was called with port 0 to let the OS pick a free port.
+func (s *Server) Addr() string {
+	return s.addr
+}
+
+// Shutdown gracefully stops the server: it stops accepting new connections
+// and waits for in-flight requests to finish, or for ctx to be canceled.
+// Safe to call more than once; only the first call does any work.
+func (s *Server) Shutdown(ctx context.Context) error {
+	s.shutdownOnce.Do(func() {
+		var errs []error
+		if s.h3Server != nil {
+			errs = append(errs, s.h3Server.Shutdown(ctx))
+		}
+		errs = append(errs, s.httpServer.Shutdown(ctx))
+		if s.udpConn != nil {
+			// http3.Server.Serve documents that closing the server does not
+			// close the connection it was given; close it ourselves.
+			errs = append(errs, s.udpConn.Close())
+		}
+		s.shutdownErr = errors.Join(errs...)
+	})
+	return s.shutdownErr
+}
+
+// New starts an HTTP server on the specified port serving the CollectorService
+// and returns immediately; it does not block. Call Shutdown on the returned
+// Server to stop it.
+//
 // Without TLS, it supports HTTP/2 over cleartext and HTTP/1.1 (necessary for browsers).
 // With CertFile and KeyFile set, it supports HTTP/2 over TLS (minimum TLS 1.2).
 // With HTTP3 also set, it additionally serves HTTP/3 over QUIC in parallel, with Alt-Svc
 // headers on TLS responses so clients can upgrade automatically.
-func New(port int, cfg Config) error {
+func New(port int, cfg Config) (*Server, error) {
 	if cfg.HTTP3 && (cfg.CertFile == "" || cfg.KeyFile == "") {
-		return errors.New("HTTP3 requires CertFile and KeyFile to be configured")
+		return nil, errors.New("HTTP3 requires CertFile and KeyFile to be configured")
 	}
 
 	mux := http.NewServeMux()
@@ -127,45 +170,83 @@ func New(port int, cfg Config) error {
 	// Cleartext HTTP/1.1 and HTTP/2 (h2c) when no certificate is configured.
 	// HTTP/1.1 must stay enabled: no browser speaks h2c.
 	if cfg.CertFile == "" {
+		ln, err := net.Listen("tcp", addr)
+		if err != nil {
+			return nil, err
+		}
+
 		protos := new(http.Protocols)
 		protos.SetHTTP1(true)
 		protos.SetHTTP2(false)
 		protos.SetUnencryptedHTTP2(true)
 
-		s := newHTTPServer(addr, h)
+		s := newHTTPServer(ln.Addr().String(), h)
 		s.Protocols = protos
-		return s.ListenAndServe()
+
+		srv := &Server{httpServer: s, addr: ln.Addr().String()}
+		go func() {
+			if err := s.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				srv.Shutdown(context.Background())
+			}
+		}()
+		return srv, nil
 	}
 
 	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
 
 	// HTTP/2-over-TLS.
 	if !cfg.HTTP3 {
-		s := newHTTPServer(addr, h)
+		ln, err := net.Listen("tcp", addr)
+		if err != nil {
+			return nil, err
+		}
+
+		s := newHTTPServer(ln.Addr().String(), h)
 		s.TLSConfig = tlsConfig
-		return s.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile)
+
+		srv := &Server{httpServer: s, addr: ln.Addr().String()}
+		go func() {
+			if err := s.ServeTLS(ln, cfg.CertFile, cfg.KeyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				srv.Shutdown(context.Background())
+			}
+		}()
+		return srv, nil
 	}
 
 	// TLS with HTTP/3: serve HTTP/2 over TLS/TCP and HTTP/3 over QUIC in parallel,
 	// advertising QUIC via Alt-Svc headers on the TLS/TCP responses.
+	tcpLn, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	udpConn, err := net.ListenPacket("udp", addr)
+	if err != nil {
+		_ = tcpLn.Close()
+		return nil, err
+	}
+
 	h3 := &http3.Server{
-		Addr:      addr,
 		Handler:   h,
 		TLSConfig: tlsConfig.Clone(),
 	}
-	tcp := newHTTPServer(addr, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	tcp := newHTTPServer(tcpLn.Addr().String(), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// #nosec G104 -- best-effort Alt-Svc advertisement
 		_ = h3.SetQUICHeaders(w.Header())
 		h.ServeHTTP(w, r)
 	}))
 	tcp.TLSConfig = tlsConfig.Clone()
 
-	errc := make(chan error, 2)
-	go func() { errc <- tcp.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile) }()
-	go func() { errc <- h3.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile) }()
+	srv := &Server{httpServer: tcp, h3Server: h3, udpConn: udpConn, addr: tcpLn.Addr().String()}
+	go func() {
+		if err := tcp.ServeTLS(tcpLn, cfg.CertFile, cfg.KeyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			srv.Shutdown(context.Background())
+		}
+	}()
+	go func() {
+		if err := h3.Serve(udpConn); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			srv.Shutdown(context.Background())
+		}
+	}()
 
-	// Whichever server fails first wins; close the other and surface any
-	// shutdown errors alongside the original.
-	err := <-errc
-	return errors.Join(err, tcp.Close(), h3.Close())
+	return srv, nil
 }
