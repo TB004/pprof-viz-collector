@@ -23,16 +23,6 @@ func TestReadAllSamples(t *testing.T) {
 	assert.NotEmpty(t, samples)
 }
 
-func TestGetIndex(t *testing.T) {
-	t.Parallel()
-
-	for i, name := range AllMetricNames {
-		assert.Equal(t, i, GetIndex(name))
-	}
-
-	assert.Equal(t, 0, GetIndex("NonExistentMetric"))
-}
-
 // intentionallyOmitted lists runtime metrics we deliberately do not collect,
 // keyed by metric name with the reason. Keep this in sync with AllMetricNames:
 // TestMetricCoverage fails if a runtime metric is neither collected nor listed

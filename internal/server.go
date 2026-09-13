@@ -20,7 +20,7 @@ import (
 // boundaries are fixed for the process lifetime, so there's no need to read
 // all runtime metrics on every call.
 var metadataResponse = sync.OnceValue(func() *proto.MetadataResponse {
-	histogramNames := []string{
+	histogramIndices := []Metric{
 		MetricGCHeapAllocsBySize,
 		MetricGCHeapFreesBySize,
 		MetricSchedLatencies,
@@ -30,16 +30,16 @@ var metadataResponse = sync.OnceValue(func() *proto.MetadataResponse {
 		MetricSchedPausesTotalOther,
 	}
 
-	samples := make([]metrics.Sample, len(histogramNames))
-	for i, name := range histogramNames {
-		samples[i].Name = name
+	samples := make([]metrics.Sample, len(histogramIndices))
+	for i, idx := range histogramIndices {
+		samples[i].Name = AllMetricNames[idx]
 	}
 	metrics.Read(samples)
 
-	buckets := make(map[string][]float32, len(samples))
-	for _, s := range samples {
-		if h := AsHistogram(s.Value); h != nil {
-			buckets[s.Name] = h.Buckets
+	buckets := make(map[Metric][]float32, len(samples))
+	for i, idx := range histogramIndices {
+		if h := AsHistogram(samples[i].Value); h != nil {
+			buckets[Metric(idx)] = h.Buckets
 		}
 	}
 

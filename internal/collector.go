@@ -66,7 +66,7 @@ func Snapshot() *proto.AllResponse {
 // Histogram bucket boundaries are never included; use GetMetadata to retrieve them once.
 func (c *SampleCollector) Collect() *proto.AllResponse {
 	// Helpers for diffing and value extraction
-	hasChanged := func(idx int) bool {
+	hasChanged := func(idx Metric) bool {
 		cur := c.samples[idx].Value
 		last := c.lastSamples[idx].Value
 
@@ -126,32 +126,28 @@ func (c *SampleCollector) Collect() *proto.AllResponse {
 		}
 	}
 
-	vUint := func(name string) *uint64 {
-		idx := GetIndex(name)
+	vUint := func(idx Metric) *uint64 {
 		if !hasChanged(idx) {
 			return nil
 		}
 		return new(AsUint(c.samples[idx].Value))
 	}
 
-	vFloat := func(name string) *float64 {
-		idx := GetIndex(name)
+	vFloat := func(idx Metric) *float64 {
 		if !hasChanged(idx) {
 			return nil
 		}
 		return new(AsFloat(c.samples[idx].Value))
 	}
 
-	vUint32 := func(name string) *uint32 {
-		idx := GetIndex(name)
+	vUint32 := func(idx Metric) *uint32 {
 		if !hasChanged(idx) {
 			return nil
 		}
 		return new(SafeUint32(AsUint(c.samples[idx].Value)))
 	}
 
-	vHist := func(name string) *proto.Histogram {
-		idx := GetIndex(name)
+	vHist := func(idx Metric) *proto.Histogram {
 		if !hasChanged(idx) {
 			return nil
 		}
