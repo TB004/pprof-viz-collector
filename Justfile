@@ -2,10 +2,11 @@
 help:
     - just --list
 
-# Generate ConnectRPC code from protobuf
+# Generate ConnectRPC code from protobuf and the runtime metric table
 [group("miscellaneous")]
 gen:
     buf generate
+    go generate ./internal/...
 
 # Check source code for vulnerabilities
 [group("maintain")]

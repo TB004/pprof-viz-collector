@@ -4,10 +4,14 @@
 package internal
 
 import (
+	"os"
+	"os/exec"
+	"path/filepath"
 	"runtime/metrics"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReadAllSamples(t *testing.T) {
@@ -55,6 +59,27 @@ func TestAllMetricNamesExist(t *testing.T) {
 
 	for _, name := range AllMetricNames {
 		assert.Truef(t, known[name], "metric %q is not provided by runtime/metrics on this Go version", name)
+	}
+}
+
+// TestGeneratedFilesUpToDate regenerates metrics_gen.go and collect_gen.go
+// from table.go into a scratch directory and fails if that differs from what's
+// checked in — i.e. someone edited table.go without running `go generate`.
+func TestGeneratedFilesUpToDate(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	cmd := exec.Command("go", "run", "./gen", "-out", dir) //nolint:gosec // fixed args, not user input
+	out, err := cmd.CombinedOutput()
+	require.NoErrorf(t, err, "go run ./gen failed: %s", out)
+
+	for _, name := range []string{"metrics_gen.go", "collect_gen.go"} {
+		want, err := os.ReadFile(filepath.Join(dir, name))
+		require.NoError(t, err)
+		got, err := os.ReadFile(name)
+		require.NoError(t, err)
+		assert.Equalf(t, string(want), string(got),
+			"%s is stale relative to table.go; run `go generate ./internal/...`", name)
 	}
 }
 
