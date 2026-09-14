@@ -156,6 +156,40 @@ func TestAsHistogram(t *testing.T) {
 	})
 }
 
+// TestHistCountsAllocs locks in the reason Collect's hot path uses histCounts
+// instead of AsHistogram: AsHistogram allocates and float64->float32-converts
+// the (unused, in the streaming path) bucket-boundary slice on every call,
+// while histCounts returns only the counts.
+func TestHistCountsAllocs(t *testing.T) {
+	collector := NewSampleCollector()
+	collector.Read()
+
+	var histValue metrics.Value
+	found := false
+	for _, s := range collector.samples {
+		if s.Value.Kind() == metrics.KindFloat64Histogram {
+			histValue = s.Value
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Skip("No histogram metrics available in this environment")
+	}
+
+	histCountsAllocs := testing.AllocsPerRun(100, func() {
+		_ = histCounts(histValue)
+	})
+	asHistogramAllocs := testing.AllocsPerRun(100, func() {
+		_ = AsHistogram(histValue)
+	})
+
+	assert.Zerof(t, histCountsAllocs, "histCounts should not allocate, got %.1f allocs/op", histCountsAllocs)
+	assert.Greaterf(t, asHistogramAllocs, histCountsAllocs,
+		"AsHistogram (%.1f allocs/op) should allocate more than histCounts (%.1f allocs/op): it also builds the bucket slice",
+		asHistogramAllocs, histCountsAllocs)
+}
+
 func TestSafeUint32(t *testing.T) {
 	tests := []struct {
 		name   string

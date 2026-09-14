@@ -26,6 +26,11 @@ cover:
 test:
     go test -race ./...
 
+# Run benchmarks with allocation reporting
+[group("maintain")]
+bench:
+    go test ./internal/... -bench . -benchmem -run '^$'
+
 # Runs the golangci-lint tool to lint the project
 [group("maintain")]
 lint:

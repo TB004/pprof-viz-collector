@@ -84,3 +84,24 @@ func TestSnapshotFullStateAcrossCalls(t *testing.T) {
 		assert.NotNilf(t, res.Memory.TotalBytes, "Snapshot must return full state on call %d", i)
 	}
 }
+
+// BenchmarkCollect measures the per-tick cost of Read+Collect: exactly what
+// StreamAll's send() does on every interval.
+func BenchmarkCollect(b *testing.B) {
+	c := NewSampleCollector()
+	c.Read()
+
+	b.ReportAllocs()
+	for b.Loop() {
+		c.Read()
+		_ = c.Collect()
+	}
+}
+
+// BenchmarkSnapshot measures the pooled one-shot path used by SnapshotAll.
+func BenchmarkSnapshot(b *testing.B) {
+	b.ReportAllocs()
+	for b.Loop() {
+		_ = Snapshot()
+	}
+}
