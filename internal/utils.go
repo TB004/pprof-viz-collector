@@ -8,6 +8,11 @@ import (
 	"runtime/metrics"
 )
 
+type Histogram struct {
+	Counts  []uint64  `json:"counts"`
+	Buckets []float32 `json:"buckets"`
+}
+
 func AsHistogram(v metrics.Value) *Histogram {
 	if v.Kind() != metrics.KindFloat64Histogram {
 		return nil
