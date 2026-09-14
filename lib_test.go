@@ -5,11 +5,20 @@ package pprofvizcollector
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"errors"
+	"math/big"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -26,6 +35,39 @@ func shutdown(t *testing.T, srv *Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	assert.NoError(t, srv.Shutdown(ctx))
+}
+
+func generateTestCert(t *testing.T) (certFile, keyFile string) {
+	t.Helper()
+
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: "localhost"},
+		NotBefore:    time.Now().Add(-time.Hour),
+		NotAfter:     time.Now().Add(time.Hour),
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		DNSNames:     []string{"localhost"},
+		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1"), net.ParseIP("::1")},
+	}
+
+	der, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	require.NoError(t, err)
+
+	keyBytes, err := x509.MarshalECPrivateKey(priv)
+	require.NoError(t, err)
+
+	dir := t.TempDir()
+	certFile = filepath.Join(dir, "cert.pem")
+	keyFile = filepath.Join(dir, "key.pem")
+
+	require.NoError(t, os.WriteFile(certFile, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o600))
+	require.NoError(t, os.WriteFile(keyFile, pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyBytes}), 0o600))
+
+	return certFile, keyFile
 }
 
 func TestBind(t *testing.T) {
@@ -180,9 +222,10 @@ func TestNew_Shutdown(t *testing.T) {
 func TestNew_HTTP3(t *testing.T) {
 	t.Parallel()
 
+	certFile, keyFile := generateTestCert(t)
 	server, err := New(0, Config{
-		CertFile: "example/cert.pem",
-		KeyFile:  "example/key.pem",
+		CertFile: certFile,
+		KeyFile:  keyFile,
 		HTTP3:    true,
 	})
 	require.NoError(t, err)

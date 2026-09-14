@@ -138,6 +138,15 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.shutdownErr
 }
 
+// selfDestruct shuts the whole Server down in the background after an
+// unexpected listener failure.
+func (s *Server) selfDestruct() {
+	go func() {
+		// #nosec G104 -- best-effort cleanup; no caller to report the error to
+		_ = s.Shutdown(context.Background())
+	}()
+}
+
 // New starts an HTTP server on the specified port serving the CollectorService
 // and returns immediately; it does not block. Call Shutdown on the returned
 // Server to stop it.
@@ -186,7 +195,7 @@ func New(port int, cfg Config) (*Server, error) {
 		srv := &Server{httpServer: s, addr: ln.Addr().String()}
 		go func() {
 			if err := s.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				srv.Shutdown(context.Background())
+				srv.selfDestruct()
 			}
 		}()
 		return srv, nil
@@ -207,7 +216,7 @@ func New(port int, cfg Config) (*Server, error) {
 		srv := &Server{httpServer: s, addr: ln.Addr().String()}
 		go func() {
 			if err := s.ServeTLS(ln, cfg.CertFile, cfg.KeyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				srv.Shutdown(context.Background())
+				srv.selfDestruct()
 			}
 		}()
 		return srv, nil
@@ -221,6 +230,7 @@ func New(port int, cfg Config) (*Server, error) {
 	}
 	udpConn, err := net.ListenPacket("udp", addr)
 	if err != nil {
+		// #nosec G104 -- best-effort cleanup; the ListenPacket error above is what's returned
 		_ = tcpLn.Close()
 		return nil, err
 	}
@@ -239,12 +249,12 @@ func New(port int, cfg Config) (*Server, error) {
 	srv := &Server{httpServer: tcp, h3Server: h3, udpConn: udpConn, addr: tcpLn.Addr().String()}
 	go func() {
 		if err := tcp.ServeTLS(tcpLn, cfg.CertFile, cfg.KeyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			srv.Shutdown(context.Background())
+			srv.selfDestruct()
 		}
 	}()
 	go func() {
 		if err := h3.Serve(udpConn); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			srv.Shutdown(context.Background())
+			srv.selfDestruct()
 		}
 	}()
 
