@@ -21,7 +21,7 @@ func main() {
 	// #nosec G101 -- example app only
 	const token = "$argon2id$v=19$m=19456,t=2,p=1$q8phA9hRew+TKOoOeXxQYA$4gjeEyK3gUScgc+wt1It59DsIahCvav7sGcznebV9lo"
 
-	config := pprofvizcollector.Config{
+	config := pprofvizcollector.NewConfig{
 		AllowedOrigins: []string{"*"},
 		HTTP3:          false,
 		Token:          token,

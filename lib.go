@@ -23,24 +23,32 @@ import (
 	"github.com/rs/cors"
 )
 
-type Config struct {
+// BindConfig configures Bind.
+type BindConfig struct {
 	// Token, if non-empty, is required on every RPC call via Authorization: Bearer <token>.
-	// Applies to both Bind and New.
 	Token string
 	// AllowedOrigins is the list of origins permitted by CORS (e.g. ["https://app.example.com"]).
 	// Use ["*"] to allow all origins. An empty slice disables CORS middleware entirely.
-	// Applies to both Bind and New.
 	AllowedOrigins []string
-	// CertFile is the path to the TLS certificate file. Enables TLS when set. Only used by New.
+}
+
+// NewConfig configures New.
+type NewConfig struct {
+	// Token, if non-empty, is required on every RPC call via Authorization: Bearer <token>.
+	Token string
+	// AllowedOrigins is the list of origins permitted by CORS (e.g. ["https://app.example.com"]).
+	// Use ["*"] to allow all origins. An empty slice disables CORS middleware entirely.
+	AllowedOrigins []string
+	// CertFile is the path to the TLS certificate file. Enables TLS when set.
 	CertFile string
-	// KeyFile is the path to the TLS private key file. Must be set together with CertFile. Only used by New.
+	// KeyFile is the path to the TLS private key file. Must be set together with CertFile.
 	KeyFile string
 	// HTTP3 also serves HTTP/3 over QUIC in parallel with the TLS/TCP server.
-	// Requires CertFile and KeyFile. Only used by New.
+	// Requires CertFile and KeyFile.
 	HTTP3 bool
 	// Host is the network interface to bind to (e.g. "127.0.0.1" or "0.0.0.0").
 	// Defaults to "localhost" when empty. Binding to a non-loopback address
-	// exposes the agent externally; pair it with TLS and a Token. Only used by New.
+	// exposes the agent externally; pair it with TLS and a Token.
 	Host string
 }
 
@@ -61,23 +69,24 @@ func recoverPanic(_ context.Context, _ connect.Spec, _ http.Header, r any) error
 	return connect.NewError(connect.CodeInternal, fmt.Errorf("panic: %v", r))
 }
 
-func handlerOpts(cfg Config) []connect.HandlerOption {
+func handlerOpts(token string) []connect.HandlerOption {
 	opts := []connect.HandlerOption{
 		connect.WithCompression(internal.CompressionZstd, internal.NewZstdDecompressor, internal.NewZstdCompressor),
 		connect.WithCompressMinBytes(256),
 		connect.WithReadMaxBytes(maxRequestBytes),
 		connect.WithRecover(recoverPanic),
 	}
-	if cfg.Token != "" {
-		opts = append(opts, connect.WithInterceptors(internal.NewTokenInterceptor(cfg.Token)))
+	if token != "" {
+		opts = append(opts, connect.WithInterceptors(internal.NewTokenInterceptor(token)))
 	}
 	return opts
 }
 
 // Bind registers the CollectorService handler to the provided http.ServeMux.
-// cfg.CertFile, cfg.KeyFile, and cfg.HTTP3 are ignored; those are server-level concerns managed externally.
-func Bind(mux *http.ServeMux, cfg Config) {
-	path, handler := protoconnect.NewCollectorServiceHandler(internal.CollectorServiceHandler{}, handlerOpts(cfg)...)
+// Server-level concerns like TLS and HTTP/3 are managed externally by whatever
+// serves mux; use New instead if you want this package to run that server.
+func Bind(mux *http.ServeMux, cfg BindConfig) {
+	path, handler := protoconnect.NewCollectorServiceHandler(internal.CollectorServiceHandler{}, handlerOpts(cfg.Token)...)
 	if len(cfg.AllowedOrigins) > 0 {
 		handler = newCORSHandler(cfg.AllowedOrigins, handler)
 	}
@@ -156,13 +165,13 @@ func (s *Server) selfDestruct() {
 // With CertFile and KeyFile set, it supports HTTP/2 over TLS (minimum TLS 1.2).
 // With HTTP3 also set, it additionally serves HTTP/3 over QUIC in parallel, with Alt-Svc
 // headers on TLS responses so clients can upgrade automatically.
-func New(port int, cfg Config) (*Server, error) {
+func New(port int, cfg NewConfig) (*Server, error) {
 	if cfg.HTTP3 && (cfg.CertFile == "" || cfg.KeyFile == "") {
 		return nil, errors.New("HTTP3 requires CertFile and KeyFile to be configured")
 	}
 
 	mux := http.NewServeMux()
-	path, handler := protoconnect.NewCollectorServiceHandler(internal.CollectorServiceHandler{}, handlerOpts(cfg)...)
+	path, handler := protoconnect.NewCollectorServiceHandler(internal.CollectorServiceHandler{}, handlerOpts(cfg.Token)...)
 	mux.Handle(path, handler)
 
 	host := cfg.Host

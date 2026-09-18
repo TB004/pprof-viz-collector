@@ -73,7 +73,7 @@ func generateTestCert(t *testing.T) (certFile, keyFile string) {
 func TestBind(t *testing.T) {
 	t.Parallel()
 	mux := http.NewServeMux()
-	Bind(mux, Config{})
+	Bind(mux, BindConfig{})
 
 	req := httptest.NewRequest("POST", "/proto.CollectorService/SnapshotAll", nil)
 	rec := httptest.NewRecorder()
@@ -86,7 +86,7 @@ func TestBind(t *testing.T) {
 func TestBind_TokenAuth(t *testing.T) {
 	t.Parallel()
 	mux := http.NewServeMux()
-	Bind(mux, Config{Token: "secret"})
+	Bind(mux, BindConfig{Token: "secret"})
 
 	t.Run("MissingToken", func(t *testing.T) {
 		t.Parallel()
@@ -121,7 +121,7 @@ func TestBind_TokenAuth(t *testing.T) {
 func TestBind_CORS(t *testing.T) {
 	t.Parallel()
 	mux := http.NewServeMux()
-	Bind(mux, Config{AllowedOrigins: []string{"https://app.example.com"}})
+	Bind(mux, BindConfig{AllowedOrigins: []string{"https://app.example.com"}})
 
 	t.Run("PreflightAllowedOrigin", func(t *testing.T) {
 		t.Parallel()
@@ -146,7 +146,7 @@ func TestBind_CORS(t *testing.T) {
 	t.Run("NoCORSWithoutOrigins", func(t *testing.T) {
 		t.Parallel()
 		mux2 := http.NewServeMux()
-		Bind(mux2, Config{})
+		Bind(mux2, BindConfig{})
 		req := httptest.NewRequest("OPTIONS", "/proto.CollectorService/Ping", nil)
 		req.Header.Set("Origin", "https://app.example.com")
 		req.Header.Set("Access-Control-Request-Method", "POST")
@@ -159,7 +159,7 @@ func TestBind_CORS(t *testing.T) {
 func TestNew(t *testing.T) {
 	t.Parallel()
 
-	server, err := New(0, Config{})
+	server, err := New(0, NewConfig{})
 	require.NoError(t, err)
 	t.Cleanup(func() { shutdown(t, server) })
 	assert.NotEmpty(t, server.Addr())
@@ -184,11 +184,11 @@ func TestNew(t *testing.T) {
 func TestNew_PortZeroPicksFreePort(t *testing.T) {
 	t.Parallel()
 
-	a, err := New(0, Config{})
+	a, err := New(0, NewConfig{})
 	require.NoError(t, err)
 	t.Cleanup(func() { shutdown(t, a) })
 
-	b, err := New(0, Config{})
+	b, err := New(0, NewConfig{})
 	require.NoError(t, err)
 	t.Cleanup(func() { shutdown(t, b) })
 
@@ -200,7 +200,7 @@ func TestNew_PortZeroPicksFreePort(t *testing.T) {
 func TestNew_Shutdown(t *testing.T) {
 	t.Parallel()
 
-	server, err := New(0, Config{})
+	server, err := New(0, NewConfig{})
 	require.NoError(t, err)
 	addr := server.Addr()
 
@@ -223,7 +223,7 @@ func TestNew_HTTP3(t *testing.T) {
 	t.Parallel()
 
 	certFile, keyFile := generateTestCert(t)
-	server, err := New(0, Config{
+	server, err := New(0, NewConfig{
 		CertFile: certFile,
 		KeyFile:  keyFile,
 		HTTP3:    true,
@@ -252,7 +252,7 @@ func TestRecoverPanic(t *testing.T) {
 func TestBind_ReadMaxBytes(t *testing.T) {
 	t.Parallel()
 	mux := http.NewServeMux()
-	Bind(mux, Config{})
+	Bind(mux, BindConfig{})
 
 	oversized := strings.Repeat("a", maxRequestBytes*2)
 	req := httptest.NewRequest("POST", "/proto.CollectorService/StreamAll", strings.NewReader(`{"intervalSeconds":`+oversized+`}`))
@@ -265,7 +265,7 @@ func TestBind_ReadMaxBytes(t *testing.T) {
 
 func TestNew_HTTP3RequiresCertFiles(t *testing.T) {
 	t.Parallel()
-	server, err := New(0, Config{HTTP3: true})
+	server, err := New(0, NewConfig{HTTP3: true})
 	assert.Nil(t, server)
 	assert.EqualError(t, err, "HTTP3 requires CertFile and KeyFile to be configured")
 }

@@ -41,34 +41,43 @@ This combination ensures that the agent consumes negligible bandwidth when the r
 
 ## Usage
 
-The library provides two primary entry points depending on your application's architecture. Both accept a `Config` struct.
+The library provides two primary entry points depending on your application's architecture. Each has its own config struct, so it's impossible to pass a `New`-only setting (like `HTTP3`) to `Bind`, where it would otherwise be silently ignored.
 
 ### Configuration
 
 ```go
-type Config struct {
+// BindConfig configures Bind.
+type BindConfig struct {
     // Token, if non-empty, is required on every RPC call via Authorization: Bearer <token>.
-    // Applies to both Bind and New.
     Token string
 
     // AllowedOrigins is the list of origins permitted by CORS (e.g. ["https://app.example.com"]).
     // Use ["*"] to allow all origins. An empty slice disables CORS middleware entirely.
-    // Applies to both Bind and New.
+    AllowedOrigins []string
+}
+
+// NewConfig configures New.
+type NewConfig struct {
+    // Token, if non-empty, is required on every RPC call via Authorization: Bearer <token>.
+    Token string
+
+    // AllowedOrigins is the list of origins permitted by CORS (e.g. ["https://app.example.com"]).
+    // Use ["*"] to allow all origins. An empty slice disables CORS middleware entirely.
     AllowedOrigins []string
 
-    // CertFile is the path to the TLS certificate file. Enables TLS when set. Only used by New.
+    // CertFile is the path to the TLS certificate file. Enables TLS when set.
     CertFile string
 
-    // KeyFile is the path to the TLS private key file. Must be set together with CertFile. Only used by New.
+    // KeyFile is the path to the TLS private key file. Must be set together with CertFile.
     KeyFile string
 
     // HTTP3 also serves HTTP/3 over QUIC in parallel with the TLS/TCP server.
-    // Requires CertFile and KeyFile. Only used by New.
+    // Requires CertFile and KeyFile.
     HTTP3 bool
 
     // Host is the network interface to bind to (e.g. "127.0.0.1" or "0.0.0.0").
     // Defaults to "localhost" when empty. Binding to a non-loopback address
-    // exposes the agent externally; pair it with TLS and a Token. Only used by New.
+    // exposes the agent externally; pair it with TLS and a Token.
     Host string
 }
 ```
@@ -92,7 +101,7 @@ func main() {
     mux := http.NewServeMux()
 
     // Bind the agent to your existing mux, optionally with a token and CORS origins
-    pprofvizcollector.Bind(mux, pprofvizcollector.Config{
+    pprofvizcollector.Bind(mux, pprofvizcollector.BindConfig{
         Token:          "your-secret-token",
         AllowedOrigins: []string{"https://app.example.com"},
     })
@@ -112,7 +121,7 @@ If your project is a long-running process without an existing HTTP server (e.g.,
 
 **Cleartext (HTTP/2) / HTTP/1.1 (browsers cannot talk h2c):**
 ```go
-server, err := pprofvizcollector.New(9999, pprofvizcollector.Config{})
+server, err := pprofvizcollector.New(9999, pprofvizcollector.NewConfig{})
 if err != nil {
     log.Fatalf("failed to start agent: %v", err)
 }
@@ -123,7 +132,7 @@ log.Printf("agent listening on %s", server.Addr())
 
 **TLS + HTTP/2 with token auth and CORS:**
 ```go
-server, err := pprofvizcollector.New(9999, pprofvizcollector.Config{
+server, err := pprofvizcollector.New(9999, pprofvizcollector.NewConfig{
     Token:          "your-secret-token",
     AllowedOrigins: []string{"https://app.example.com"},
     CertFile:       "/path/to/cert.pem",
@@ -137,7 +146,7 @@ defer server.Shutdown(context.Background())
 
 **TLS + HTTP/3:**
 ```go
-server, err := pprofvizcollector.New(9999, pprofvizcollector.Config{
+server, err := pprofvizcollector.New(9999, pprofvizcollector.NewConfig{
     Token:          "your-secret-token",
     AllowedOrigins: []string{"https://app.example.com"},
     CertFile:       "/path/to/cert.pem",
@@ -162,10 +171,10 @@ if err := server.Shutdown(ctx); err != nil {
 
 ### CORS
 
-When `Config.AllowedOrigins` is set, the agent applies CORS middleware configured specifically for ConnectRPC. It permits the required ConnectRPC protocol headers, exposes response trailers, and additionally allows the `Authorization` header for token auth. Use `["*"]` to allow all origins during development:
+When `AllowedOrigins` is set (on either `BindConfig` or `NewConfig`), the agent applies CORS middleware configured specifically for ConnectRPC. It permits the required ConnectRPC protocol headers, exposes response trailers, and additionally allows the `Authorization` header for token auth. Use `["*"]` to allow all origins during development:
 
 ```go
-pprofvizcollector.Config{
+pprofvizcollector.BindConfig{
     AllowedOrigins: []string{"*"}, // restrict to your app's origin in production
 }
 ```
@@ -174,7 +183,7 @@ An empty `AllowedOrigins` slice disables CORS entirely — no headers are added 
 
 ### Authentication
 
-When `Config.Token` is set, every RPC call must include the token as a bearer credential:
+When `Token` is set (on either `BindConfig` or `NewConfig`), every RPC call must include the token as a bearer credential:
 
 ```
 Authorization: Bearer your-secret-token
