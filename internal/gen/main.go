@@ -85,7 +85,7 @@ func writeGoFile(name string, src []byte) error {
 	return os.WriteFile(name, formatted, 0o644)
 }
 
-// vFunc names the Collect() helper closure (vUint, vFloat, vUint32, vHist)
+// vFunc names the SampleCollector method (vUint, vFloat, vUint32, vHist)
 // that reads a metric of this kind.
 func (k kind) vFunc() string {
 	switch k {
@@ -166,16 +166,11 @@ func genCollect() []byte {
 	fmt.Fprintf(&b, "import %q\n\n", "github.com/TB004/pprof-viz-collector/internal/proto")
 
 	b.WriteString("// buildAllResponse maps every metric in the table (table.go) into a\n")
-	b.WriteString("// proto.AllResponse using the supplied read/diff helpers from Collect.\n")
+	b.WriteString("// proto.AllResponse using c's read/diff helpers.\n")
 	b.WriteString("//\n")
 	b.WriteString("// A metric with no entry here is a compile error, not a silently dropped\n")
 	b.WriteString("// value.\n")
-	b.WriteString("func buildAllResponse(\n")
-	b.WriteString("\tvUint func(Metric) *uint64,\n")
-	b.WriteString("\tvFloat func(Metric) *float64,\n")
-	b.WriteString("\tvUint32 func(Metric) *uint32,\n")
-	b.WriteString("\tvHist func(Metric) *proto.Histogram,\n")
-	b.WriteString(") *proto.AllResponse {\n")
+	b.WriteString("func buildAllResponse(c *SampleCollector) *proto.AllResponse {\n")
 	b.WriteString("\treturn &proto.AllResponse{\n")
 	for _, g := range groupOrder {
 		fields := byGroup[g.group]
@@ -184,7 +179,7 @@ func genCollect() []byte {
 		}
 		fmt.Fprintf(&b, "\t\t%s: &proto.%s{\n", g.group, g.message)
 		for _, m := range fields {
-			fmt.Fprintf(&b, "\t\t\t%s: %s(Metric%s),\n", m.protoField, m.kind.vFunc(), m.name)
+			fmt.Fprintf(&b, "\t\t\t%s: c.%s(Metric%s),\n", m.protoField, m.kind.vFunc(), m.name)
 		}
 		b.WriteString("\t\t},\n")
 	}

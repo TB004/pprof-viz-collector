@@ -65,124 +65,133 @@ func Snapshot() *proto.AllResponse {
 // since the last Read. On a fresh collector, all non-zero fields are returned.
 // Histogram bucket boundaries are never included; use GetMetadata to retrieve them once.
 func (c *SampleCollector) Collect() *proto.AllResponse {
-	// Helpers for diffing and value extraction
-	hasChanged := func(idx Metric) bool {
-		cur := c.samples[idx].Value
-		last := c.lastSamples[idx].Value
+	return buildAllResponse(c)
+}
 
-		// If last is uninitialized (KindBad), we treat it as a delta from the default (0) value.
-		if last.Kind() == metrics.KindBad {
-			switch cur.Kind() {
-			case metrics.KindUint64:
-				return cur.Uint64() != 0
-			case metrics.KindFloat64:
-				return cur.Float64() != 0
-			case metrics.KindFloat64Histogram:
-				h := cur.Float64Histogram()
-				if h == nil {
-					return false
-				}
-				for _, count := range h.Counts {
-					if count != 0 {
-						return true
-					}
-				}
-				return false
-			case metrics.KindBad:
-				return false // Both are bad
-			default:
-				return true
-			}
-		}
+// hasChanged reports whether the metric at idx differs between the current
+// and previous Read. If the previous value is uninitialized (KindBad), it is
+// treated as a delta from the default (0) value.
+func (c *SampleCollector) hasChanged(idx Metric) bool {
+	cur := c.samples[idx].Value
+	last := c.lastSamples[idx].Value
 
-		if cur.Kind() != last.Kind() {
-			return true
-		}
-
+	if last.Kind() == metrics.KindBad {
 		switch cur.Kind() {
 		case metrics.KindUint64:
-			return cur.Uint64() != last.Uint64()
+			return cur.Uint64() != 0
 		case metrics.KindFloat64:
-			return cur.Float64() != last.Float64()
-		case metrics.KindBad:
-			return false
+			return cur.Float64() != 0
 		case metrics.KindFloat64Histogram:
-			hCur := cur.Float64Histogram()
-			hLast := last.Float64Histogram()
-			if hCur == nil || hLast == nil {
-				return hCur != hLast
+			h := cur.Float64Histogram()
+			if h == nil {
+				return false
 			}
-			if len(hCur.Counts) != len(hLast.Counts) {
-				return true
-			}
-			for i, v := range hCur.Counts {
-				if v != hLast.Counts[i] {
+			for _, count := range h.Counts {
+				if count != 0 {
 					return true
 				}
 			}
 			return false
+		case metrics.KindBad:
+			return false // Both are bad
 		default:
 			return true
 		}
 	}
 
-	vUint := func(idx Metric) *uint64 {
-		if !hasChanged(idx) {
-			return nil
-		}
-		return new(AsUint(c.samples[idx].Value))
+	if cur.Kind() != last.Kind() {
+		return true
 	}
 
-	vFloat := func(idx Metric) *float64 {
-		if !hasChanged(idx) {
-			return nil
+	switch cur.Kind() {
+	case metrics.KindUint64:
+		return cur.Uint64() != last.Uint64()
+	case metrics.KindFloat64:
+		return cur.Float64() != last.Float64()
+	case metrics.KindBad:
+		return false
+	case metrics.KindFloat64Histogram:
+		hCur := cur.Float64Histogram()
+		hLast := last.Float64Histogram()
+		if hCur == nil || hLast == nil {
+			return hCur != hLast
 		}
-		return new(AsFloat(c.samples[idx].Value))
-	}
-
-	vUint32 := func(idx Metric) *uint32 {
-		if !hasChanged(idx) {
-			return nil
+		if len(hCur.Counts) != len(hLast.Counts) {
+			return true
 		}
-		return new(SafeUint32(AsUint(c.samples[idx].Value)))
-	}
-
-	vHist := func(idx Metric) *proto.Histogram {
-		if !hasChanged(idx) {
-			return nil
-		}
-
-		counts := histCounts(c.samples[idx].Value)
-		if counts == nil {
-			return nil
-		}
-
-		var lastCounts []uint64
-		if last := c.lastSamples[idx].Value; last.Kind() == metrics.KindFloat64Histogram {
-			if hLast := last.Float64Histogram(); hLast != nil {
-				lastCounts = hLast.Counts
+		for i, v := range hCur.Counts {
+			if v != hLast.Counts[i] {
+				return true
 			}
 		}
+		return false
+	default:
+		return true
+	}
+}
 
-		updated := make(map[uint32]uint64)
-		for i, v := range counts {
-			var lv uint64
-			if i < len(lastCounts) {
-				lv = lastCounts[i]
-			}
-			if v != lv {
-				updated[uint32(i)] = v
-			}
-		}
+// vUint returns the current uint64 value of idx, or nil if it hasn't changed
+// since the last Read.
+func (c *SampleCollector) vUint(idx Metric) *uint64 {
+	if !c.hasChanged(idx) {
+		return nil
+	}
+	return new(AsUint(c.samples[idx].Value))
+}
 
-		if len(updated) == 0 {
-			return nil
-		}
+// vFloat returns the current float64 value of idx, or nil if it hasn't
+// changed since the last Read.
+func (c *SampleCollector) vFloat(idx Metric) *float64 {
+	if !c.hasChanged(idx) {
+		return nil
+	}
+	return new(AsFloat(c.samples[idx].Value))
+}
 
-		return &proto.Histogram{
-			UpdatedCounts: updated,
+// vUint32 returns the current value of idx narrowed to uint32, or nil if it
+// hasn't changed since the last Read.
+func (c *SampleCollector) vUint32(idx Metric) *uint32 {
+	if !c.hasChanged(idx) {
+		return nil
+	}
+	return new(SafeUint32(AsUint(c.samples[idx].Value)))
+}
+
+// vHist returns the histogram buckets of idx that changed since the last
+// Read, or nil if none did.
+func (c *SampleCollector) vHist(idx Metric) *proto.Histogram {
+	if !c.hasChanged(idx) {
+		return nil
+	}
+
+	counts := histCounts(c.samples[idx].Value)
+	if counts == nil {
+		return nil
+	}
+
+	var lastCounts []uint64
+	if last := c.lastSamples[idx].Value; last.Kind() == metrics.KindFloat64Histogram {
+		if hLast := last.Float64Histogram(); hLast != nil {
+			lastCounts = hLast.Counts
 		}
 	}
 
-	return buildAllResponse(vUint, vFloat, vUint32, vHist)
+	updated := make(map[uint32]uint64)
+	for i, v := range counts {
+		var lv uint64
+		if i < len(lastCounts) {
+			lv = lastCounts[i]
+		}
+		if v != lv {
+			updated[uint32(i)] = v
+		}
+	}
+
+	if len(updated) == 0 {
+		return nil
+	}
+
+	return &proto.Histogram{
+		UpdatedCounts: updated,
+	}
 }
