@@ -4,7 +4,9 @@
 package internal
 
 import (
+	"runtime/metrics"
 	"testing"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -73,6 +75,46 @@ func TestResetBaseline(t *testing.T) {
 	// A running program always has non-zero total memory, so a full snapshot
 	// must include it again.
 	assert.NotNil(t, res.Memory.TotalBytes, "resetBaseline should restore full-state collection")
+}
+
+// TestResetBaselinePreservesHistogramAllocation verifies that resetBaseline
+// zeroes a histogram metric's counts in place instead of replacing the Value,
+// so runtime/metrics can still reuse the existing *Float64Histogram (and its
+// counts slice) on the next Read instead of reallocating it.
+func TestResetBaselinePreservesHistogramAllocation(t *testing.T) {
+	c := NewSampleCollector()
+	c.Read()
+
+	idx := MetricGCHeapAllocsBySize
+	before := c.samples[idx].Value.Float64Histogram()
+	if !assert.NotNil(t, before) {
+		return
+	}
+	beforePtr := unsafe.Pointer(before)
+
+	c.resetBaseline()
+
+	reset := c.samples[idx].Value
+	assert.Equal(t, metrics.KindFloat64Histogram, reset.Kind(),
+		"resetBaseline must keep the histogram Value's kind/pointer so runtime/metrics can reuse it")
+	h := reset.Float64Histogram()
+	if assert.NotNil(t, h) {
+		assert.True(t, beforePtr == unsafe.Pointer(h), "resetBaseline must not replace the *Float64Histogram")
+		for _, v := range h.Counts {
+			assert.Zero(t, v)
+		}
+	}
+
+	// Cycle the double buffer twice so this same slot is the target of a real
+	// ReadAllSamples call again, and confirm runtime/metrics reused the
+	// existing histogram object instead of allocating a new one.
+	c.Read()
+	c.Read()
+	after := c.samples[idx].Value.Float64Histogram()
+	if assert.NotNil(t, after) {
+		assert.True(t, beforePtr == unsafe.Pointer(after),
+			"runtime/metrics should reuse the histogram allocation across pooled resets")
+	}
 }
 
 // TestSnapshotFullStateAcrossCalls verifies the pooled Snapshot helper returns a

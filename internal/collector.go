@@ -38,8 +38,26 @@ func (c *SampleCollector) Read() {
 
 // resetBaseline clears the current sample values so that the next Read+Collect
 // reports the full current state rather than a diff.
+//
+// Histogram metrics are cleared by zeroing their Counts in place rather than
+// replacing the whole Value. This matters because runtime/metrics only
+// reuses an existing *Float64Histogram (avoiding a fresh allocation of the
+// histogram and its counts slice) when the Value it's given already has
+// KindFloat64Histogram and a non-nil pointer (see float64HistOrInit in
+// runtime/metrics.go). Overwriting the Value with its zero value would drop
+// that pointer, so a pooled collector would force the runtime to reallocate
+// every histogram metric on its very next Read.
 func (c *SampleCollector) resetBaseline() {
 	for i := range c.samples {
+		val := c.samples[i].Value
+		if val.Kind() == metrics.KindFloat64Histogram {
+			if h := val.Float64Histogram(); h != nil {
+				for j := range h.Counts {
+					h.Counts[j] = 0
+				}
+			}
+			continue
+		}
 		c.samples[i].Value = metrics.Value{}
 	}
 }
