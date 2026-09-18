@@ -1,52 +1,19 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Tizian Bahr
 
-package internal
+package rpc
 
 import (
 	"context"
 	"errors"
-	"runtime/metrics"
-	"sync"
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/TB004/pprof-viz-collector/internal/collect"
 	"github.com/TB004/pprof-viz-collector/internal/proto"
 	"github.com/TB004/pprof-viz-collector/internal/proto/protoconnect"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
-
-// metadataResponse builds the MetadataResponse once and caches it: bucket
-// boundaries are fixed for the process lifetime, so there's no need to read
-// all runtime metrics on every call.
-var metadataResponse = sync.OnceValue(func() *proto.MetadataResponse {
-	samples := make([]metrics.Sample, len(histogramMetrics))
-	for i, idx := range histogramMetrics {
-		samples[i].Name = AllMetricNames[idx]
-	}
-	metrics.Read(samples)
-
-	buckets := make(map[Metric][]float32, len(samples))
-	for i, idx := range histogramMetrics {
-		if h := asHistogram(samples[i].Value); h != nil {
-			buckets[idx] = h.Buckets
-		}
-	}
-
-	return &proto.MetadataResponse{
-		Gc: &proto.GCMetadata{
-			BytesAllocsBySizeBuckets: buckets[MetricGCHeapAllocsBySize],
-			BytesFreesBySizeBuckets:  buckets[MetricGCHeapFreesBySize],
-		},
-		Scheduler: &proto.SchedulerMetadata{
-			LatenciesSecondsBuckets:       buckets[MetricSchedLatencies],
-			StoppingGcSecondsBuckets:      buckets[MetricSchedPausesStoppingGC],
-			StoppingOtherSecondsBuckets:   buckets[MetricSchedPausesStoppingOther],
-			TotalGcPauseSecondsBuckets:    buckets[MetricSchedPausesTotalGC],
-			TotalOtherPauseSecondsBuckets: buckets[MetricSchedPausesTotalOther],
-		},
-	}
-})
 
 type CollectorServiceHandler struct {
 	protoconnect.UnimplementedCollectorServiceHandler
@@ -59,13 +26,13 @@ func (h CollectorServiceHandler) Ping(context.Context, *emptypb.Empty) (*emptypb
 
 // SnapshotAll returns a single point-in-time capture of all supported Go runtime metrics.
 func (h CollectorServiceHandler) SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error) {
-	return snapshot(), nil
+	return collect.Snapshot(), nil
 }
 
 // GetMetadata returns the static bucket boundaries for all histogram metrics.
 // Clients should call this once before streaming; StreamAll never sends bucket boundaries.
 func (h CollectorServiceHandler) GetMetadata(context.Context, *emptypb.Empty) (*proto.MetadataResponse, error) {
-	return metadataResponse(), nil
+	return collect.Metadata(), nil
 }
 
 // StreamAll streams runtime metrics at a client-provided interval in a client-provided number of cycles or indefinitely.
@@ -81,11 +48,11 @@ func (h CollectorServiceHandler) StreamAll(ctx context.Context, req *proto.Strea
 	ticker := time.NewTicker(intervalDuration)
 	defer ticker.Stop()
 
-	collector := newSampleCollector()
+	collector := collect.NewCollector()
 
 	send := func() error {
-		collector.read()
-		return stream.Send(collector.collect())
+		collector.Read()
+		return stream.Send(collector.Collect())
 	}
 
 	// Send a full initial frame immediately so clients aren't blind for the

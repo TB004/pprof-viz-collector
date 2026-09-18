@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Tizian Bahr
 
-package internal
+package collect
 
 import (
 	"math"

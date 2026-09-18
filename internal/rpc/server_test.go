@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Tizian Bahr
 
-package internal
+package rpc
 
 import (
 	"context"
@@ -52,18 +52,6 @@ func TestAgentServiceHandler_GetMetadata(t *testing.T) {
 	assert.NotNil(t, resp.Scheduler)
 	assert.NotEmpty(t, resp.Gc.BytesAllocsBySizeBuckets)
 	assert.NotEmpty(t, resp.Scheduler.LatenciesSecondsBuckets)
-}
-
-// TestMetadataResponseCached locks in the sync.OnceValue caching in
-// metadataResponse: histogram bucket boundaries are fixed for the process
-// lifetime, so every call after the first must be free.
-func TestMetadataResponseCached(t *testing.T) {
-	_ = metadataResponse() // warm the cache
-
-	allocs := testing.AllocsPerRun(100, func() {
-		_ = metadataResponse()
-	})
-	assert.Zerof(t, allocs, "metadataResponse should be free after the first call, got %.1f allocs/op", allocs)
 }
 
 func TestAgentServiceHandler_StreamAll(t *testing.T) {
@@ -133,15 +121,4 @@ func TestAgentServiceHandler_StreamAll(t *testing.T) {
 		assert.Error(t, stream.Err())
 		assert.Contains(t, stream.Err().Error(), "canceled")
 	})
-}
-
-func TestCollectSamples(t *testing.T) {
-	t.Parallel()
-	collector := newSampleCollector()
-	collector.read()
-	resp := collector.collect()
-	assert.NotNil(t, resp)
-	// Basic validation that we got some data populated
-	assert.NotNil(t, resp.Cpu)
-	assert.NotNil(t, resp.Gc)
 }

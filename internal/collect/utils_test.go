@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Tizian Bahr
 
-package internal
+package collect
 
 import (
 	"math"
@@ -123,8 +123,8 @@ func TestAsHistogram(t *testing.T) {
 
 	t.Run("ValidHistogram", func(t *testing.T) {
 		t.Parallel()
-		collector := newSampleCollector()
-		collector.read()
+		collector := NewCollector()
+		collector.Read()
 
 		// Find a histogram sample
 		var histValue metrics.Value
@@ -172,8 +172,8 @@ func TestAsHistogram(t *testing.T) {
 // the (unused, in the streaming path) bucket-boundary slice on every call,
 // while histCounts returns only the counts.
 func TestHistCountsAllocs(t *testing.T) {
-	collector := newSampleCollector()
-	collector.read()
+	collector := NewCollector()
+	collector.Read()
 
 	var histValue metrics.Value
 	found := false

@@ -131,7 +131,7 @@ func main() {
 
 ### 2. Using `New()` (Standalone/CLI Tools)
 
-If your project is a long-running process without an existing HTTP server (e.g., a background worker or CLI tool), use `New` to start a dedicated telemetry server. `New` starts the server in the background and returns immediately with a `*Server`; call `Shutdown` on it to stop the server gracefully, and `Addr()` to learn the address it's listening on (useful when passing port `0` to let the OS pick a free one).
+If your project is a long-running process without an existing HTTP server (e.g., a background worker or CLI tool), use `New` to start a dedicated telemetry server. `New` takes a `uint16` port (so an out-of-range value is a compile error, not a runtime one) — pass `0` to let the OS pick a free one. `New` starts the server in the background and returns immediately with a `*Server`; call `Shutdown` on it to stop the server gracefully, and `Addr()` to learn the address it's listening on.
 
 **Cleartext (HTTP/2) / HTTP/1.1 (browsers cannot talk h2c):**
 ```go
