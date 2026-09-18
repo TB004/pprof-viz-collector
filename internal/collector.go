@@ -158,12 +158,10 @@ func (c *SampleCollector) vUint32(idx Metric) *uint32 {
 }
 
 // vHist returns the histogram buckets of idx that changed since the last
-// Read, or nil if none did.
+// Read, or nil if none did. Unlike hasChanged+vUint's two-step pattern, this
+// makes a single pass over the counts and only allocates the result map once
+// a difference is actually found.
 func (c *SampleCollector) vHist(idx Metric) *proto.Histogram {
-	if !c.hasChanged(idx) {
-		return nil
-	}
-
 	counts := histCounts(c.samples[idx].Value)
 	if counts == nil {
 		return nil
@@ -176,13 +174,16 @@ func (c *SampleCollector) vHist(idx Metric) *proto.Histogram {
 		}
 	}
 
-	updated := make(map[uint32]uint64)
+	var updated map[uint32]uint64
 	for i, v := range counts {
 		var lv uint64
 		if i < len(lastCounts) {
 			lv = lastCounts[i]
 		}
 		if v != lv {
+			if updated == nil {
+				updated = make(map[uint32]uint64, len(counts)-i)
+			}
 			updated[uint32(i)] = v
 		}
 	}
