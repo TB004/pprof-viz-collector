@@ -263,6 +263,40 @@ func TestBind_ReadMaxBytes(t *testing.T) {
 	assert.NotEqual(t, http.StatusOK, rec.Code)
 }
 
+func TestBind_CompressMinBytes(t *testing.T) {
+	t.Parallel()
+
+	ping := func(t *testing.T, mux *http.ServeMux) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest("POST", "/proto.CollectorService/Ping", strings.NewReader("{}"))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Accept-Encoding", "zstd")
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		return rec
+	}
+
+	t.Run("DefaultThreshold_TinyResponseUncompressed", func(t *testing.T) {
+		t.Parallel()
+		mux := http.NewServeMux()
+		Bind(mux, BindConfig{})
+		rec := ping(t, mux)
+		require.Equal(t, http.StatusOK, rec.Code)
+		assert.Empty(t, rec.Header().Get("Content-Encoding"),
+			"Ping's tiny response should stay under the default 256-byte compression threshold")
+	})
+
+	t.Run("LowThreshold_TinyResponseCompressed", func(t *testing.T) {
+		t.Parallel()
+		mux := http.NewServeMux()
+		Bind(mux, BindConfig{CompressMinBytes: 1})
+		rec := ping(t, mux)
+		require.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "zstd", rec.Header().Get("Content-Encoding"),
+			"a 1-byte threshold should compress even Ping's tiny response")
+	})
+}
+
 func TestNew_HTTP3RequiresCertFiles(t *testing.T) {
 	t.Parallel()
 	server, err := New(0, NewConfig{HTTP3: true})

@@ -54,6 +54,13 @@ type BindConfig struct {
     // AllowedOrigins is the list of origins permitted by CORS (e.g. ["https://app.example.com"]).
     // Use ["*"] to allow all origins. An empty slice disables CORS middleware entirely.
     AllowedOrigins []string
+
+    // CompressMinBytes is the minimum response size, in bytes, below which
+    // responses are sent uncompressed. Defaults to 256 when zero. Lower it on
+    // bandwidth-constrained links, where compressing even small frames is
+    // worth the CPU cost; raise it if compression's CPU cost outweighs the
+    // bandwidth savings for your typical message sizes.
+    CompressMinBytes int
 }
 
 // NewConfig configures New.
@@ -64,6 +71,13 @@ type NewConfig struct {
     // AllowedOrigins is the list of origins permitted by CORS (e.g. ["https://app.example.com"]).
     // Use ["*"] to allow all origins. An empty slice disables CORS middleware entirely.
     AllowedOrigins []string
+
+    // CompressMinBytes is the minimum response size, in bytes, below which
+    // responses are sent uncompressed. Defaults to 256 when zero. Lower it on
+    // bandwidth-constrained links, where compressing even small frames is
+    // worth the CPU cost; raise it if compression's CPU cost outweighs the
+    // bandwidth savings for your typical message sizes.
+    CompressMinBytes int
 
     // CertFile is the path to the TLS certificate file. Enables TLS when set.
     CertFile string

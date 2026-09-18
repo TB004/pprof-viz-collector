@@ -30,6 +30,12 @@ type BindConfig struct {
 	// AllowedOrigins is the list of origins permitted by CORS (e.g. ["https://app.example.com"]).
 	// Use ["*"] to allow all origins. An empty slice disables CORS middleware entirely.
 	AllowedOrigins []string
+	// CompressMinBytes is the minimum response size, in bytes, below which
+	// responses are sent uncompressed. Defaults to 256 when zero. Lower it on
+	// bandwidth-constrained links, where compressing even small frames is
+	// worth the CPU cost; raise it if compression's CPU cost outweighs the
+	// bandwidth savings for your typical message sizes.
+	CompressMinBytes int
 }
 
 // NewConfig configures New.
@@ -39,6 +45,12 @@ type NewConfig struct {
 	// AllowedOrigins is the list of origins permitted by CORS (e.g. ["https://app.example.com"]).
 	// Use ["*"] to allow all origins. An empty slice disables CORS middleware entirely.
 	AllowedOrigins []string
+	// CompressMinBytes is the minimum response size, in bytes, below which
+	// responses are sent uncompressed. Defaults to 256 when zero. Lower it on
+	// bandwidth-constrained links, where compressing even small frames is
+	// worth the CPU cost; raise it if compression's CPU cost outweighs the
+	// bandwidth savings for your typical message sizes.
+	CompressMinBytes int
 	// CertFile is the path to the TLS certificate file. Enables TLS when set.
 	CertFile string
 	// KeyFile is the path to the TLS private key file. Must be set together with CertFile.
@@ -65,14 +77,19 @@ func newCORSHandler(origins []string, h http.Handler) http.Handler {
 // this is generous headroom, not a real limit.
 const maxRequestBytes = 4096
 
+const defaultCompressMinBytes = 256
+
 func recoverPanic(_ context.Context, _ connect.Spec, _ http.Header, r any) error {
 	return connect.NewError(connect.CodeInternal, fmt.Errorf("panic: %v", r))
 }
 
-func handlerOpts(token string) []connect.HandlerOption {
+func handlerOpts(token string, compressMinBytes int) []connect.HandlerOption {
+	if compressMinBytes <= 0 {
+		compressMinBytes = defaultCompressMinBytes
+	}
 	opts := []connect.HandlerOption{
 		connect.WithCompression(internal.CompressionZstd, internal.NewZstdDecompressor, internal.NewZstdCompressor),
-		connect.WithCompressMinBytes(256),
+		connect.WithCompressMinBytes(compressMinBytes),
 		connect.WithReadMaxBytes(maxRequestBytes),
 		connect.WithRecover(recoverPanic),
 	}
@@ -86,7 +103,7 @@ func handlerOpts(token string) []connect.HandlerOption {
 // Server-level concerns like TLS and HTTP/3 are managed externally by whatever
 // serves mux; use New instead if you want this package to run that server.
 func Bind(mux *http.ServeMux, cfg BindConfig) {
-	path, handler := protoconnect.NewCollectorServiceHandler(internal.CollectorServiceHandler{}, handlerOpts(cfg.Token)...)
+	path, handler := protoconnect.NewCollectorServiceHandler(internal.CollectorServiceHandler{}, handlerOpts(cfg.Token, cfg.CompressMinBytes)...)
 	if len(cfg.AllowedOrigins) > 0 {
 		handler = newCORSHandler(cfg.AllowedOrigins, handler)
 	}
@@ -171,7 +188,7 @@ func New(port int, cfg NewConfig) (*Server, error) {
 	}
 
 	mux := http.NewServeMux()
-	path, handler := protoconnect.NewCollectorServiceHandler(internal.CollectorServiceHandler{}, handlerOpts(cfg.Token)...)
+	path, handler := protoconnect.NewCollectorServiceHandler(internal.CollectorServiceHandler{}, handlerOpts(cfg.Token, cfg.CompressMinBytes)...)
 	mux.Handle(path, handler)
 
 	host := cfg.Host
