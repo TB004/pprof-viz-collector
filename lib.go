@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -47,7 +48,7 @@ func newCORSHandler(origins []string, h http.Handler) http.Handler {
 	return cors.New(cors.Options{
 		AllowedOrigins: origins,
 		AllowedMethods: connectcors.AllowedMethods(),
-		AllowedHeaders: append(connectcors.AllowedHeaders(), "Authorization"),
+		AllowedHeaders: slices.Concat(connectcors.AllowedHeaders(), []string{"Authorization"}),
 		ExposedHeaders: connectcors.ExposedHeaders(),
 	}).Handler(h)
 }
