@@ -28,7 +28,7 @@ var metadataResponse = sync.OnceValue(func() *proto.MetadataResponse {
 
 	buckets := make(map[Metric][]float32, len(samples))
 	for i, idx := range histogramMetrics {
-		if h := AsHistogram(samples[i].Value); h != nil {
+		if h := asHistogram(samples[i].Value); h != nil {
 			buckets[idx] = h.Buckets
 		}
 	}
@@ -59,7 +59,7 @@ func (h CollectorServiceHandler) Ping(context.Context, *emptypb.Empty) (*emptypb
 
 // SnapshotAll returns a single point-in-time capture of all supported Go runtime metrics.
 func (h CollectorServiceHandler) SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error) {
-	return Snapshot(), nil
+	return snapshot(), nil
 }
 
 // GetMetadata returns the static bucket boundaries for all histogram metrics.
@@ -80,15 +80,15 @@ func (h CollectorServiceHandler) StreamAll(ctx context.Context, req *proto.Strea
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	defer ticker.Stop()
 
-	collector := NewSampleCollector()
+	collector := newSampleCollector()
 
 	send := func() error {
-		collector.Read()
-		return stream.Send(collector.Collect())
+		collector.read()
+		return stream.Send(collector.collect())
 	}
 
 	// Send a full initial frame immediately so clients aren't blind for the
-	// first interval. The first Read on a fresh collector diffs against an empty
+	// first interval. The first read on a fresh collector diffs against an empty
 	// baseline, so this frame carries the full current state; subsequent frames
 	// are differential.
 	if err := send(); err != nil {

@@ -85,7 +85,7 @@ func writeGoFile(name string, src []byte) error {
 	return os.WriteFile(name, formatted, 0o644)
 }
 
-// vFunc names the SampleCollector method (vUint, vFloat, vUint32, vHist)
+// vFunc names the sampleCollector method (vUint, vFloat, vUint32, vHist)
 // that reads a metric of this kind.
 func (k kind) vFunc() string {
 	switch k {
@@ -170,7 +170,7 @@ func genCollect() []byte {
 	b.WriteString("//\n")
 	b.WriteString("// A metric with no entry here is a compile error, not a silently dropped\n")
 	b.WriteString("// value.\n")
-	b.WriteString("func buildAllResponse(c *SampleCollector) *proto.AllResponse {\n")
+	b.WriteString("func buildAllResponse(c *sampleCollector) *proto.AllResponse {\n")
 	b.WriteString("\treturn &proto.AllResponse{\n")
 	for _, g := range groupOrder {
 		fields := byGroup[g.group]

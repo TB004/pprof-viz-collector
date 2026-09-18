@@ -11,7 +11,7 @@ import "github.com/TB004/pprof-viz-collector/internal/proto"
 //
 // A metric with no entry here is a compile error, not a silently dropped
 // value.
-func buildAllResponse(c *SampleCollector) *proto.AllResponse {
+func buildAllResponse(c *sampleCollector) *proto.AllResponse {
 	return &proto.AllResponse{
 		Cgo: &proto.CgoResponse{
 			CgoCalls: c.vUint(MetricCgoGoToCCalls),

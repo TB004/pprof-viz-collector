@@ -6,6 +6,7 @@ package internal
 import (
 	"math"
 	"runtime/metrics"
+	"slices"
 	"testing"
 	"unsafe"
 
@@ -67,7 +68,7 @@ func TestAsFloat(t *testing.T) {
 			var v metrics.Value
 			setMetricValue(&v, tt.kind, tt.scalar, nil)
 
-			val := AsFloat(v)
+			val := asFloat(v)
 			assert.InDelta(t, tt.expected, val, 0.0001)
 		})
 	}
@@ -111,7 +112,7 @@ func TestAsUint(t *testing.T) {
 			var v metrics.Value
 			setMetricValue(&v, tc.kind, tc.scalar, nil)
 
-			val := AsUint(v)
+			val := asUint(v)
 			assert.Equal(t, tc.expected, val)
 		})
 	}
@@ -122,8 +123,8 @@ func TestAsHistogram(t *testing.T) {
 
 	t.Run("ValidHistogram", func(t *testing.T) {
 		t.Parallel()
-		collector := NewSampleCollector()
-		collector.Read()
+		collector := newSampleCollector()
+		collector.read()
 
 		// Find a histogram sample
 		var histValue metrics.Value
@@ -140,10 +141,20 @@ func TestAsHistogram(t *testing.T) {
 			t.Skip("No histogram metrics available in this environment")
 		}
 
-		histg := AsHistogram(histValue)
+		histg := asHistogram(histValue)
 		assert.NotNil(t, histg)
 		assert.NotEmpty(t, histg.Buckets)
 		assert.NotEmpty(t, histg.Counts)
+
+		// Counts must be an owned copy, not an alias into the runtime's live
+		// buffer: mutating the original histogram's Counts (as metrics.Read
+		// would on the next Read) must not change the returned Histogram.
+		live := histValue.Float64Histogram()
+		want := slices.Clone(histg.Counts)
+		for i := range live.Counts {
+			live.Counts[i] = ^live.Counts[i]
+		}
+		assert.Equal(t, want, histg.Counts, "asHistogram's Counts must not alias the runtime's live buffer")
 	})
 
 	t.Run("InvalidHistogram", func(t *testing.T) {
@@ -151,18 +162,18 @@ func TestAsHistogram(t *testing.T) {
 		var v metrics.Value
 		setMetricValue(&v, int(metrics.KindUint64), 123, nil)
 
-		h := AsHistogram(v)
+		h := asHistogram(v)
 		assert.Nil(t, h)
 	})
 }
 
 // TestHistCountsAllocs locks in the reason Collect's hot path uses histCounts
-// instead of AsHistogram: AsHistogram allocates and float64->float32-converts
+// instead of asHistogram: asHistogram allocates and float64->float32-converts
 // the (unused, in the streaming path) bucket-boundary slice on every call,
 // while histCounts returns only the counts.
 func TestHistCountsAllocs(t *testing.T) {
-	collector := NewSampleCollector()
-	collector.Read()
+	collector := newSampleCollector()
+	collector.read()
 
 	var histValue metrics.Value
 	found := false
@@ -181,12 +192,12 @@ func TestHistCountsAllocs(t *testing.T) {
 		_ = histCounts(histValue)
 	})
 	asHistogramAllocs := testing.AllocsPerRun(100, func() {
-		_ = AsHistogram(histValue)
+		_ = asHistogram(histValue)
 	})
 
 	assert.Zerof(t, histCountsAllocs, "histCounts should not allocate, got %.1f allocs/op", histCountsAllocs)
 	assert.Greaterf(t, asHistogramAllocs, histCountsAllocs,
-		"AsHistogram (%.1f allocs/op) should allocate more than histCounts (%.1f allocs/op): it also builds the bucket slice",
+		"asHistogram (%.1f allocs/op) should allocate more than histCounts (%.1f allocs/op): it also builds the bucket slice",
 		asHistogramAllocs, histCountsAllocs)
 }
 
@@ -212,7 +223,7 @@ func TestSafeUint32(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			out := SafeUint32(tc.input)
+			out := safeUint32(tc.input)
 			assert.Equal(t, tc.expect, out)
 		})
 	}

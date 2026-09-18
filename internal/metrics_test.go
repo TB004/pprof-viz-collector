@@ -22,7 +22,7 @@ func TestReadAllSamples(t *testing.T) {
 		samples[i].Name = name
 	}
 
-	ReadAllSamples(samples)
+	readAllSamples(samples)
 
 	assert.NotEmpty(t, samples)
 }

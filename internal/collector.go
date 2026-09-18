@@ -10,33 +10,33 @@ import (
 	"github.com/TB004/pprof-viz-collector/internal/proto"
 )
 
-// SampleCollector manages a pre-allocated slice of metrics.Sample for efficient collection.
-type SampleCollector struct {
+// sampleCollector manages a pre-allocated slice of metrics.Sample for efficient collection.
+type sampleCollector struct {
 	samples     []metrics.Sample
 	lastSamples []metrics.Sample
 }
 
-// NewSampleCollector creates a new SampleCollector with pre-allocated samples.
-func NewSampleCollector() *SampleCollector {
+// newSampleCollector creates a new sampleCollector with pre-allocated samples.
+func newSampleCollector() *sampleCollector {
 	samples := make([]metrics.Sample, len(AllMetricNames))
 	lastSamples := make([]metrics.Sample, len(AllMetricNames))
 	for i, name := range AllMetricNames {
 		samples[i].Name = name
 		lastSamples[i].Name = name
 	}
-	return &SampleCollector{
+	return &sampleCollector{
 		samples:     samples,
 		lastSamples: lastSamples,
 	}
 }
 
-// Read updates the internal samples with current runtime metrics.
-func (c *SampleCollector) Read() {
+// read updates the internal samples with current runtime metrics.
+func (c *sampleCollector) read() {
 	c.samples, c.lastSamples = c.lastSamples, c.samples
-	ReadAllSamples(c.samples)
+	readAllSamples(c.samples)
 }
 
-// resetBaseline clears the current sample values so that the next Read+Collect
+// resetBaseline clears the current sample values so that the next read+collect
 // reports the full current state rather than a diff.
 //
 // Histogram metrics are cleared by zeroing their Counts in place rather than
@@ -46,8 +46,8 @@ func (c *SampleCollector) Read() {
 // KindFloat64Histogram and a non-nil pointer (see float64HistOrInit in
 // runtime/metrics.go). Overwriting the Value with its zero value would drop
 // that pointer, so a pooled collector would force the runtime to reallocate
-// every histogram metric on its very next Read.
-func (c *SampleCollector) resetBaseline() {
+// every histogram metric on its very next read.
+func (c *sampleCollector) resetBaseline() {
 	for i := range c.samples {
 		val := c.samples[i].Value
 		if val.Kind() == metrics.KindFloat64Histogram {
@@ -62,34 +62,34 @@ func (c *SampleCollector) resetBaseline() {
 	}
 }
 
-// collectorPool recycles SampleCollectors for one-shot snapshots so repeated
-// Snapshot calls don't each allocate two full sample slices.
+// collectorPool recycles sampleCollectors for one-shot snapshots so repeated
+// snapshot calls don't each allocate two full sample slices.
 var collectorPool = sync.Pool{
-	New: func() any { return NewSampleCollector() },
+	New: func() any { return newSampleCollector() },
 }
 
-// Snapshot performs a single full collection of all runtime metrics using a
+// snapshot performs a single full collection of all runtime metrics using a
 // pooled collector.
-func Snapshot() *proto.AllResponse {
-	c := collectorPool.Get().(*SampleCollector)
+func snapshot() *proto.AllResponse {
+	c := collectorPool.Get().(*sampleCollector)
 	defer collectorPool.Put(c)
 
 	c.resetBaseline()
-	c.Read()
-	return c.Collect()
+	c.read()
+	return c.collect()
 }
 
-// Collect maps the current samples into a proto response, returning only fields that changed
-// since the last Read. On a fresh collector, all non-zero fields are returned.
+// collect maps the current samples into a proto response, returning only fields that changed
+// since the last read. On a fresh collector, all non-zero fields are returned.
 // Histogram bucket boundaries are never included; use GetMetadata to retrieve them once.
-func (c *SampleCollector) Collect() *proto.AllResponse {
+func (c *sampleCollector) collect() *proto.AllResponse {
 	return buildAllResponse(c)
 }
 
 // hasChanged reports whether the metric at idx differs between the current
-// and previous Read. If the previous value is uninitialized (KindBad), it is
+// and previous read. If the previous value is uninitialized (KindBad), it is
 // treated as a delta from the default (0) value.
-func (c *SampleCollector) hasChanged(idx Metric) bool {
+func (c *sampleCollector) hasChanged(idx Metric) bool {
 	cur := c.samples[idx].Value
 	last := c.lastSamples[idx].Value
 
@@ -149,37 +149,37 @@ func (c *SampleCollector) hasChanged(idx Metric) bool {
 }
 
 // vUint returns the current uint64 value of idx, or nil if it hasn't changed
-// since the last Read.
-func (c *SampleCollector) vUint(idx Metric) *uint64 {
+// since the last read.
+func (c *sampleCollector) vUint(idx Metric) *uint64 {
 	if !c.hasChanged(idx) {
 		return nil
 	}
-	return new(AsUint(c.samples[idx].Value))
+	return new(asUint(c.samples[idx].Value))
 }
 
 // vFloat returns the current float64 value of idx, or nil if it hasn't
-// changed since the last Read.
-func (c *SampleCollector) vFloat(idx Metric) *float64 {
+// changed since the last read.
+func (c *sampleCollector) vFloat(idx Metric) *float64 {
 	if !c.hasChanged(idx) {
 		return nil
 	}
-	return new(AsFloat(c.samples[idx].Value))
+	return new(asFloat(c.samples[idx].Value))
 }
 
 // vUint32 returns the current value of idx narrowed to uint32, or nil if it
-// hasn't changed since the last Read.
-func (c *SampleCollector) vUint32(idx Metric) *uint32 {
+// hasn't changed since the last read.
+func (c *sampleCollector) vUint32(idx Metric) *uint32 {
 	if !c.hasChanged(idx) {
 		return nil
 	}
-	return new(SafeUint32(AsUint(c.samples[idx].Value)))
+	return new(safeUint32(asUint(c.samples[idx].Value)))
 }
 
 // vHist returns the histogram buckets of idx that changed since the last
-// Read, or nil if none did. Unlike hasChanged+vUint's two-step pattern, this
+// read, or nil if none did. Unlike hasChanged+vUint's two-step pattern, this
 // makes a single pass over the counts and only allocates the result map once
 // a difference is actually found.
-func (c *SampleCollector) vHist(idx Metric) *proto.Histogram {
+func (c *sampleCollector) vHist(idx Metric) *proto.Histogram {
 	counts := histCounts(c.samples[idx].Value)
 	if counts == nil {
 		return nil
