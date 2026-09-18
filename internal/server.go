@@ -77,7 +77,8 @@ func (h CollectorServiceHandler) StreamAll(ctx context.Context, req *proto.Strea
 
 	numCycles := int(req.GetNumberOfCycles())
 
-	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	intervalDuration := time.Duration(interval) * time.Second
+	ticker := time.NewTicker(intervalDuration)
 	defer ticker.Stop()
 
 	collector := newSampleCollector()
@@ -94,6 +95,9 @@ func (h CollectorServiceHandler) StreamAll(ctx context.Context, req *proto.Strea
 	if err := send(); err != nil {
 		return err
 	}
+	// Reset so the first scheduled tick is measured from here, not from when
+	// the ticker was constructed a moment earlier.
+	ticker.Reset(intervalDuration)
 
 	for i := 1; numCycles == 0 || i < numCycles; i++ {
 		select {
@@ -103,6 +107,13 @@ func (h CollectorServiceHandler) StreamAll(ctx context.Context, req *proto.Strea
 			if err := send(); err != nil {
 				return err
 			}
+			// stream.Send blocks until the client accepts the frame. Without
+			// this reset, a client that stalls past one or more ticks would
+			// get an immediate catch-up frame from the ticker's one buffered
+			// tick as soon as it recovers. Resetting here instead measures
+			// the interval between frames, not between tick attempts: the
+			// next frame always waits a full, fresh interval.
+			ticker.Reset(intervalDuration)
 		}
 	}
 
