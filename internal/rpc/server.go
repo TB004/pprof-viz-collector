@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Tizian Bahr
 
-package internal
+package rpc
 
 import (
 	"context"
 	"errors"
-	"runtime/metrics"
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/TB004/pprof-viz-collector/internal/collect"
 	"github.com/TB004/pprof-viz-collector/internal/proto"
 	"github.com/TB004/pprof-viz-collector/internal/proto/protoconnect"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -26,43 +26,13 @@ func (h CollectorServiceHandler) Ping(context.Context, *emptypb.Empty) (*emptypb
 
 // SnapshotAll returns a single point-in-time capture of all supported Go runtime metrics.
 func (h CollectorServiceHandler) SnapshotAll(context.Context, *emptypb.Empty) (*proto.AllResponse, error) {
-	return Snapshot(), nil
+	return collect.Snapshot(), nil
 }
 
 // GetMetadata returns the static bucket boundaries for all histogram metrics.
 // Clients should call this once before streaming; StreamAll never sends bucket boundaries.
 func (h CollectorServiceHandler) GetMetadata(context.Context, *emptypb.Empty) (*proto.MetadataResponse, error) {
-	collector := NewSampleCollector()
-	collector.Read()
-
-	// Helper function to get buckets out of a histogram value
-	getBuckets := func(v metrics.Value) []float32 {
-		h := AsHistogram(v)
-		if h == nil {
-			return nil
-		}
-		return h.Buckets
-	}
-
-	v := func(name string) metrics.Value {
-		return collector.samples[GetIndex(name)].Value
-	}
-
-	resp := &proto.MetadataResponse{
-		Gc: &proto.GCMetadata{
-			BytesAllocsBySizeBuckets: getBuckets(v(MetricGCHeapAllocsBySize)),
-			BytesFreesBySizeBuckets:  getBuckets(v(MetricGCHeapFreesBySize)),
-		},
-		Scheduler: &proto.SchedulerMetadata{
-			LatenciesSecondsBuckets:       getBuckets(v(MetricSchedLatencies)),
-			StoppingGcSecondsBuckets:      getBuckets(v(MetricSchedPausesStoppingGC)),
-			StoppingOtherSecondsBuckets:   getBuckets(v(MetricSchedPausesStoppingOther)),
-			TotalGcPauseSecondsBuckets:    getBuckets(v(MetricSchedPausesTotalGC)),
-			TotalOtherPauseSecondsBuckets: getBuckets(v(MetricSchedPausesTotalOther)),
-		},
-	}
-
-	return resp, nil
+	return collect.Metadata(), nil
 }
 
 // StreamAll streams runtime metrics at a client-provided interval in a client-provided number of cycles or indefinitely.
@@ -74,10 +44,11 @@ func (h CollectorServiceHandler) StreamAll(ctx context.Context, req *proto.Strea
 
 	numCycles := int(req.GetNumberOfCycles())
 
-	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	intervalDuration := time.Duration(interval) * time.Second
+	ticker := time.NewTicker(intervalDuration)
 	defer ticker.Stop()
 
-	collector := NewSampleCollector()
+	collector := collect.NewCollector()
 
 	send := func() error {
 		collector.Read()
@@ -85,12 +56,15 @@ func (h CollectorServiceHandler) StreamAll(ctx context.Context, req *proto.Strea
 	}
 
 	// Send a full initial frame immediately so clients aren't blind for the
-	// first interval. The first Read on a fresh collector diffs against an empty
+	// first interval. The first read on a fresh collector diffs against an empty
 	// baseline, so this frame carries the full current state; subsequent frames
 	// are differential.
 	if err := send(); err != nil {
 		return err
 	}
+	// Reset so the first scheduled tick is measured from here, not from when
+	// the ticker was constructed a moment earlier.
+	ticker.Reset(intervalDuration)
 
 	for i := 1; numCycles == 0 || i < numCycles; i++ {
 		select {
@@ -100,6 +74,13 @@ func (h CollectorServiceHandler) StreamAll(ctx context.Context, req *proto.Strea
 			if err := send(); err != nil {
 				return err
 			}
+			// stream.Send blocks until the client accepts the frame. Without
+			// this reset, a client that stalls past one or more ticks would
+			// get an immediate catch-up frame from the ticker's one buffered
+			// tick as soon as it recovers. Resetting here instead measures
+			// the interval between frames, not between tick attempts: the
+			// next frame always waits a full, fresh interval.
+			ticker.Reset(intervalDuration)
 		}
 	}
 

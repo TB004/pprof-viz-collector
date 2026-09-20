@@ -1,13 +1,12 @@
-export GOEXPERIMENT := "cgocheck2,newinliner,jsonv2,loopvar,fieldtrack,runtimefreegc,mapsplitgroup"
-
 # Prints all available receipes
 help:
     - just --list
 
-# Generate ConnectRPC code from protobuf
+# Generate ConnectRPC code from protobuf and the runtime metric table
 [group("miscellaneous")]
 gen:
     buf generate
+    go generate ./internal/...
 
 # Check source code for vulnerabilities
 [group("maintain")]
@@ -26,6 +25,11 @@ cover:
 [group("maintain")]
 test:
     go test -race ./...
+
+# Run benchmarks with allocation reporting
+[group("maintain")]
+bench:
+    go test ./internal/... -bench . -benchmem -run '^$'
 
 # Runs the golangci-lint tool to lint the project
 [group("maintain")]

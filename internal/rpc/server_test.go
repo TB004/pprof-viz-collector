@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Tizian Bahr
 
-package internal
+package rpc
 
 import (
 	"context"
@@ -121,15 +121,4 @@ func TestAgentServiceHandler_StreamAll(t *testing.T) {
 		assert.Error(t, stream.Err())
 		assert.Contains(t, stream.Err().Error(), "canceled")
 	})
-}
-
-func TestCollectSamples(t *testing.T) {
-	t.Parallel()
-	collector := NewSampleCollector()
-	collector.Read()
-	resp := collector.Collect()
-	assert.NotNil(t, resp)
-	// Basic validation that we got some data populated
-	assert.NotNil(t, resp.Cpu)
-	assert.NotNil(t, resp.Gc)
 }

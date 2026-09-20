@@ -5,17 +5,36 @@ library does, its public API, and usage examples — that is not repeated here.
 
 ## Directory Structure
 
-- **`/lib.go`**: The public API surface — `Config`, `Bind()`, `New()` and `newCORSHandler(origins []string, h http.Handler) http.Handler`.
-- **`/internal/`**: Private implementation.
-    - **`server.go`**: ConnectRPC service handlers (`Ping`, `SnapshotAll`, `StreamAll`, `GetMetadata`).
-    - **`collector.go`**: `SampleCollector` — single-pass collection with double-buffering
-      and differential updates.
-    - **`interceptor.go`**: `NewTokenInterceptor(token)`, the bearer-token interceptor.
-    - **`metrics.go` / `paths.go`**: `runtime/metrics` interfacing and pre-calculated metric indices.
-    - **`models.go`**: Shared data structures (e.g. `Histogram`).
-    - **`utils.go`**: Conversion helpers for `metrics.Value`.
-    - **`compression.go`**: Custom `zstd` compressor/decompressor for ConnectRPC (256-byte threshold).
-    - **`proto/`**: Generated Go code. Never edit by hand — use `just gen`.
+- **Package root (`pprofvizcollector`)**: the public API surface, split by concern rather than
+  crammed into one file. Each exported entry point owns its config struct in the same file.
+    - **`bind.go`**: `BindConfig` and `Bind()`.
+    - **`new.go`**: `NewConfig` and `New()` — the h2c/TLS/HTTP3 listener branching. `New`'s `port`
+      parameter is `uint16`, not `int`: the type itself rules out negative or out-of-range values
+      instead of leaving that to a runtime check.
+    - **`handler.go`**: the ConnectRPC handler-option/CORS wiring shared by `Bind` and `New`
+      (`newCORSHandler`, `handlerOpts`, `recoverPanic`, `maxRequestBytes`, `defaultCompressMinBytes`).
+    - **`server.go`**: the `Server` type returned by `New()` (`Addr`, `Shutdown`) and the shared
+      `newHTTPServer` helper.
+- **`/internal/`**: Private implementation, split into subpackages so a symbol's import path says
+  where it comes from instead of everything being flatly `internal`.
+    - **`internal/rpc/`**: the ConnectRPC transport layer.
+        - **`server.go`**: `CollectorServiceHandler` (`Ping`, `SnapshotAll`, `StreamAll`,
+          `GetMetadata`) — thin glue that delegates metric work to `internal/collect`.
+        - **`interceptor.go`**: `NewTokenInterceptor(token)`, the bearer-token interceptor.
+        - **`compression.go`**: custom `zstd` compressor/decompressor for ConnectRPC (256-byte
+          threshold).
+    - **`internal/collect/`**: runtime-metrics collection, independent of ConnectRPC.
+        - **`collector.go`**: `Collector` — single-pass collection with double-buffering and
+          differential updates; `Snapshot()` for pooled one-shot reads.
+        - **`metadata.go`**: `Metadata()`, the cached histogram bucket-boundary response.
+        - **`metrics.go`**: `runtime/metrics` interfacing (`readAllSamples`).
+        - **`metrics_gen.go` / `collect_gen.go`**: generated from `gen/table.go` — never edit by
+          hand, run `just gen`.
+        - **`utils.go`**: conversion helpers for `metrics.Value`.
+        - **`gen/`**: the code generator (`table.go` is the single source of truth for every
+          collected metric).
+    - **`internal/proto/`**: Generated Go code shared by both subpackages. Never edit by hand — use
+      `just gen`.
 - **`/proto/`**: Source `.proto` files defining the service contract.
 
 ## Commands
@@ -36,9 +55,9 @@ All maintenance tasks run through the `Justfile`.
 - **Unused parameters**: omit parameter names entirely — do not use `_`. Match existing handler
   signatures (e.g. `func (h CollectorServiceHandler) Ping(context.Context, *emptypb.Empty)`).
 - **Memory**: order struct fields by size (descending) to minimize padding; use pre-allocated
-  slices and `SampleCollector` to avoid heap allocations during collection.
-- **Metric lookup**: use `GetIndex(name)` for O(1) index retrieval into the pre-allocated
-  `[]metrics.Sample` slice (initialized via `init()`) — never a map.
+  slices and `Collector` to avoid heap allocations during collection.
+- **Metric lookup**: each `Metric` constant is a direct index into the pre-allocated
+  `[]metrics.Sample` slice — an O(1) array access, never a map.
 - **Pointers**: use `new(value)` for single-line pointer creation for `optional` fields.
 - **Documentation**: all exported functions and types need descriptive comments.
 
@@ -46,28 +65,28 @@ All maintenance tasks run through the `Justfile`.
 
 - **Parallelism**: use `t.Parallel()` for all safe tests. With `t.Run`, call `t.Parallel()`
   *inside* the subtest function.
-- **Test helpers**: use `newTestClient(t *testing.T)` (in `internal/server_test.go`) for isolated
-  ConnectRPC test servers.
+- **Test helpers**: use `newTestClient(t *testing.T)` (in `internal/rpc/server_test.go`) for
+  isolated ConnectRPC test servers.
 - **`defer` vs `t.Cleanup`**: when a parent test spawns parallel subtests, `defer` fires at parent
   return, before the subtests finish. Always use `t.Cleanup` for resources shared with parallel
   subtests — this is why `newTestClient` uses `t.Cleanup(server.Close)`.
-- **Metric coverage guard**: `TestMetricCoverage` (`internal/metrics_test.go`) asserts every
-  `runtime/metrics.All()` entry is either collected (in `AllMetricNames`) or listed in the
+- **Metric coverage guard**: `TestMetricCoverage` (`internal/collect/metrics_test.go`) asserts
+  every `runtime/metrics.All()` entry is either collected (in `AllMetricNames`) or listed in the
   documented `intentionallyOmitted` map. A new Go version's added metrics will fail this test
   until they are wired up or explicitly omitted with a reason.
 
 ## Collector Design
 
-- **`SampleCollector.Collect()`** always returns differential updates. On a fresh collector the
+- **`Collector.Collect()`** always returns differential updates. On a fresh collector the
   `KindBad` branch in `hasChanged` treats all non-zero values as "changed from zero", which is why
   no explicit `forceFull` flag exists.
 - **Histogram buckets are never included in `Collect()`**. Bucket boundaries are static and sent
   once via `GetMetadata`; only `UpdatedCounts` (sparse delta map) goes on the wire.
-- **One-shot snapshots use a pooled collector**: `internal.Snapshot()` recycles `SampleCollector`s
+- **One-shot snapshots use a pooled collector**: `collect.Snapshot()` recycles `Collector`s
   through a `sync.Pool` and calls `resetBaseline()` before each read, reproducing fresh-collector
   full-state semantics without re-allocating sample slices. `StreamAll` keeps its own persistent
   collector for genuine differential diffing — never route it through the pool.
-- **`ReadAllSamples` panics on a wrong-sized buffer**: the slice must have exactly
+- **`readAllSamples` panics on a wrong-sized buffer**: the slice must have exactly
   `len(AllMetricNames)` entries. A mismatch is a programming error inside the package, and panicking
   beats silently emitting zeroed metrics.
 

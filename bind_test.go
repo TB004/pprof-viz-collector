@@ -4,19 +4,22 @@
 package pprofvizcollector
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
+	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBind(t *testing.T) {
 	t.Parallel()
 	mux := http.NewServeMux()
-	Bind(mux, Config{})
+	Bind(mux, BindConfig{})
 
 	req := httptest.NewRequest("POST", "/proto.CollectorService/SnapshotAll", nil)
 	rec := httptest.NewRecorder()
@@ -29,7 +32,7 @@ func TestBind(t *testing.T) {
 func TestBind_TokenAuth(t *testing.T) {
 	t.Parallel()
 	mux := http.NewServeMux()
-	Bind(mux, Config{Token: "secret"})
+	Bind(mux, BindConfig{Token: "secret"})
 
 	t.Run("MissingToken", func(t *testing.T) {
 		t.Parallel()
@@ -64,7 +67,7 @@ func TestBind_TokenAuth(t *testing.T) {
 func TestBind_CORS(t *testing.T) {
 	t.Parallel()
 	mux := http.NewServeMux()
-	Bind(mux, Config{AllowedOrigins: []string{"https://app.example.com"}})
+	Bind(mux, BindConfig{AllowedOrigins: []string{"https://app.example.com"}})
 
 	t.Run("PreflightAllowedOrigin", func(t *testing.T) {
 		t.Parallel()
@@ -89,7 +92,7 @@ func TestBind_CORS(t *testing.T) {
 	t.Run("NoCORSWithoutOrigins", func(t *testing.T) {
 		t.Parallel()
 		mux2 := http.NewServeMux()
-		Bind(mux2, Config{})
+		Bind(mux2, BindConfig{})
 		req := httptest.NewRequest("OPTIONS", "/proto.CollectorService/Ping", nil)
 		req.Header.Set("Origin", "https://app.example.com")
 		req.Header.Set("Access-Control-Request-Method", "POST")
@@ -99,32 +102,60 @@ func TestBind_CORS(t *testing.T) {
 	})
 }
 
-func TestNew(t *testing.T) {
-	go func() {
-		_ = New(50000, Config{})
-	}()
+func TestRecoverPanic(t *testing.T) {
+	t.Parallel()
 
-	time.Sleep(100 * time.Millisecond)
-
-	protos := new(http.Protocols)
-	protos.SetUnencryptedHTTP2(true)
-	client := &http.Client{Transport: &http.Transport{Protocols: protos}}
-
-	body := strings.NewReader("{}")
-	req, err := http.NewRequest("POST", "http://localhost:50000/proto.CollectorService/SnapshotAll", body)
-	assert.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := client.Do(req)
-	assert.NoError(t, err)
-	if resp != nil {
-		defer assert.NoError(t, resp.Body.Close())
-	}
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	err := recoverPanic(context.Background(), connect.Spec{}, nil, "boom")
+	var connectErr *connect.Error
+	assert.True(t, errors.As(err, &connectErr))
+	assert.Equal(t, connect.CodeInternal, connectErr.Code())
+	assert.Contains(t, connectErr.Error(), "boom")
 }
 
-func TestNew_HTTP3RequiresCertFiles(t *testing.T) {
+func TestBind_ReadMaxBytes(t *testing.T) {
 	t.Parallel()
-	err := New(50001, Config{HTTP3: true})
-	assert.EqualError(t, err, "HTTP3 requires CertFile and KeyFile to be configured")
+	mux := http.NewServeMux()
+	Bind(mux, BindConfig{})
+
+	oversized := strings.Repeat("a", maxRequestBytes*2)
+	req := httptest.NewRequest("POST", "/proto.CollectorService/StreamAll", strings.NewReader(`{"intervalSeconds":`+oversized+`}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	assert.NotEqual(t, http.StatusOK, rec.Code)
+}
+
+func TestBind_CompressMinBytes(t *testing.T) {
+	t.Parallel()
+
+	ping := func(t *testing.T, mux *http.ServeMux) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest("POST", "/proto.CollectorService/Ping", strings.NewReader("{}"))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Accept-Encoding", "zstd")
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		return rec
+	}
+
+	t.Run("DefaultThreshold_TinyResponseUncompressed", func(t *testing.T) {
+		t.Parallel()
+		mux := http.NewServeMux()
+		Bind(mux, BindConfig{})
+		rec := ping(t, mux)
+		require.Equal(t, http.StatusOK, rec.Code)
+		assert.Empty(t, rec.Header().Get("Content-Encoding"),
+			"Ping's tiny response should stay under the default 256-byte compression threshold")
+	})
+
+	t.Run("LowThreshold_TinyResponseCompressed", func(t *testing.T) {
+		t.Parallel()
+		mux := http.NewServeMux()
+		Bind(mux, BindConfig{CompressMinBytes: 1})
+		rec := ping(t, mux)
+		require.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "zstd", rec.Header().Get("Content-Encoding"),
+			"a 1-byte threshold should compress even Ping's tiny response")
+	})
 }

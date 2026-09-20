@@ -1,23 +1,31 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Tizian Bahr
 
-package internal
+package rpc
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/subtle"
 	"errors"
 	"net/http"
+	"strings"
 
 	"connectrpc.com/connect"
 )
 
-type tokenInterceptor struct{ token string }
+const bearerPrefix = "Bearer "
+
+type tokenInterceptor struct {
+	// wantHash is the SHA-256 digest of the expected token, precomputed once
+	// so check doesn't rebuild and re-hash it on every RPC.
+	wantHash [sha256.Size]byte
+}
 
 // NewTokenInterceptor returns a ConnectRPC interceptor that enforces bearer token
 // authentication on every RPC.
 func NewTokenInterceptor(token string) connect.Interceptor {
-	return tokenInterceptor{token: token}
+	return tokenInterceptor{wantHash: sha256.Sum256([]byte(token))}
 }
 
 func (ti tokenInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
@@ -44,8 +52,12 @@ func (ti tokenInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFun
 
 func (ti tokenInterceptor) check(h http.Header) error {
 	got := h.Get("Authorization")
-	want := "Bearer " + ti.token
-	if subtle.ConstantTimeCompare([]byte(got), []byte(want)) != 1 {
+	if len(got) < len(bearerPrefix) || !strings.EqualFold(got[:len(bearerPrefix)], bearerPrefix) {
+		return connect.NewError(connect.CodeUnauthenticated, errors.New("invalid or missing token"))
+	}
+
+	gotHash := sha256.Sum256([]byte(got[len(bearerPrefix):]))
+	if subtle.ConstantTimeCompare(gotHash[:], ti.wantHash[:]) != 1 {
 		return connect.NewError(connect.CodeUnauthenticated, errors.New("invalid or missing token"))
 	}
 	return nil

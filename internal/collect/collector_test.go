@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Tizian Bahr
 
-package internal
+package collect
 
 import (
+	"runtime/metrics"
 	"testing"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSampleCollector_ReadAndCollect(t *testing.T) {
-	c := NewSampleCollector()
+func TestCollector_ReadAndCollect(t *testing.T) {
+	c := NewCollector()
 
 	// Initial read to populate samples
 	c.Read()
@@ -40,7 +42,7 @@ func TestSampleCollector_ReadAndCollect(t *testing.T) {
 	})
 
 	t.Run("DiffCollection_NoChange", func(t *testing.T) {
-		c2 := NewSampleCollector()
+		c2 := NewCollector()
 
 		res := c2.Collect()
 		// Since samples and lastSamples are both zero, they are equal.
@@ -55,7 +57,7 @@ func TestSampleCollector_ReadAndCollect(t *testing.T) {
 // semantics on a collector that has already accumulated real values, which is
 // what makes pooled reuse for one-shot snapshots correct.
 func TestResetBaseline(t *testing.T) {
-	c := NewSampleCollector()
+	c := NewCollector()
 
 	c.Read()
 	_ = c.Collect() // first read returns full state
@@ -75,6 +77,46 @@ func TestResetBaseline(t *testing.T) {
 	assert.NotNil(t, res.Memory.TotalBytes, "resetBaseline should restore full-state collection")
 }
 
+// TestResetBaselinePreservesHistogramAllocation verifies that resetBaseline
+// zeroes a histogram metric's counts in place instead of replacing the Value,
+// so runtime/metrics can still reuse the existing *Float64Histogram (and its
+// counts slice) on the next Read instead of reallocating it.
+func TestResetBaselinePreservesHistogramAllocation(t *testing.T) {
+	c := NewCollector()
+	c.Read()
+
+	idx := MetricGCHeapAllocsBySize
+	before := c.samples[idx].Value.Float64Histogram()
+	if !assert.NotNil(t, before) {
+		return
+	}
+	beforePtr := unsafe.Pointer(before)
+
+	c.resetBaseline()
+
+	reset := c.samples[idx].Value
+	assert.Equal(t, metrics.KindFloat64Histogram, reset.Kind(),
+		"resetBaseline must keep the histogram Value's kind/pointer so runtime/metrics can reuse it")
+	h := reset.Float64Histogram()
+	if assert.NotNil(t, h) {
+		assert.True(t, beforePtr == unsafe.Pointer(h), "resetBaseline must not replace the *Float64Histogram")
+		for _, v := range h.Counts {
+			assert.Zero(t, v)
+		}
+	}
+
+	// Cycle the double buffer twice so this same slot is the target of a real
+	// readAllSamples call again, and confirm runtime/metrics reused the
+	// existing histogram object instead of allocating a new one.
+	c.Read()
+	c.Read()
+	after := c.samples[idx].Value.Float64Histogram()
+	if assert.NotNil(t, after) {
+		assert.True(t, beforePtr == unsafe.Pointer(after),
+			"runtime/metrics should reuse the histogram allocation across pooled resets")
+	}
+}
+
 // TestSnapshotFullStateAcrossCalls verifies the pooled Snapshot helper returns a
 // full snapshot on every call, even when a recycled collector is reused.
 func TestSnapshotFullStateAcrossCalls(t *testing.T) {
@@ -82,5 +124,37 @@ func TestSnapshotFullStateAcrossCalls(t *testing.T) {
 		res := Snapshot()
 		assert.NotNil(t, res)
 		assert.NotNilf(t, res.Memory.TotalBytes, "Snapshot must return full state on call %d", i)
+	}
+}
+
+func TestCollectSamples(t *testing.T) {
+	t.Parallel()
+	collector := NewCollector()
+	collector.Read()
+	resp := collector.Collect()
+	assert.NotNil(t, resp)
+	// Basic validation that we got some data populated
+	assert.NotNil(t, resp.Cpu)
+	assert.NotNil(t, resp.Gc)
+}
+
+// BenchmarkCollect measures the per-tick cost of Read+Collect: exactly what
+// StreamAll's send() does on every interval.
+func BenchmarkCollect(b *testing.B) {
+	c := NewCollector()
+	c.Read()
+
+	b.ReportAllocs()
+	for b.Loop() {
+		c.Read()
+		_ = c.Collect()
+	}
+}
+
+// BenchmarkSnapshot measures the pooled one-shot path used by SnapshotAll.
+func BenchmarkSnapshot(b *testing.B) {
+	b.ReportAllocs()
+	for b.Loop() {
+		_ = Snapshot()
 	}
 }
