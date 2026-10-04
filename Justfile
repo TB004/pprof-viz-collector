@@ -11,7 +11,7 @@ gen:
 # Fix field alignments in structs to improve performance
 [group("miscellaneous")]
 fix_alignments:
-    fieldalignment -fix ./...
+    fieldalignment -test=false -fix $(go list ./... | grep -v /internal/proto)
 
 # Check source code for vulnerabilities
 [group("maintain")]
@@ -42,7 +42,7 @@ lint:
     go vet ./...
     golangci-lint run ./...
     modernize ./...
-    fieldalignment ./...
+    fieldalignment -test=false $(go list ./... | grep -v /internal/proto)
 
 # Install necessary go tools
 [group("setup")]
