@@ -8,6 +8,11 @@ gen:
     buf generate
     go generate ./internal/...
 
+# Fix field alignments in structs to improve performance
+[group("miscellaneous")]
+fix_alignments:
+    fieldalignment -test=false -fix $(go list ./... | grep -v /internal/proto)
+
 # Check source code for vulnerabilities
 [group("maintain")]
 vuln:
@@ -31,12 +36,13 @@ test:
 bench:
     go test ./internal/... -bench . -benchmem -run '^$'
 
-# Runs the golangci-lint tool to lint the project
+# Runs different tool to lint the project
 [group("maintain")]
 lint:
     go vet ./...
     golangci-lint run ./...
     modernize ./...
+    fieldalignment -test=false $(go list ./... | grep -v /internal/proto)
 
 # Install necessary go tools
 [group("setup")]
@@ -51,3 +57,4 @@ install:
     go install golang.org/x/tools/go/analysis/passes/modernize/cmd/modernize@latest
     go install golang.org/x/vuln/cmd/govulncheck@latest
     go install github.com/bufbuild/buf/cmd/buf@latest
+    go install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@latest

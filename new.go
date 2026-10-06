@@ -19,6 +19,14 @@ import (
 type NewConfig struct {
 	// Token, if non-empty, is required on every RPC call via Authorization: Bearer <token>.
 	Token string
+	// CertFile is the path to the TLS certificate file. Enables TLS when set.
+	CertFile string
+	// KeyFile is the path to the TLS private key file. Must be set together with CertFile.
+	KeyFile string
+	// Host is the network interface to bind to (e.g. "127.0.0.1" or "0.0.0.0").
+	// Defaults to "localhost" when empty. Binding to a non-loopback address
+	// exposes the agent externally; pair it with TLS and a Token.
+	Host string
 	// AllowedOrigins is the list of origins permitted by CORS (e.g. ["https://app.example.com"]).
 	// Use ["*"] to allow all origins. An empty slice disables CORS middleware entirely.
 	AllowedOrigins []string
@@ -28,17 +36,9 @@ type NewConfig struct {
 	// worth the CPU cost; raise it if compression's CPU cost outweighs the
 	// bandwidth savings for your typical message sizes.
 	CompressMinBytes int
-	// CertFile is the path to the TLS certificate file. Enables TLS when set.
-	CertFile string
-	// KeyFile is the path to the TLS private key file. Must be set together with CertFile.
-	KeyFile string
 	// HTTP3 also serves HTTP/3 over QUIC in parallel with the TLS/TCP server.
 	// Requires CertFile and KeyFile.
 	HTTP3 bool
-	// Host is the network interface to bind to (e.g. "127.0.0.1" or "0.0.0.0").
-	// Defaults to "localhost" when empty. Binding to a non-loopback address
-	// exposes the agent externally; pair it with TLS and a Token.
-	Host string
 }
 
 // New starts an HTTP server on the specified port serving the CollectorService

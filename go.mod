@@ -10,8 +10,8 @@ tool (
 require (
 	connectrpc.com/connect v1.21.0
 	connectrpc.com/cors v0.1.0
-	github.com/klauspost/compress v1.20.0
-	github.com/quic-go/quic-go v0.62.0
+	github.com/klauspost/compress v1.20.1
+	github.com/quic-go/quic-go v0.63.0
 	github.com/rs/cors v1.11.1
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/protobuf v1.36.12

@@ -31,14 +31,12 @@ func newHTTPServer(addr string, h http.Handler) *http.Server {
 // Server is a running instance started by New. The zero value is not usable;
 // obtain one from New.
 type Server struct {
-	httpServer *http.Server
-	h3Server   *http3.Server  // nil unless HTTP3 was enabled
-	udpConn    net.PacketConn // nil unless HTTP3 was enabled
-
-	addr string
-
-	shutdownOnce sync.Once
+	udpConn      net.PacketConn // nil unless HTTP3 was enabled
 	shutdownErr  error
+	httpServer   *http.Server
+	h3Server     *http3.Server // nil unless HTTP3 was enabled
+	addr         string
+	shutdownOnce sync.Once
 }
 
 // Addr returns the address the server is listening on, e.g. "127.0.0.1:57621".
