@@ -74,6 +74,7 @@ func buildAllResponse(c *Collector) *proto.AllResponse {
 			HttpLaxContentLengthEvents:        c.vUint(MetricGoDebugHTTPLaxContentLength),
 			HttpMuxGo_121Events:               c.vUint(MetricGoDebugHTTPMuxGo121),
 			HttpServeContentKeepHeadersEvents: c.vUint(MetricGoDebugHTTPServeContentKeepHeaders),
+			HttpServeContentMaxRangesEvents:   c.vUint(MetricGoDebugHTTPServeContentMaxRanges),
 			InstallGoRootEvents:               c.vUint(MetricGoDebugInstallGoroot),
 			MultipartMaxHeadersEvents:         c.vUint(MetricGoDebugMultipartMaxHeaders),
 			MultipartMaxPartsEvents:           c.vUint(MetricGoDebugMultipartMaxParts),

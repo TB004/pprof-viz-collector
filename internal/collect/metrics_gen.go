@@ -67,6 +67,7 @@ const (
 	MetricGoDebugHTTPLaxContentLength
 	MetricGoDebugHTTPMuxGo121
 	MetricGoDebugHTTPServeContentKeepHeaders
+	MetricGoDebugHTTPServeContentMaxRanges
 	MetricGoDebugInstallGoroot
 	MetricGoDebugMultipartMaxHeaders
 	MetricGoDebugMultipartMaxParts
@@ -187,6 +188,7 @@ var AllMetricNames = [metricCount]string{
 	MetricGoDebugHTTPLaxContentLength:        "/godebug/non-default-behavior/httplaxcontentlength:events",
 	MetricGoDebugHTTPMuxGo121:                "/godebug/non-default-behavior/httpmuxgo121:events",
 	MetricGoDebugHTTPServeContentKeepHeaders: "/godebug/non-default-behavior/httpservecontentkeepheaders:events",
+	MetricGoDebugHTTPServeContentMaxRanges:   "/godebug/non-default-behavior/httpservecontentmaxranges:events",
 	MetricGoDebugInstallGoroot:               "/godebug/non-default-behavior/installgoroot:events",
 	MetricGoDebugMultipartMaxHeaders:         "/godebug/non-default-behavior/multipartmaxheaders:events",
 	MetricGoDebugMultipartMaxParts:           "/godebug/non-default-behavior/multipartmaxparts:events",

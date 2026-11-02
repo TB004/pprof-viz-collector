@@ -109,8 +109,6 @@ func TestNew_PortZeroPicksFreePort(t *testing.T) {
 }
 
 func TestNew_Shutdown(t *testing.T) {
-	t.Parallel()
-
 	server, err := New(0, NewConfig{})
 	require.NoError(t, err)
 	addr := server.Addr()
@@ -122,12 +120,16 @@ func TestNew_Shutdown(t *testing.T) {
 	// Idempotent: a second call must not error or hang.
 	assert.NoError(t, server.Shutdown(ctx))
 
-	// The listener must actually be closed.
-	conn, err := net.DialTimeout("tcp", addr, time.Second)
-	if conn != nil {
-		_ = conn.Close()
-	}
-	assert.Error(t, err)
+	// The listener must actually be closed. http.Server.Serve closes it from
+	// its own goroutine, so if Shutdown ran before Serve registered the
+	// listener the close lands shortly after Shutdown returns.
+	assert.Eventually(t, func() bool {
+		conn, err := net.DialTimeout("tcp", addr, time.Second)
+		if conn != nil {
+			_ = conn.Close()
+		}
+		return err != nil
+	}, 5*time.Second, 10*time.Millisecond, "listener still accepting connections after Shutdown")
 }
 
 func TestNew_HTTP3(t *testing.T) {
