@@ -103,6 +103,7 @@ var metrics = []field{
 	{"GoDebugHTTPLaxContentLength", "/godebug/non-default-behavior/httplaxcontentlength:events", "GoDebug", "HttpLaxContentLengthEvents", kindUint64},
 	{"GoDebugHTTPMuxGo121", "/godebug/non-default-behavior/httpmuxgo121:events", "GoDebug", "HttpMuxGo_121Events", kindUint64},
 	{"GoDebugHTTPServeContentKeepHeaders", "/godebug/non-default-behavior/httpservecontentkeepheaders:events", "GoDebug", "HttpServeContentKeepHeadersEvents", kindUint64},
+	{"GoDebugHTTPServeContentMaxRanges", "/godebug/non-default-behavior/httpservecontentmaxranges:events", "GoDebug", "HttpServeContentMaxRangesEvents", kindUint64},
 	{"GoDebugInstallGoroot", "/godebug/non-default-behavior/installgoroot:events", "GoDebug", "InstallGoRootEvents", kindUint64},
 	{"GoDebugMultipartMaxHeaders", "/godebug/non-default-behavior/multipartmaxheaders:events", "GoDebug", "MultipartMaxHeadersEvents", kindUint64},
 	{"GoDebugMultipartMaxParts", "/godebug/non-default-behavior/multipartmaxparts:events", "GoDebug", "MultipartMaxPartsEvents", kindUint64},
