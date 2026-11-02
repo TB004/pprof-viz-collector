@@ -228,6 +228,10 @@ Requests without the header or with a wrong token are rejected with HTTP 401 Una
 
 This collector is designed to work seamlessly with the **Pprof-Viz Web App**, a free-to-use visualization platform that provides real-time dashboards for your Go applications.
 
+## AI Notice
+
+This project makes heavy use of AI-assisted development (Claude Code). Much of the code, tests, and documentation was written or refactored with AI assistance. All changes are reviewed and verified by a human maintainer, and are covered by the test suite, but you should evaluate the code for your own use case as you would any third-party dependency. See `AGENTS.md` for the engineering conventions that guide AI contributions.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

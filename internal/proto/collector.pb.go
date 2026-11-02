@@ -10,9 +10,9 @@
 package proto
 
 import (
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
+	"reflect"
+	"sync"
+	"unsafe"
 
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -771,6 +771,7 @@ type GoDebugResponse struct {
 	// Added in Go 1.27.
 	Fips140EmsEvents                  *uint64 `protobuf:"varint,47,opt,name=fips140_ems_events,json=fips140EmsEvents,proto3,oneof" json:"fips140_ems_events,omitempty"`
 	X509SslCertOverridePlatformEvents *uint64 `protobuf:"varint,48,opt,name=x509_ssl_cert_override_platform_events,json=x509SslCertOverridePlatformEvents,proto3,oneof" json:"x509_ssl_cert_override_platform_events,omitempty"`
+	HttpServeContentMaxRangesEvents   *uint64 `protobuf:"varint,49,opt,name=http_serve_content_max_ranges_events,json=httpServeContentMaxRangesEvents,proto3,oneof" json:"http_serve_content_max_ranges_events,omitempty"`
 	unknownFields                     protoimpl.UnknownFields
 	sizeCache                         protoimpl.SizeCache
 }
@@ -1088,6 +1089,13 @@ func (x *GoDebugResponse) GetFips140EmsEvents() uint64 {
 func (x *GoDebugResponse) GetX509SslCertOverridePlatformEvents() uint64 {
 	if x != nil && x.X509SslCertOverridePlatformEvents != nil {
 		return *x.X509SslCertOverridePlatformEvents
+	}
+	return 0
+}
+
+func (x *GoDebugResponse) GetHttpServeContentMaxRangesEvents() uint64 {
+	if x != nil && x.HttpServeContentMaxRangesEvents != nil {
+		return *x.HttpServeContentMaxRangesEvents
 	}
 	return 0
 }
@@ -1627,7 +1635,7 @@ const file_proto_collector_proto_rawDesc = "" +
 	"\x14_stack_scanned_bytesB\x16\n" +
 	"\x14_total_scanned_bytesB\x16\n" +
 	"\x14_stack_starting_sizeB\x1e\n" +
-	"\x1c_target_heap_size_percentage\"\xa4\x1e\n" +
+	"\x1c_target_heap_size_percentage\"\xa1\x1f\n" +
 	"\x0fGoDebugResponse\x12/\n" +
 	"\x11cache_hash_events\x18\x01 \x01(\x04H\x00R\x0fcacheHashEvents\x88\x01\x01\x12/\n" +
 	"\x11cache_test_events\x18\x02 \x01(\x04H\x01R\x0fcacheTestEvents\x88\x01\x01\x123\n" +
@@ -1671,7 +1679,8 @@ const file_proto_collector_proto_rawDesc = "" +
 	"\x18x509_use_policies_events\x18- \x01(\x04H%R\x15x509UsePoliciesEvents\x88\x01\x01\x12<\n" +
 	"\x18zip_insecure_path_events\x18. \x01(\x04H&R\x15zipInsecurePathEvents\x88\x01\x01\x121\n" +
 	"\x12fips140_ems_events\x18/ \x01(\x04H'R\x10fips140EmsEvents\x88\x01\x01\x12V\n" +
-	"&x509_ssl_cert_override_platform_events\x180 \x01(\x04H(R!x509SslCertOverridePlatformEvents\x88\x01\x01B\x14\n" +
+	"&x509_ssl_cert_override_platform_events\x180 \x01(\x04H(R!x509SslCertOverridePlatformEvents\x88\x01\x01\x12R\n" +
+	"$http_serve_content_max_ranges_events\x181 \x01(\x04H)R\x1fhttpServeContentMaxRangesEvents\x88\x01\x01B\x14\n" +
 	"\x12_cache_hash_eventsB\x14\n" +
 	"\x12_cache_test_eventsB\x16\n" +
 	"\x14_cache_verify_eventsB\x16\n" +
@@ -1712,7 +1721,8 @@ const file_proto_collector_proto_rawDesc = "" +
 	"\x19_x509_use_policies_eventsB\x1b\n" +
 	"\x19_zip_insecure_path_eventsB\x15\n" +
 	"\x13_fips140_ems_eventsB)\n" +
-	"'_x509_ssl_cert_override_platform_eventsJ\x04\b\x06\x10\aJ\x04\b\a\x10\bJ\x04\b\t\x10\n" +
+	"'_x509_ssl_cert_override_platform_eventsB'\n" +
+	"%_http_serve_content_max_ranges_eventsJ\x04\b\x06\x10\aJ\x04\b\a\x10\bJ\x04\b\t\x10\n" +
 	"J\x04\b\v\x10\fJ\x04\b\x11\x10\x12J\x04\b\x17\x10\x18J\x04\b(\x10)R\x13tls10_server_eventsR\x0ftls3_des_eventsR\x12tls_rsa_kex_eventsR\x15tls_unsafe_ekm_eventsR\x17async_timer_chan_eventsR\x11type_alias_eventsR\x18x509_keypair_leaf_events\"\xdc\a\n" +
 	"\x0eMemoryResponse\x12+\n" +
 	"\x0fheap_free_bytes\x18\x01 \x01(\x04H\x00R\rheapFreeBytes\x88\x01\x01\x12/\n" +

@@ -139,6 +139,7 @@ message GoDebugResponse {
   // Added in Go 1.27.
   optional uint64 fips140_ems_events = 47;
   optional uint64 x509_ssl_cert_override_platform_events = 48;
+  optional uint64 http_serve_content_max_ranges_events = 49;
 
   // Removed from runtime/metrics in Go 1.27 (the corresponding GODEBUG
   // settings were retired). Tags stay reserved so old clients stay compatible.
