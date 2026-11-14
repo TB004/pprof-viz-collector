@@ -1,6 +1,24 @@
 version: 2
+# Security updates bypass both the cooldown and the groups, so fixes still
+# arrive immediately as individual PRs.
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 7
+    # Major versions still arrive as separate PRs.
+    groups:
+      go-modules:
+        update-types: ["minor", "patch"]
