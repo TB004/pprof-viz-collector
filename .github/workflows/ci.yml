@@ -36,6 +36,23 @@ jobs:
         with:
           just-version: "1.59.0"
 
+      # Module download cache, compiled package cache and golangci-lint cache.
+      # restore-keys allows a stale cache to be reused incrementally when
+      # go.sum changes; it is saved even if a later step fails. Restored before
+      # the tool install: go install leaves read-only files in ~/go/pkg/mod,
+      # which tar cannot overwrite when extracting the cache afterwards.
+      - name: Restore Go build caches
+        id: cache-build
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/.cache/golangci-lint
+          key: ${{ runner.os }}-go-build-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-build-${{ steps.setup-go.outputs.go-version }}-
+
       # Tool binaries only change when this file (the tool list) or the Go
       # version does, so the key must not depend on go.sum. An exact hit
       # (cache-hit == 'true') is required to skip the install.
@@ -62,21 +79,6 @@ jobs:
         with:
           path: ~/go/bin
           key: ${{ steps.cache-tools.outputs.cache-primary-key }}
-
-      # Module download cache, compiled package cache and golangci-lint cache.
-      # restore-keys allows a stale cache to be reused incrementally when
-      # go.sum changes; it is saved even if a later step fails.
-      - name: Restore Go build caches
-        id: cache-build
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-            ~/.cache/golangci-lint
-          key: ${{ runner.os }}-go-build-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-build-${{ steps.setup-go.outputs.go-version }}-
 
       - name: Run coverage
         run: |
