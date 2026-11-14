@@ -11,7 +11,7 @@ require (
 	connectrpc.com/connect v1.21.1
 	connectrpc.com/cors v0.1.0
 	github.com/klauspost/compress v1.20.3
-	github.com/quic-go/quic-go v0.64.1
+	github.com/quic-go/quic-go v0.65.0
 	github.com/rs/cors v1.11.1
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/protobuf v1.36.12
