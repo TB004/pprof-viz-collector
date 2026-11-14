@@ -47,14 +47,14 @@ lint:
 # Install necessary go tools
 [group("setup")]
 install:
-    go install github.com/cweill/gotests/gotests@latest
-    go install github.com/go-delve/delve/cmd/dlv@latest
-    go install github.com/josharian/impl@latest
-    go install golang.org/x/tools/gopls@latest
-    go install honnef.co/go/tools/cmd/staticcheck@latest
-    go install github.com/securego/gosec/v2/cmd/gosec@latest
-    go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
-    go install golang.org/x/tools/go/analysis/passes/modernize/cmd/modernize@latest
-    go install golang.org/x/vuln/cmd/govulncheck@latest
-    go install github.com/bufbuild/buf/cmd/buf@latest
-    go install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@latest
+    go install github.com/cweill/gotests/gotests@v1.9.0
+    go install github.com/go-delve/delve/cmd/dlv@v1.27.2
+    go install github.com/josharian/impl@v1.5.0
+    go install golang.org/x/tools/gopls@v0.24.0
+    go install honnef.co/go/tools/cmd/staticcheck@v0.8.2
+    go install github.com/securego/gosec/v2/cmd/gosec@v2.30.0
+    go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0
+    go install golang.org/x/tools/go/analysis/passes/modernize/cmd/modernize@v0.52.0
+    go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+    go install github.com/bufbuild/buf/cmd/buf@v1.75.0
+    go install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@v0.52.0
